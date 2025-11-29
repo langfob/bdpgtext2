@@ -345,7 +345,13 @@ proj_dir = here()
 # source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
 #         local = knitr::knit_global())
 
-source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
+# 2025 11 29 - BTL
+# Move source file from R to R_new since it is referenced in current code, 
+# which assumes R code is in R_new.
+
+# source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
+#         local = knitr::knit_global())
+source (file.path (proj_dir, "R_new/v1_p6_load_libraries_and_R_source_code.R"), 
         local = knitr::knit_global())
 ```
 
