@@ -711,7 +711,13 @@ source (file.path (proj_dir, "/R_new/p8.matildaFunctions.v01.R"),
 source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
+# 2025 11 29 - BTL
+# Move source file from R to R_new since it is referenced in current code, 
+# which assumes R code is in R_new.
+
+# source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R_new/v2_paper_3_cv_test_train_splitting_functions.R"), 
          local = knitr::knit_global())
 ```
 
