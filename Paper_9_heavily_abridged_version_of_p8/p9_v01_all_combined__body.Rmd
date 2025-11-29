@@ -32,7 +32,7 @@ params:
 #-----  path variables  -----# 
   relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
   relative_path_to_data_out_loc: "Data/TempOutput"
-  ggplot_save_path: "Paper_8_all_combined_for_Ecological_Monographs/Saved_plots"
+  ggplot_save_path: "Paper_9_heavily_abridged_version_of_p8/Saved_plots"
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
   show_only_test_results: TRUE
