@@ -1,0 +1,911 @@
+---
+params:
+  initialDate: "2019-03-17"
+  gurobi_problem_filter: "all"    # "all" OR "completed" OR "unfinished"
+  exclude_imperfect_wraps: FALSE    #  2020 06 09 unfinished fails w/ both T & F
+  exclude_ZL: TRUE
+  do_all_batches: TRUE
+  exclude_APP_0_inErr: TRUE
+  remove_probs_with_gt_10_pct_input_err: TRUE
+  near_1_tol: 0.05
+  write_tibs_to_csv: FALSE
+  write_most_important_tibs_to_csv: FALSE
+  add_gen_time_to_csv_name: TRUE
+  relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
+  data_out_loc: "Data/TempOutput"
+  build_appendices: TRUE
+  bdpg_p_needs_fixing: TRUE
+  file_type_to_write: "rds"
+  show_excess_tables: FALSE
+  mag_base_col_name_str: "max_TOT_FN_FP_rate"    #"max_TOT_FN_FP_rate"    #  "rsp_euc_realized_Ftot_and_cost_in_err_frac"
+##    | `r paste0 ('[add_gurobi_status_col: ', params$add_gurobi_status_col, ']')`
+#  func_path_in_proj_dir: "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"
+title: | 
+    | Supplemental Information for Shiny app for
+    | Learning to predict reserve selection error under uncertainty 
+    | p9 v01
+author: |  
+    | William T. Langford^1,3^, Ascelin Gordon^2^
+    | 
+    | 1 Romsey VIC 3434, Australia
+    | 2 School of Global, Urban and Social Studies, RMIT University, Melbourne, VIC 3000, Australia
+    | 3 Corresponding author email: btlangford.work\@gmail.com
+    | 
+    | `r paste0 ('[gur probs: ', params$gurobi_problem_filter, ']')` 
+    | `r paste0 ('[exc imperfect: ', params$exclude_imperfect_wraps, ']')`
+    | `r paste0 ('[exc ZL: ', params$exclude_ZL, ']')`
+    | `r paste0 ('[do all batches: ', params$do_all_batches, ']')`
+    | `r paste0 ('[exc 0 APP inErr: ', params$exclude_APP_0_inErr, ']')`
+    | `r paste0 ('[exc > 10% inErr: ', params$remove_probs_with_gt_10_pct_input_err, ']')`
+    | `r paste0 ('[near_1_tol: ', params$near_1_tol, ']')`
+    | `r paste0 ('[write_tibs_to_csv: ', params$write_tibs_to_csv, ']')`
+    | `r paste0 ('[write_most_important_tibs_to_csv: ', params$write_most_important_tibs_to_csv, ']')`
+    | `r paste0 ('[add_gen_time_to_csv_name: ', params$add_gen_time_to_csv_name, ']')`
+    | `r paste0 ('[relative_path_to_input_data: ', params$relative_path_to_input_data, ']')`
+    | `r paste0 ('[data_out_loc: ', params$data_out_loc, ']')`
+    | `r paste0 ('[build_appendices: ', params$build_appendices, ']')`
+    | `r paste0 ('[bdpg_p_needs_fixing: ', params$bdpg_p_needs_fixing, ']')`
+    | `r paste0 ('[file_type_to_write: ', params$file_type_to_write, ']')`
+    | `r paste0 ('[show_excess_tables: ', params$show_excess_tables, ']')`
+    | `r paste0 ('[mag_base_col_name_str: ', params$mag_base_col_name_str, ']')`
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/methods-in-ecology-and-evolution.csl
+---
+
+```{r, eval=FALSE, echo=FALSE}
+#  Version history
+
+##  p9 v01 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v17_all_combined____Shiny_app__supplemental_information.Rmd.  
+
+Need to greatly abridge p8, so I'm creating p9 to do that.  
+
+##  p8 v17 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v16_all_combined____Shiny_app__supplemental_information.Rmd.  
+
+Need to change all references to Gurobi, Marxan_SA, and Marxan_SA_SS to ILP, SA, and SA_SS.  I've done a couple of these in the version 16, but I want to separate this action out as much as possible in case it causes any problems.  So, I'm going to do only this in version 17.  This could also be done using a fork for this name changing and another for many other changes, but merging the name change fork with all kinds of other changes made on another fork will be just as messy, if not more so.  I'm putting it in a separate version number as a compromise to make it easier to revert back to the end of v16 if there are unanticipated issues down the road after changing the names.
+
+##  p8 v16 April 16, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v15_all_combined____Shiny__supplemental_information.Rmd.  
+
+Made a fairly complete, somewhat reduced version of the fully body of the paper in v15, however, there are a fair number of small details that need to be repaired.  Creating v16 to make those repairs, such as entering the correct definitions of variables in the tables of variables.  
+
+I'm also going to remove all uses of and references to the Latapy variables in both the text and the data loading, since they were of almost no use and greatly complicate the writing up.
+
+##  p8 v15 August 4, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v14_all_combined____Shiny__supplemental_information.Rmd
+
+Edited v14 with respect to Ascelin comments up through most of Discussion but stopped at beginning of Predictions section of Discussion.  I've decided to try to shrink the paper and as much as possible and get rid of as much controversial stuff as possible.  If I change my mind later about doing that, I should go back to the latest version of v14 and continue with the editing I had been doing there.  At the moment, continuing with those edits seems like a waste of time if I'm going to slash things, so I'm creating a new version 15 for slashing.  
+
+##  p8 v14 June 6, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v13_all_combined____Shiny__supplemental_information.Rmd
+
+Updating this version to keep in step with change to v14 in main body of p8.  
+
+##  v13 (of paper 8) April 22, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/v12_Paper_6_p1p2_combined____Shiny__supplemental_information.Rmd
+
+Updating this version to keep in step with change to v13 in main body of p8.  
+
+##  v12 (of paper 8) March 10, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/v11_Paper_6_p1p2_combined____Shiny__supplemental_information.Rmd
+
+I'm taking the revised versions of the SI files that were submitted to MEE with Paper 6 and using them with Paper 8.  I'm sure that they will need some modification to work with Paper 8, but they're a very good starting point that I don't think will require a lot of modification.  
+
+##  v11 (of paper 6) July 1, 2022  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/v10_Paper_6_p1p2_combined____Shiny__supplemental_information.Rmd
+
+Revising for resubmission after second MEE rejection.
+
+##  v10 (of paper 6) March 13, 2022  
+
+Cloned from bdpgtext/v09_Paper_6_p1p2_combined____Shiny__supplemental_information.Rmd
+
+Finished making revisions to the submitted appendix Rmd files and main body Rmd file after finding some cross-referencing errors in the submitted versions of the appendix files and a little bit of wording error in the main body Methods section on reserve selectors.  Renaming now to v10 of appendices to differentiate from what was submitted.  Should have done this renaming before I made the post resubmission changes, 
+but I didn't, so I'm doing it now.  
+
+##  v09 (of paper 6) February 8, 2022  
+
+Cloned from bdpgtext/v09_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Pulling the Shiny app documentation out into its own file.  
+
+##  v09 (of paper 6) January 22, 2022  
+
+Cloned from bdpgtext/v08_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Finished incorporating edits from Ascelin's review v6 of main body.  Now splitting up the appendices into smaller units to make them easier to manage.  Will probably have to recombine them all again later.
+
+##  v08 (of paper 6 APP Supplemental Information) January 21, 2022  
+
+Cloned from bdpgtext/v07_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Creating a new version to incorporate edits from Ascelin's review v6 of main body.  
+
+##  v07 (of paper 6 APP Supplemental Information) January 6, 2022  
+
+Cloned from Cloned from bdpgtext/Paper_6_p1p2_combined/v06_Paper_6_p1p2_combined____APP__supplemental_information.Rmd.
+
+The p6 main body, COR SI, and APP SI files all have different startup settings and code.  I'm creating v7 to try to synchronize/unify all of them as much as possible so that the appendices and main paper body don't end up with mismatched results because of how they start up.  It should also make it easier to maintain if I can make the startup for all three call one function that they all share.  
+
+##  v06 (of paper 6 APP Supplemental Information) December 31, 2021    
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v19_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Have decided to split the SI for p6 into two files, COR and APP, based on the SI files for p1 and p2.  Will probably end up having to combine them into one giant file to get the appendix numbering to work correctly, but for now, it's easier to manage them separately since there will be little or no change to the COR file.
+
+##  v19 (of paper 2 Supplemental Information) November 13, 2021  
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v18_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Finished incorporating Ascelin's suggestions in v18 from his reviewing v17.  Now ready to make a more synthetic revision of the full manuscript since incorporating his changes made it clear that there were some other duplications and missing things that need to be dealt with across the manuscript as a whole to make it clearer and reduce its size, e.g., by discussing these things in a single place.
+
+##  v18 (of paper 2 Supplemental Information) November 6, 2021  
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v17_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Incorporating Ascelin's suggestions from his reviewing v17 shown in the file:   "v17_Paper_2_comparison_of_reserve_selectors__body.for Ascelin. 2021 09 30 3 20 pm_AG.docx" and "v17_Paper_2_comparison_of_reserve_selectors__body.for Ascelin 2021 09 29 8am - unfinished Discussion_AG.docx".
+
+##  v17 (of paper 2 Supplemental Information) September 26, 2021  
+
+Cloned from bdpgtext/Paper_1_method/v11_Paper_1_method__supplemental_information.Rmd for header and structure.  Then split appendices out of p2 main body bdpgtext/Paper_2_comparison_of_reserve_selectors/v17_Paper_2_comparison_of_reserve_selectors__body.Rmd.
+
+Needs to be a separate file in submission and may need to have separate reference list, so I'm cutting it out of the main Rmd file for p2.  
+
+```
+
+```{r echo=FALSE}
+#  Header code chunks (option setting, history, etc.)
+
+##  Set latex and knitr options
+```
+
+```{cat, engine.opts = list(file = "header.tex")}
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
+```
+
+```{r global_options, include=FALSE}
+
+    #  Global options are set here based on some examples in:
+    #      https://kbroman.org/knitr_knutshell/pages/Rmarkdown.html
+    #      https://kbroman.org/knitr_knutshell/pages/figs_tables.html
+
+knitr::opts_chunk$set(#fig.width=12, 
+                      #fig.height=8, 
+                      fig.path='Figs/',  #  Save figures to indiv files in Figs/
+                      echo=FALSE,        #  Don't echo code to output
+                      
+                      warning=FALSE,  
+                      message=FALSE, 
+
+                      fig.pos = "H", out.extra = ""    #  Keep latex from floating figures
+                     )
+```
+
+```{r echo=FALSE}
+##  Load R libraries  
+```
+
+```{r loadLibraries, echo=FALSE}
+
+library (knitr)    #  For include_graphics()
+library (ggplot2)
+library (patchwork)
+library (here)
+library (readr)
+```
+
+```{r setDifficultOptions, include=FALSE}
+
+    #  Two options are either used globally or are hard to set in 
+    #  the header params list, so set them here.
+
+    #  This is both hard to set in params header and used globally.
+if (as.logical (params$exclude_ZL))
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "Marxan_SA_SS")
+    } else
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "ZL_Backward", "Marxan_SA_SS")
+    }
+
+file_type_to_write = params$file_type_to_write
+
+    #  This is easy to set but used globally.
+near_1_tol = as.numeric (params$near_1_tol)
+```
+
+```{r echo=FALSE}
+##  Set bdpg options  
+```
+
+```{r setechoOptions, include=FALSE}
+
+    #  Echo the values of the main options.
+
+cat ("\nMain options are:\n")
+
+for (idx in 1:length(params))   
+  cat ("\n", names(params)[idx], ": ", params[[idx]], sep="")
+
+cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
+```
+
+```{r echo=FALSE}
+##  Load bdpg functions  
+```
+
+```{r setFilePaths, include=FALSE}
+
+#  Set file paths
+
+library (here)
+
+proj_dir = here()
+#cat ("\n\nproj_dir = here() = ", proj_dir, "\n", sep='')
+```
+
+```{r loadP1andP2FunctionDefns, include=FALSE}
+    
+#  Load R functions
+
+#  2020 08 20 - BTL
+#  "Rmarkdown Cookbook" section	"16.1 Source external R scripts" says to 
+#  include the "local" argument.
+#       https://bookdown.org/yihui/rmarkdown-cookbook/source-script.html
+#       "We recommend that you use the argument local in source() or envir in 
+#        sys.source() explicitly to make sure the code is evaluated in the 
+#        correct environment, i.e., knitr::knit_global(). The default values 
+#        for them may not be the appropriate environment: you may end up 
+#        creating variables in the wrong environment, and being surprised 
+#        that certain objects are not found in later code chunks."
+#  I haven't noticed a problem with this, but maybe it's been there and 
+#  I just haven't had it affect something important enough to notice.
+
+
+# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
+#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
+#         local = knitr::knit_global()) 
+# 
+# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
+#         local = knitr::knit_global())
+
+source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
+        local = knitr::knit_global())
+```
+
+```{r echo=FALSE}
+##  Load full bdpg data set  
+```
+
+```{r loadFullBdpgDataSet, include=FALSE}
+
+retVals = load_p6_data (params, 
+                        proj_dir, 
+                        rs_method_names_list, 
+                        file_type_to_write)
+
+app_wrap_tib = retVals$p2_app_wrap_tib
+```
+
+
+```{r, echo=FALSE}
+#===============================================================================
+
+# Extra code for use only in SI  
+
+#===============================================================================
+
+digits_to_show = 2    #  Number of digits to display in kable() tables.
+##  Force colors of FN and FP to always be consistent in scatterplots
+
+color_breaks_and_values = force_dom_err_type_colors (app_wrap_tib$dom_err_type)
+
+scale_color_breaks = color_breaks_and_values$breaks
+scale_color_values = color_breaks_and_values$values
+
+#===============================================================================
+
+# imperfect wrap
+# gurobi completed
+# tot err or rep shortfall
+# reserve selector 1 - reserve selector 2
+# zero
+# neg
+# pos
+# 
+# want to compare marxan vs gurobi and marxan sa ss versus gurobi under each circumstance
+# marxan minus gurobi
+# marxan sa ss minus gurobi
+# 
+# separate tables for combinations of imperfect, completed,
+# 
+# perfect&imperfect  completed&incomplete  compRS  baseRS  tot0  totN  totP  rep0  repN  repP
+#                                          rs2  -  rs1
+#                                          rs3  -  rs1
+#                                          rs4  -  rs1
+#                                          rs3  -  rs2
+#                                          rs4  -  rs2
+#                                          rs4  -  rs3
+#                                          
+# perfect            completed&incomplete
+# imperfect          completed&incomplete
+# 
+# perfect&imperfect  completed
+# perfect            completed
+# imperfect          completed
+# 
+# perfect&imperfect  incomplete
+# perfect            incomplete
+# imperfect          incomplete
+
+#library(tibble)
+rs_pair_data = tibble (comp_RS = c("Marxan_SA", "Marxan_SA_SS", "UR_Forward", 
+                                       "Marxan_SA_SS", "UR_Forward", 
+                                       "UR_Forward"), 
+                           base_RS = c("Gurobi", "Gurobi", "Gurobi", 
+                                       "Marxan_SA", "Marxan_SA", 
+                                       "Marxan_SA_SS"), 
+                           tot_col_name = c("diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS"), 
+                           rep_col_name = c("diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS"))
+
+if(FALSE)
+{
+for (perfection in c("both", "perfect", "imperfect"))
+    {
+    for (completion in c("both", "completed", "incomplete"))
+        {
+        cat ("\n\n", #cur_ct, "  ", 
+             perfection, "  ", 
+             completion, "  ", 
+             "\n", sep='')
+
+        cur_tib = app_wrap_tib
+        
+        if (perfection == "perfect")
+            {
+            cur_tib = filter (cur_tib, 
+                              is.na (rsp_wrap_is_imperfect) | ! rsp_wrap_is_imperfect) 
+          
+            } else if (perfection == "imperfect")
+            {
+            cur_tib = filter (cur_tib, rsp_wrap_is_imperfect) 
+            }
+        
+        if (completion == "completed")
+            {
+            cur_tib = filter (cur_tib, gurobi_status == "OPTIMAL") 
+
+            } else if (completion == "incomplete")
+            {
+            cur_tib = filter (cur_tib, gurobi_status != "OPTIMAL") 
+            }
+
+        for (cur_ct in 1:6)
+            {
+            cur_comp_RS = rs_pair_data [[cur_ct, "comp_RS"]]
+            cur_base_RS = rs_pair_data [[cur_ct, "base_RS"]]
+            cur_tot_col_name = rs_pair_data [[cur_ct, "tot_col_name"]]
+            cur_rep_col_name = rs_pair_data [[cur_ct, "rep_col_name"]]
+            
+            tot_err_0 = filter (cur_tib, tot_col_name == 0)
+            
+            cat ("\n", cur_ct, "  ", 
+                 perfection, "  ", 
+                 completion, "  ", 
+                 
+                 cur_comp_RS, "  ", 
+                 cur_base_RS, "  ", 
+                 cur_tot_col_name, "  ", 
+                 cur_rep_col_name, "  ", 
+
+                 # rs_pair_data [[cur_ct, "comp_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "base_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "tot_col_name"]], "  ", 
+                 # rs_pair_data [[cur_ct, "rep_col_name"]], "  ", 
+
+                 dim (cur_tib)[1], "  ",                      
+                 length (pull (cur_tib, cur_tot_col_name)), "  ", 
+                 length (pull (cur_tib, cur_rep_col_name)), "  ", 
+
+                 # rs_pair_data [[cur_ct, "comp_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "base_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "tot_col_name"]], "  ", 
+                 # rs_pair_data [[cur_ct, "rep_col_name"]], "  ", 
+                 
+                 sep='')
+            }
+        cat ("\n")
+        }
+    }
+
+cat ("\n\n")
+}
+
+#===============================================================================
+
+```
+
+```{r, include=FALSE}
+
+##  Create tibs for each separate reserve selector for building fivenum() tables
+
+num_prob_per_rs = count (app_wrap_tib, rs_method_name)
+
+Gurobi_only_tib = filter (app_wrap_tib, rs_method_name == "Gurobi")
+Marxan_SA_only_tib = filter (app_wrap_tib, rs_method_name == "Marxan_SA")
+Marxan_SA_SS_only_tib = filter (app_wrap_tib, rs_method_name == "Marxan_SA_SS")
+UR_Forward_only_tib = filter (app_wrap_tib, rs_method_name == "UR_Forward")
+```
+
+```{r, fig.pos="h"}
+
+##  Overall counts for options (imperfect wrap, gurobi status, dominant error type)  
+
+count (Gurobi_only_tib, gurobi_status) %>%
+      mutate(fraction = n / sum(n)) -> gurobi_status_cts_table
+
+count (Gurobi_only_tib, dom_err_type) %>%
+      mutate(fraction = n / sum(n)) -> dom_err_type_cts_table
+```
+
+\newpage
+
+#  How to run the Shiny app  
+
+##  How to run the Shiny app in a web browser or from this document  
+
+Go to the following url:   [https://langfob.shinyapps.io/bdpgShiny/](https://langfob.shinyapps.io/bdpgShiny/)   
+
+##  How to run the Shiny app locally in R  
+
+```{r howToRunShinyAppLocally, eval=FALSE, echo=TRUE}
+library (shiny)
+runApp (dir_containing_app_R_file)  #  Local path to where you have the app.R file
+```
+
+##  How to run the Shiny app locally in RStudio   
+
+If you have the app.R file open in RStudio's editor, there should be a Run App button visible in the toolbar just below the line of tabs containing the names of open files.  Just click on the Run App button.  You can also pull down a menu from the Run App button and choose to run the app in different ways than the default, which pops the app up in its own window.  
+
+#  Using the Shiny app  
+
+Most aspects of the interface are fairly self-explanatory if you have read the paper, so you may want to just play with the interface and only come back to this section if you have a problem.  We include something like an FAQ section below (section \ref{shinyFAQappendix}) to address a few common issues that might come up.
+
+The Shiny app is a single window containing four panes (see Fig.  \ref{fig:shinyAppOpeningPageImg}).  The left side of the window contains a menu of button options for controlling what appears in the right side of the window.  Some combinations of buttons will recreate figures used in the paper (e.g., the default button settings when the window opens recreate **\textcolor{red}{Fig. 5 from the paper}**).  Most combinations produce plots that either display data subsets not shown in the paper and/or plot types not used in the paper, e.g., different kinds of boxplots.  
+
+The right side of the window contains three stacked panes.  
+
+- The top pane displays plots of the data as specified by the option buttons.
+- The middle pane contains a table summarizing statistics about the data selected using the option buttons.  The format of the table is described in AppSI Appendix B.3.2 **\textcolor{red}{\ref{appendixMostCommonTableFormat}}**.  Note that the values shown in the table may sometimes not appear to match what's displayed in the plot.  This is because what appears in the table corresponds to the full set of values selected in the button choices but the plot is a scaled window onto the data and will often cut off certain values, usually extreme values.  Also, values may be plotted as percentages but shown in the table as proportions.
+- The bottom pane displays a subset of the rows of the data selected using the option buttons.  That pane contains many more columns than will fit in the window, but you can use the slider bar to scroll to the right.  That pane also contains a rudimentary search option that just searches for the string you enter in any column of all of the data in the set currently selected by the option buttons.  
+
+```{r shinyAppOpeningPage, echo=FALSE, out.width = "95%", fig.cap = "\\label{fig:shinyAppOpeningPageImg} bdpg Shiny app opening page showing the four panes: 1) Option buttons, 2) Plots, 3) Summary table, and 4) Data rows"}
+
+shinyOpeningScreen_img_path = 
+    file.path (proj_dir, 
+               "Figures/2022 01 31 Shiny app opening page zoomed so entire menu shows.png")
+
+include_graphics (shinyOpeningScreen_img_path)
+```
+
+Below, we discuss each section of the Options pane.  
+
+#  Options pane  
+
+##  Option:  Plot type  
+
+There are five different plot types available, two of which already appear in the paper (Scatterplot, Shortfall vs Signed Cost).  
+
+###  Scatterplot
+
+The scatterplots in the app have the same layout and magnification rays as in those used in the paper.  In fact, the default plot that comes up first in the app is the same plot as **\textcolor{red}{Fig. 5 in the paper}**.  The main reason for including scatterplots in the app is so that you can look at many more different breakdowns of the data than are shown in the paper.  
+  
+###  1% Binned Boxplot  
+
+The large clouds of points in the scatterplots make it difficult to see how the results are behaving at any specific level of input error.  The binned boxplots break the data up into increments of 1% input error and show a boxplot for each of those bins, e.g., bin 1 is all values with input errors between 0 and 1 (see Fig. \ref{fig:boxplot1pctTotOutErrFull} and Fig. \ref{fig:boxplot1pctTotOutErrMagFull}).  
+
+Like the scatterplots, these plots show magnification rays for 1x, 5x, and 10x magnification of input error, where the input error used is the one chosen in the "Input Error Measure" option (see Section \ref{inputErrorMeasureOptionAppendix}).  This is also done when plotting Error Magnfication instead of Error.  Because it can be difficult to eyeball exactly where the center of the box is when determining the magnification for a given 1% increment, a dot is placed at the intersection of each ray with the center of each boxplot.  
+
+Each individual 1% boxplot in the figure is drawn using the same conventions as are used in the regular boxplots described in section \ref{boxplotOptionAppendix}.     
+
+```{r plotBoxplot1pctTotOutErrFull, fig.align="center", out.width = "60%", fig.cap = "\\label{fig:boxplot1pctTotOutErrFull}Boxplot for each 1\\% interval of input error (FP and FN-dominated), e.g., group 3 summarizes all total output error values for problems with input error between 2\\% and 3\\%."}
+
+app_wrap_tib %>% 
+
+  ggplot_boxplot_over_bins (x_grouping_var = "input_error_group_by_max_TOT_FN_FP", 
+                            y_output_var = "rsr_COR_euc_out_err_frac", 
+                            facet_var = "rs_method_name", 
+                            y_min = 0, 
+                            y_max = 1.25, 
+                            plot_title = "Total output error in groups of 1% input error\nFP & FN-dominated", 
+                            x_axis_label = "Input Error 1% Bin", 
+                            y_axis_label = "Total Output Error", 
+                            plotting_mags = FALSE)
+```
+
+```{r plotBoxplot1pctTotOutErrMagFull, fig.align="center", out.width = "60%", fig.cap = "\\label{fig:boxplot1pctTotOutErrMagFull}Boxplot for each 1\\% interval of input error (FP and FN-dominated), e.g., group 3 summarizes all total output error magnifications for problems with input error between 2\\% and 3\\%."}
+
+app_wrap_tib %>% 
+
+  ggplot_boxplot_over_bins (x_grouping_var = "input_error_group_by_max_TOT_FN_FP", 
+                            y_output_var = "max_TOT_FN_FP_tot_mag", 
+                            facet_var = "rs_method_name", 
+                            y_min = 0, 
+                            y_max = 20, 
+                            plot_title = "Total output error MAGNIFICATION in groups of 1% input error\nFP & FN-dominated", 
+                            x_axis_label = "Input Error 1% Bin", 
+                            y_axis_label = "Total Output Error Mag", 
+                            
+                            show_y_as_percent = FALSE, 
+                            
+                            plotting_mags = TRUE)
+```
+
+###  Boxplot  {#boxplotOptionAppendix}  
+
+Boxplots are drawn using the geom_boxplot() function of the ggplot2 package in R, which  draws Tukey-style boxplots.  It represents five summary statistics and outlying points as follows (quoting directly from the "Summary statistics" section of the function's documentation (https://ggplot2.tidyverse.org/reference/geom_boxplot.html)):  
+```
+        The lower and upper hinges correspond to the first and third quartiles
+        (the 25th and 75th percentiles). This differs slightly from the method
+        used by the boxplot() function, and may be apparent with small samples.
+        See boxplot.stats() for for more information on how hinge positions are
+        calculated for boxplot().
+
+        The upper whisker extends from the hinge to the largest value no further
+        than 1.5 * IQR from the hinge (where IQR is the inter-quartile range, or
+        distance between the first and third quartiles). The lower whisker
+        extends from the hinge to the smallest value at most 1.5 * IQR of the
+        hinge. Data beyond the end of the whiskers are called "outlying" points
+        and are plotted individually.
+
+        In a notched box plot, the notches extend 1.58 * IQR / sqrt(n). This
+        gives a roughly 95% confidence interval for comparing medians. See
+        McGill et al. (1978) for more details."
+        ...
+        References
+        McGill, R., Tukey, J. W. and Larsen, W. A. (1978) Variations of box 
+        plots. The American Statistician 32, 12-16.
+```
+The one thing we do differently is to add a small diamond point inside each box to indicate the value of the mean.  In many cases, it's not too far from the median, but in a few cases they differ by quite a bit (e.g., with Error Magnification of Total Output Error on reserve selector UR_Forward using "Input Error Measure" = "max TOT FN FP err").  
+
+###  Histogram  
+
+These are just typical histograms that need no explanation except for how to set the upper bound of the x axis in the histogram.  Counterintuitively, you can control that upper bound by using the "Set **y** axis max using:" option since the y axis of the other plots has become the x axis in the histogram and we didn't want to add an x axis control option solely for this one plot.  
+
+###  Shortfall vs Signed Cost   
+
+This plot is the same kind of plot as what is shown in **\textcolor{red}{Fig. 9 in the paper}**.  The only difference is that you can show error magnifications too, which aren't shown in the paper.  You can also choose different subsets of the data to display, e.g., problems where Gurobi timed out.  
+
+Note that this option is currently only defined for "Output Error Variable" = "Signed Solution Cost Error".  It raises an error message with any other output error variable choice.  
+
+##  Option:  Output Error Variable  
+
+The options here are just the output error measures described in the paper and will be displayed on the y axis of the selected plot type (with the exception of Histograms, where they will be on the x axis).  
+
+##  Option:  Show Out Error or Mag
+
+This option allows you to choose whether the chosen plot shows the output error variable itself or its magnification value.  
+
+##  Option:  Dominant Error Type  
+
+This option allows you to choose whether to show results for All of the data or only the FP-dominated or FN-dominated subset of it.  
+
+##  Option:  Reserve selectors (choose at least 1)  
+
+This option allows you to choose any combination of reserve selector(s) to display results for.
+
+##  Option:  Problem difficulty    
+
+This option allows you to restrict the data to problems that Gurobi finished (Easier problems) and ones it didn't finish (Harder problems) or not restrict the data by problem difficulty (All).  The consequences of including and excluding problems that Gurobi did not finish are discussed more in AppSI Appendices C.3, D **\textcolor{red}{\ref{GurobiTextFromP1}, \ref{GurobiTimeLimitsAppendix}}**.  
+
+##  Option:  Input Error Measure     {#inputErrorMeasureOptionAppendix}
+
+This option allows you to choose which input error measure is used as the x axis for most plots as well as the basis for magnification calculations.  The two possible values and their consequences are discussed in more detail in AppSI Appendix C.1 **\textcolor{red}{\ref{ErrorMagnificationAppendix}}**.
+
+##  Option:  Set y axis max using:     {#setYaxisMaxAppendix}
+
+This option allows you to control the scaling of the y axis in plots except for Histograms.  There it controls the scaling of the *x axis*.  The Default option tries to choose a value that is generally reasonable for getting most of the data on the plot, however, it doesn't always succeed or it may not get the data that interests you most.  Alternatively, you can choose the Percentile or Fixed Value options.
+
+###  Percentile: 
+
+This choice allows you to use the value of a given percentile of the selected data as the maximum axis value.  It defaults to the 99th percentile, but a pop-up dialog box allows you to set the value where you choose, e.g., 100 to show every data point.  This option is most often useful when you get a strange plot like a boxplot that only has vertical lines rather than boxplots because the first or last quartile and outliers are pushed out of view.  
+
+###  Fixed Value:  
+
+This choice allows you to use an exact value for maximum axis value.  It defaults to 1.  Note that if the axis displays percents, then the value you enter here is the value of the corresponding proportion, not the value in percent.  For example, the default value of 1 was chosen because it corresponds to 100% (though errors often greatly exceed 100%).  
+
+##  Option:  Exclude Imperfect Wraps      
+
+This option allows you to choose whether to select "All" problems, only problems that were "Perfect" wraps, or only problems that were "Imperfect" wraps.  More discussion about this choice and its consequences can be found in AppSI Appendix E **\textcolor{red}{\ref{ImperfectWrapsAppendix}}**.
+
+#  Misc tips and FAQs  {#shinyFAQappendix}
+
+##  Weird-looking plots and option to set y axis max
+
+If you get weird-looking plots, it's most likely a problem with the value the plot is using for the y axis maximum.  A good example of this is in boxplots for Total Output Error Magnification and "Input Error Measure" = "TOT Input Err" (e.g., Fig. \ref{fig:shinyAppFNboxplotOffScreenImg}).  There, the default display for the "Dominant Error Type" = "All" selection doesn't show a box for the FNs because it's way off the top of the screen.  You can change the y axis scale manually using Option "Set y axis max using:".  If you switch "Set y axis max using:" to "Percentile" instead of "Default" and accept *its* default of 99, then the FNs get pulled back into sight, though the FPs get smashed down to almost nothing.  See section \ref{setYaxisMaxAppendix} for more information.  
+
+```{r shinyAppFNboxplotOffScreen, echo=FALSE, out.width = "95%", fig.cap = "\\label{fig:shinyAppFNboxplotOffScreenImg} bdpg Shiny app boxplot with FN boxes off the plot."}
+
+shinyAppFNboxplotOffScreen_img_path = 
+    file.path (proj_dir, 
+               "Figures/2022 02 08 boxplots with FN offscreen in Shiny app.png")
+
+include_graphics (shinyAppFNboxplotOffScreen_img_path)
+```
+
+##  Data in summary table vs. data in plot  
+
+When x and/or y axes on a plot are limited (e.g., showing only y values < 125%), the tables shown below the plot are NOT limited to the range shown on the axis (unless it shows all values).  Tables show values for the full distribution of the variable as selected in the options.  For example, if you have chosen a plot of Total Output Error for FP-dominated, Hard problems only and the y axis is limited to 125% error, the table will show summary statistics for all of the FP-dominated, Hard problems in the data set.  It won't show statistics for the entire data set of FP and FN and Easy and Hard problems, but it will show FP-dominated, Hard problems with errors both above and below 125%.
+
+##  "Notch went outside hinges" messages in the console when using binned boxplots  
+
+If you're running the Shiny app from R rather than over the web and you can see the console window, some of the binned boxplots generate the following warning message in the console when they're drawn:  
+
+\textcolor{red}{notch went outside hinges. Try setting notch=FALSE.}  
+
+This is not an error.  It just means that the rough 95% confidence interval of the median computed in the `geom_boxplot` function (and represented by the bounds of the notch) extended beyond one or both of the first and third quartiles.  This can happen when the confidence interval is wide (as in Fig. \ref{fig:notchOutsideHingesPlot}).
+
+```{r shinyNotchOutsideHinges, echo=FALSE, out.width = "95%", fig.cap = "\\label{fig:notchOutsideHingesPlot} 4 notches outside hinges"}
+
+notchOutsideHingesPlot_img_path = file.path (proj_dir, "Figures/example of Shiny notch went outside hinges - on Harder problems where Gurobi did not finish.png")
+
+include_graphics (notchOutsideHingesPlot_img_path)
+```
+
+##  Window scrolling  
+
+If things don't fit on your screen (e.g., the bottom of the Options pane or the right side of the data rows pane), you can scroll the window vertically and/or horizontally  You can also use whatever method your operating system has for zooming in and out.  For example, Fig. \ref{fig:shinyAppOpeningPageImg} in this file was obtained by hitting "Cmd -" twice on a Mac to make the complete Options pane visible.  Usually, this isn't necessary as the least used options are at the bottom of the list and are generally the things that are hidden and you can scroll them up only when necessary.  
+
+-----  
+
+\newpage
+
+# (APPENDIX) Appendix {-} 
+
+Dummy APP SI appendices to generate correct cross references to APP SI in text above.  
+
+```{r include=FALSE}
+# NOTE:  These dummy appendices are derived by running the following commands in the p6 directory (bdpgtext/Paper_6_p1p2_combined):
+
+# > grep    -i    "{#"    v09_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+
+#  Appendix - Reproducibility and Availability {#appendixReproducibilityAndAvailability}  
+##  Software availability {#appendixSoftwareAvailability}
+##  Data availability {#appendixDataAvailability}
+## Hardware {#appendixHardware}
+#  Appendix - Conventions for naming, display, etc. {#ConventionsAppendix}  
+##  Definitions {#appendixDefns}
+##  Naming conventions {#appendixNamingConventions}  
+##  Tables {#appendixTableConventions}  
+###  Confidence intervals on medians in tables {#appendixTableCIs} 
+###  Most common table format in these Appendices and in Shiny app  {#appendixMostCommonTableFormat}
+# Appendix - Notes on parameter and equation choices {#MethodsParAndEqNotesAppendix}  
+##  Error magnification base  {#ErrorMagnificationAppendix}
+##  Incommensurate bounds of solution cost error and rep shortfall error  {#incommensurateBoundsAppendix}  
+##  Unfinished Gurobi runs {#GurobiTextFromP1}  
+##  Imperfect wraps {#appendixImperfectWraps}  
+#  Appendix - Inclusion and relative difficulty of problems that Gurobi didn't finish {#GurobiTimeLimitsAppendix}
+##  Overview of unfinished Gurobi problems section {#appendixOverviewGurUnfinishedSection}  
+###  Definition of mipgap {#appendixMipgapDefn}  
+###  Inability to provably determine cause of unfinished problems {#appendixInabilityToProve}  
+##  FN-dominated values {#appendixTimeLimitsFNdom}  
+###  FN-dominated raw error values {#appendixTimeLimitsFNdomRaw}
+###  FN-dominated error magnifications {#appendixTimeLimitsFNdomMag}
+##  FP-dominated values {#appendixTimeLimitsFPdom}
+###  FP-dominated raw error values {#appendixTimeLimitsFPdomRaw}
+####  FP-dominated total output error (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErr}  
+####  FP-dominated rep shortfall  (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfall}  
+###  FP-dominated error magnifications {#appendixTimeLimitsFPdomMags}
+####  FP-dominated total output error MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErrMag}  
+####  FP-dominated representation shortfall MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfallMag}  
+##  Distributions of mipgap values {#appendixMipgapDists} 
+###  Density of Gurobi mipgaps {#appendixMipgapDensity}  
+###  Gurobi mipgap as a function of problem size {#appendixMipgapAsFuncOfProbSize} 
+##  Gurobi mipgaps vs. error measures across all reserve selectors {#gurMipgapsVsErrorsAppendix}
+###  Gurobi mipgap vs. Abs solution cost error {#appendixMipgapVsAbsSolCostErr} 
+####  Gurobi mipgap vs. Abs solution cost error MAGNIFICATION {#appendixMipgapVsAbsSolCostMag} 
+###  Gurobi mipgap vs. Signed solution cost error {#appendixMipgapVsSignedSolCostErr} 
+####  Gurobi mipgap vs. Signed solution cost error MAGNIFICATION {#appendixMipgapVsSignedSolCostMag} 
+###  Gurobi mipgap vs. Total output error {#appendixMipgapVsTotOutErr} 
+####  Gurobi mipgap vs. Total output error MAGNIFICATION {#appendixMipgapVsTotOutMag} 
+###  Gurobi mipgap vs. representation shortfall {#appendixMipgapVsRepShortfall} 
+####  Gurobi mipgap vs. representation shortfall MAGNIFICATION {#appendixMipgapVsRepShortfallMag} 
+#  Appendix - Inclusion and relative difficulty of imperfect Wrap problems  {#ImperfectWrapsAppendix}
+##  All {#appendixImperfectWrapsAll}  
+###  All raw {#appendixImperfectWrapsAllRaw}  
+###  All mag {#appendixImperfectWrapsAllMag}
+##  FN-dominated {#appendixImperfectWrapsFNdom}
+###  FN-dominated raw {#appendixImperfectWrapsFNdomRaw}  
+###  FN-dominated mag {#appendixImperfectWrapsFNdomMag}
+##  FP-dominated {#appendixImperfectWrapsFPdom}
+###  FP-dominated raw {#appendixImperfectWrapsFPdomRaw}
+###  FP-dominated mag {#appendixImperfectWrapsFPdomMag}
+#  Appendix - Differences between pairs of reserve selectors on individual problems {#DiffsAppendix}
+##  Structure of each section {#appendixDiffsSecStruct}  
+##  Marxan_SA minus Gurobi {#appendixDiffsMsaGur}
+###  Marxan_SA minus Gurobi - Total error diff tables {#appendixDiffsMsaGurTotErr}
+###  Marxan_SA minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsaGurRepShortfall}  
+##  Marxan_SA_SS minus Gurobi {#appendixDiffsMsassGur}
+###  Marxan_SA_SS minus Gurobi - Total error diff tables {#appendixDiffsMsassGurTotErr}
+###  Marxan_SA_SS minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsassGurRepShortfall}
+##  UR_Forward minus Gurobi {#appendixDiffsUrfGur}
+###  UR_Forward minus Gurobi - Total error diff tables {#appendixDiffsUrfGurTotErr}
+###  UR_Forward minus Gurobi - Rep shortfall diff tables {#appendixDiffsUrfGurRepShortfall}
+##  Marxan_SA_SS minus Marxan_SA {#appendixDiffsMsassMsa}  
+###  Marxan_SA_SS minus Marxan_SA - Total error diff tables {#appendixDiffsMsassMsaTotErr}
+###  Marxan_SA_SS minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsMsassMsaRepShortfall}
+##  UR_Forward minus Marxan_SA {#appendixDiffsUrfMsa}
+###  UR_Forward minus Marxan_SA - Total error diff tables {#appendixDiffsUrfMsaTotErr}
+###  UR_Forward minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsUrfMsaRepShortfall}
+##  UR_Forward minus Marxan_SA_SS {#appendixDiffsUrfMsass}
+###  UR_Forward minus Marxan_SA_SS - Total error diff tables {#appendixDiffsUrfMsassTotErr}
+###  UR_Forward minus Marxan_SA_SS - Rep shortfall diff tables {#appendixDiffsUrfMsassRepShortfall}
+#  Appendix - APP SI Supplemental References {#appendixAppSuppRefs}  
+```
+
+#  Appendix - Reproducibility and Availability {#appendixReproducibilityAndAvailability}  
+##  Software availability {#appendixSoftwareAvailability}
+##  Data availability {#appendixDataAvailability}
+## Hardware {#appendixHardware}
+#  Appendix - Conventions for naming, display, etc. {#ConventionsAppendix}  
+##  Definitions {#appendixDefns}
+##  Naming conventions {#appendixNamingConventions}  
+##  Tables {#appendixTableConventions}  
+###  Confidence intervals on medians in tables {#appendixTableCIs} 
+###  Most common table format in these Appendices and in Shiny app  {#appendixMostCommonTableFormat}
+# Appendix - Notes on parameter and equation choices {#MethodsParAndEqNotesAppendix}  
+##  Error magnification base  {#ErrorMagnificationAppendix}
+##  Incommensurate bounds of solution cost error and rep shortfall error  {#incommensurateBoundsAppendix}  
+##  Unfinished Gurobi runs {#GurobiTextFromP1}  
+##  Imperfect wraps {#appendixImperfectWraps}  
+#  Appendix - Inclusion and relative difficulty of problems that Gurobi didn't finish {#GurobiTimeLimitsAppendix}
+##  Overview of unfinished Gurobi problems section {#appendixOverviewGurUnfinishedSection}  
+###  Definition of mipgap {#appendixMipgapDefn}  
+###  Inability to provably determine cause of unfinished problems {#appendixInabilityToProve}  
+##  FN-dominated values {#appendixTimeLimitsFNdom}  
+###  FN-dominated raw error values {#appendixTimeLimitsFNdomRaw}
+###  FN-dominated error magnifications {#appendixTimeLimitsFNdomMag}
+##  FP-dominated values {#appendixTimeLimitsFPdom}
+###  FP-dominated raw error values {#appendixTimeLimitsFPdomRaw}
+####  FP-dominated total output error (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErr}  
+####  FP-dominated rep shortfall  (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfall}  
+###  FP-dominated error magnifications {#appendixTimeLimitsFPdomMags}
+####  FP-dominated total output error MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErrMag}  
+####  FP-dominated representation shortfall MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfallMag}  
+##  Distributions of mipgap values {#appendixMipgapDists} 
+###  Density of Gurobi mipgaps {#appendixMipgapDensity}  
+###  Gurobi mipgap as a function of problem size {#appendixMipgapAsFuncOfProbSize} 
+##  Gurobi mipgaps vs. error measures across all reserve selectors {#gurMipgapsVsErrorsAppendix}
+###  Gurobi mipgap vs. Abs solution cost error {#appendixMipgapVsAbsSolCostErr} 
+####  Gurobi mipgap vs. Abs solution cost error MAGNIFICATION {#appendixMipgapVsAbsSolCostMag} 
+###  Gurobi mipgap vs. Signed solution cost error {#appendixMipgapVsSignedSolCostErr} 
+####  Gurobi mipgap vs. Signed solution cost error MAGNIFICATION {#appendixMipgapVsSignedSolCostMag} 
+###  Gurobi mipgap vs. Total output error {#appendixMipgapVsTotOutErr} 
+####  Gurobi mipgap vs. Total output error MAGNIFICATION {#appendixMipgapVsTotOutMag} 
+###  Gurobi mipgap vs. representation shortfall {#appendixMipgapVsRepShortfall} 
+####  Gurobi mipgap vs. representation shortfall MAGNIFICATION {#appendixMipgapVsRepShortfallMag} 
+#  Appendix - Inclusion and relative difficulty of imperfect Wrap problems  {#ImperfectWrapsAppendix}
+##  All {#appendixImperfectWrapsAll}  
+###  All raw {#appendixImperfectWrapsAllRaw}  
+###  All mag {#appendixImperfectWrapsAllMag}
+##  FN-dominated {#appendixImperfectWrapsFNdom}
+###  FN-dominated raw {#appendixImperfectWrapsFNdomRaw}  
+###  FN-dominated mag {#appendixImperfectWrapsFNdomMag}
+##  FP-dominated {#appendixImperfectWrapsFPdom}
+###  FP-dominated raw {#appendixImperfectWrapsFPdomRaw}
+###  FP-dominated mag {#appendixImperfectWrapsFPdomMag}
+#  Appendix - Differences between pairs of reserve selectors on individual problems {#DiffsAppendix}
+##  Structure of each section {#appendixDiffsSecStruct}  
+##  Marxan_SA minus Gurobi {#appendixDiffsMsaGur}
+###  Marxan_SA minus Gurobi - Total error diff tables {#appendixDiffsMsaGurTotErr}
+###  Marxan_SA minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsaGurRepShortfall}  
+##  Marxan_SA_SS minus Gurobi {#appendixDiffsMsassGur}
+###  Marxan_SA_SS minus Gurobi - Total error diff tables {#appendixDiffsMsassGurTotErr}
+###  Marxan_SA_SS minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsassGurRepShortfall}
+##  UR_Forward minus Gurobi {#appendixDiffsUrfGur}
+###  UR_Forward minus Gurobi - Total error diff tables {#appendixDiffsUrfGurTotErr}
+###  UR_Forward minus Gurobi - Rep shortfall diff tables {#appendixDiffsUrfGurRepShortfall}
+##  Marxan_SA_SS minus Marxan_SA {#appendixDiffsMsassMsa}  
+###  Marxan_SA_SS minus Marxan_SA - Total error diff tables {#appendixDiffsMsassMsaTotErr}
+###  Marxan_SA_SS minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsMsassMsaRepShortfall}
+##  UR_Forward minus Marxan_SA {#appendixDiffsUrfMsa}
+###  UR_Forward minus Marxan_SA - Total error diff tables {#appendixDiffsUrfMsaTotErr}
+###  UR_Forward minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsUrfMsaRepShortfall}
+##  UR_Forward minus Marxan_SA_SS {#appendixDiffsUrfMsass}
+###  UR_Forward minus Marxan_SA_SS - Total error diff tables {#appendixDiffsUrfMsassTotErr}
+###  UR_Forward minus Marxan_SA_SS - Rep shortfall diff tables {#appendixDiffsUrfMsassRepShortfall}
+#  Appendix - APP SI Supplemental References {#appendixAppSuppRefs}  
+
+#  Appendix - Shiny SI Supplemental References {#appendixShinySuppRefs}  
+ 
+<div id="refs"></div>
+
+----------
+

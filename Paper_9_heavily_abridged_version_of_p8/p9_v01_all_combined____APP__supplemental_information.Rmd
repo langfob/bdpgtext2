@@ -1,0 +1,3473 @@
+---
+params:
+  initialDate: "2019-03-17"
+  gurobi_problem_filter: "all"    # "all" OR "completed" OR "unfinished"
+  exclude_imperfect_wraps: FALSE    #  2020 06 09 unfinished fails w/ both T & F
+  exclude_ZL: TRUE
+  do_all_batches: TRUE
+  exclude_APP_0_inErr: TRUE
+  remove_probs_with_gt_10_pct_input_err: TRUE
+  near_1_tol: 0.05
+  write_tibs_to_csv: FALSE
+  write_most_important_tibs_to_csv: FALSE
+  add_gen_time_to_csv_name: TRUE
+  relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
+  data_out_loc: "Data/TempOutput"
+  build_appendices: TRUE
+  bdpg_p_needs_fixing: TRUE
+  file_type_to_write: "rds"
+  show_excess_tables: FALSE
+  mag_base_col_name_str: "max_TOT_FN_FP_rate"    #"max_TOT_FN_FP_rate"    #  "rsp_euc_realized_Ftot_and_cost_in_err_frac"
+##    | `r paste0 ('[add_gurobi_status_col: ', params$add_gurobi_status_col, ']')`
+#  data_out_loc: "~/Downloads/bdpgRelated"
+#  func_path_in_proj_dir: "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"
+title: | 
+    | Supplemental Information for APP problems for
+    | Learning to predict reserve selection error under uncertainty 
+    | p9 v01
+author: |  
+    | William T. Langford^1,3^, Ascelin Gordon^2^
+    | 
+    | 1 Romsey VIC 3434, Australia
+    | 2 School of Global, Urban and Social Studies, RMIT University, Melbourne, VIC 3000, Australia
+    | 3 Corresponding author email: btlangford.work\@gmail.com
+    | 
+    | `r paste0 ('[gur probs: ', params$gurobi_problem_filter, ']')` 
+    | `r paste0 ('[exc imperfect: ', params$exclude_imperfect_wraps, ']')`
+    | `r paste0 ('[exc ZL: ', params$exclude_ZL, ']')`
+    | `r paste0 ('[do all batches: ', params$do_all_batches, ']')`
+    | `r paste0 ('[exc 0 APP inErr: ', params$exclude_APP_0_inErr, ']')`
+    | `r paste0 ('[exc > 10% inErr: ', params$remove_probs_with_gt_10_pct_input_err, ']')`
+    | `r paste0 ('[near_1_tol: ', params$near_1_tol, ']')`
+    | `r paste0 ('[write_tibs_to_csv: ', params$write_tibs_to_csv, ']')`
+    | `r paste0 ('[write_most_important_tibs_to_csv: ', params$write_most_important_tibs_to_csv, ']')`
+    | `r paste0 ('[add_gen_time_to_csv_name: ', params$add_gen_time_to_csv_name, ']')`
+    | `r paste0 ('[relative_path_to_input_data: ', params$relative_path_to_input_data, ']')`
+    | `r paste0 ('[data_out_loc: ', params$data_out_loc, ']')`
+    | `r paste0 ('[build_appendices: ', params$build_appendices, ']')`
+    | `r paste0 ('[bdpg_p_needs_fixing: ', params$bdpg_p_needs_fixing, ']')`
+    | `r paste0 ('[file_type_to_write: ', params$file_type_to_write, ']')`
+    | `r paste0 ('[show_excess_tables: ', params$show_excess_tables, ']')`
+    | `r paste0 ('[mag_base_col_name_str: ', params$mag_base_col_name_str, ']')`
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/methods-in-ecology-and-evolution.csl
+---
+
+```{r, eval=FALSE, echo=FALSE}
+#  Version history
+
+##  p9 v01 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v17_all_combined____APP__supplemental_information.Rmd.  
+
+Need to greatly abridge p8, so I'm creating p9 to do that.  
+
+##  p8 v17 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v16_all_combined____APP__supplemental_information.Rmd.  
+
+Need to change all references to Gurobi, Marxan_SA, and Marxan_SA_SS to ILP, SA, and SA_SS.  I've done a couple of these in the version 16, but I want to separate this action out as much as possible in case it causes any problems.  So, I'm going to do only this in version 17.  This could also be done using a fork for this name changing and another for many other changes, but merging the name change fork with all kinds of other changes made on another fork will be just as messy, if not more so.  I'm putting it in a separate version number as a compromise to make it easier to revert back to the end of v16 if there are unanticipated issues down the road after changing the names.
+
+##  p8 v16 April 16, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v15_all_combined____APP__supplemental_information.Rmd.  
+
+Made a fairly complete, somewhat reduced version of the fully body of the paper in v15, however, there are a fair number of small details that need to be repaired.  Creating v16 to make those repairs, such as entering the correct definitions of variables in the tables of variables.  
+
+I'm also going to remove all uses of and references to the Latapy variables in both the text and the data loading, since they were of almost no use and greatly complicate the writing up.  
+
+Also moving two tables of graph variable name definitions and name conversions between bipartite and bdpg from main body into the APP appendix since they're quite long.  
+
+##  p8 v15 August 4, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v14_all_combined____APP__supplemental_information.Rmd
+
+Edited v14 with respect to Ascelin comments up through most of Discussion but stopped at beginning of Predictions section of Discussion.  I've decided to try to shrink the paper and as much as possible and get rid of as much controversial stuff as possible.  If I change my mind later about doing that, I should go back to the latest version of v14 and continue with the editing I had been doing there.  At the moment, continuing with those edits seems like a waste of time if I'm going to slash things, so I'm creating a new version 15 for slashing.  
+
+##  p8 v14 June 6, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v13_all_combined____APP__supplemental_information.Rmd
+
+Updating this version to keep in step with change to v14 in main body of p8.  
+
+##  v13 (of paper 8) April 22, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/older_Rmd_versions/v12_Paper_6_p1p2_combined____APP__supplemental_information.Rmd.  
+
+Updating this version to keep in step with change to v13 in main body of p8.  
+
+##  v12 (of paper 8) March 10, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/older_Rmd_versions/v11_Paper_6_p1p2_combined____APP__supplemental_information.Rmd.  
+
+I'm taking the revised versions of the SI files that were submitted to MEE with Paper 6 and using them with Paper 8.  I'm sure that they will need some modification to work with Paper 8, but they're a very good starting point that I don't think will require a lot of modification.  
+
+##  v11 (of paper 6) July 1, 2022  
+
+Cloned from bdpgtext/v10_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Revising for resubmission after second MEE rejection.
+
+##  v10 (of paper 6) March 13, 2022  
+
+Cloned from bdpgtext/v09_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Finished making revisions to the submitted appendix Rmd files and main body Rmd file after finding some cross-referencing errors in the submitted versions of the appendix files and a little bit of wording error in the main body Methods section on reserve selectors.  Renaming now to v10 of appendices to differentiate from what was submitted.  Should have done this renaming before I made the post resubmission changes, 
+but I didn't, so I'm doing it now.  
+
+##  v09 (of paper 6) January 22, 2022  
+
+Cloned from bdpgtext/v08_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Finished incorporating edits from Ascelin's review v6 of main body.  Now splitting up the appendices into smaller units to make them easier to manage.  Will probably have to recombine them all again later.
+
+##  v08 (of paper 6 APP Supplemental Information) January 21, 2022  
+
+Cloned from bdpgtext/v07_Paper_6_p1p2_combined____APP__supplemental_information.Rmd
+
+Creating a new version to incorporate edits from Ascelin's review v6 of main body.  
+
+##  v07 (of paper 6 APP Supplemental Information) January 6, 2022  
+
+Cloned from Cloned from bdpgtext/Paper_6_p1p2_combined/v06_Paper_6_p1p2_combined____APP__supplemental_information.Rmd.
+
+The p6 main body, COR SI, and APP SI files all have different startup settings and code.  I'm creating v7 to try to synchronize/unify all of them as much as possible so that the appendices and main paper body don't end up with mismatched results because of how they start up.  It should also make it easier to maintain if I can make the startup for all three call one function that they all share.  
+
+##  v06 (of paper 6 APP Supplemental Information) December 31, 2021    
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v19_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Have decided to split the SI for p6 into two files, COR and APP, based on the SI files for p1 and p2.  Will probably end up having to combine them into one giant file to get the appendix numbering to work correctly, but for now, it's easier to manage them separately since there will be little or no change to the COR file.
+
+##  v19 (of paper 2 Supplemental Information) November 13, 2021  
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v18_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Finished incorporating Ascelin's suggestions in v18 from his reviewing v17.  Now ready to make a more synthetic revision of the full manuscript since incorporating his changes made it clear that there were some other duplications and missing things that need to be dealt with across the manuscript as a whole to make it clearer and reduce its size, e.g., by discussing these things in a single place.
+
+##  v18 (of paper 2 Supplemental Information) November 6, 2021  
+
+Cloned from bdpgtext/Paper_2_comparison_of_reserve_selectors/v17_Paper_2_comparison_of_reserve_selectors__supplemental_information.Rmd
+
+Incorporating Ascelin's suggestions from his reviewing v17 shown in the file:   "v17_Paper_2_comparison_of_reserve_selectors__body.for Ascelin. 2021 09 30 3 20 pm_AG.docx" and "v17_Paper_2_comparison_of_reserve_selectors__body.for Ascelin 2021 09 29 8am - unfinished Discussion_AG.docx".
+
+##  v17 (of paper 2 Supplemental Information) September 26, 2021  
+
+Cloned from bdpgtext/Paper_1_method/v11_Paper_1_method__supplemental_information.Rmd for header and structure.  Then split appendices out of p2 main body bdpgtext/Paper_2_comparison_of_reserve_selectors/v17_Paper_2_comparison_of_reserve_selectors__body.Rmd.
+
+Needs to be a separate file in submission and may need to have separate reference list, so I'm cutting it out of the main Rmd file for p2.  
+
+```
+
+```{r echo=FALSE}
+#  Header code chunks (option setting, history, etc.)
+
+##  Set latex and knitr options
+```
+
+```{cat, engine.opts = list(file = "header.tex")}
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
+```
+
+```{r global_options, include=FALSE}
+
+    #  Global options are set here based on some examples in:
+    #      https://kbroman.org/knitr_knutshell/pages/Rmarkdown.html
+    #      https://kbroman.org/knitr_knutshell/pages/figs_tables.html
+
+knitr::opts_chunk$set(#fig.width=12, 
+                      #fig.height=8, 
+                      fig.path='Figs/',  #  Save figures to indiv files in Figs/
+                      echo=FALSE,        #  Don't echo code to output
+                      
+                      warning=FALSE,  
+                      message=FALSE, 
+
+                      fig.pos = "H", out.extra = ""    #  Keep latex from floating figures
+                     )
+```
+
+```{r echo=FALSE}
+##  Load R libraries  
+```
+
+```{r loadLibraries, echo=FALSE}
+
+library (knitr)    #  For include_graphics()
+library (ggplot2)
+library (patchwork)
+library (here)
+library (readr)
+```
+
+```{r setDifficultOptions, include=FALSE}
+
+    #  Two options are either used globally or are hard to set in 
+    #  the header params list, so set them here.
+
+    #  This is both hard to set in params header and used globally.
+if (as.logical (params$exclude_ZL))
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "Marxan_SA_SS")
+    } else
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "ZL_Backward", "Marxan_SA_SS")
+    }
+
+file_type_to_write = params$file_type_to_write
+
+    #  This is easy to set but used globally.
+near_1_tol = as.numeric (params$near_1_tol)
+```
+
+```{r echo=FALSE}
+##  Set bdpg options  
+```
+
+```{r setechoOptions, include=FALSE}
+
+    #  Echo the values of the main options.
+
+cat ("\nMain options are:\n")
+
+for (idx in 1:length(params))   
+  cat ("\n", names(params)[idx], ": ", params[[idx]], sep="")
+
+cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
+```
+
+```{r echo=FALSE}
+##  Load bdpg functions  
+```
+
+```{r setFilePaths, include=FALSE}
+
+#  Set file paths
+
+library (here)
+
+proj_dir = here()
+#cat ("\n\nproj_dir = here() = ", proj_dir, "\n", sep='')
+```
+
+```{r loadP1andP2FunctionDefns, include=FALSE}
+    
+#  Load R functions
+
+#  2020 08 20 - BTL
+#  "Rmarkdown Cookbook" section	"16.1 Source external R scripts" says to 
+#  include the "local" argument.
+#       https://bookdown.org/yihui/rmarkdown-cookbook/source-script.html
+#       "We recommend that you use the argument local in source() or envir in 
+#        sys.source() explicitly to make sure the code is evaluated in the 
+#        correct environment, i.e., knitr::knit_global(). The default values 
+#        for them may not be the appropriate environment: you may end up 
+#        creating variables in the wrong environment, and being surprised 
+#        that certain objects are not found in later code chunks."
+#  I haven't noticed a problem with this, but maybe it's been there and 
+#  I just haven't had it affect something important enough to notice.
+
+
+# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
+#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
+#         local = knitr::knit_global()) 
+# 
+# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
+#         local = knitr::knit_global())
+
+source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
+        local = knitr::knit_global())
+```
+
+```{r echo=FALSE}
+##  Load full bdpg data set  
+```
+
+```{r loadFullBdpgDataSet, include=FALSE}
+
+retVals = load_p6_data (params, 
+                        proj_dir, 
+                        rs_method_names_list, 
+                        file_type_to_write)
+
+app_wrap_tib = retVals$p2_app_wrap_tib
+```
+
+
+```{r, echo=FALSE}
+#===============================================================================
+
+# Extra code for use only in SI
+
+#===============================================================================
+
+digits_to_show = 2    #  Number of digits to display in kable() tables.
+##  Force colors of FN and FP to always be consistent in scatterplots
+
+color_breaks_and_values = force_dom_err_type_colors (app_wrap_tib$dom_err_type)
+
+scale_color_breaks = color_breaks_and_values$breaks
+scale_color_values = color_breaks_and_values$values
+
+#===============================================================================
+
+# imperfect wrap
+# gurobi completed
+# tot err or rep shortfall
+# reserve selector 1 - reserve selector 2
+# zero
+# neg
+# pos
+# 
+# want to compare marxan vs gurobi and marxan sa ss versus gurobi under each circumstance
+# marxan minus gurobi
+# marxan sa ss minus gurobi
+# 
+# separate tables for combinations of imperfect, completed,
+# 
+# perfect&imperfect  completed&incomplete  compRS  baseRS  tot0  totN  totP  rep0  repN  repP
+#                                          rs2  -  rs1
+#                                          rs3  -  rs1
+#                                          rs4  -  rs1
+#                                          rs3  -  rs2
+#                                          rs4  -  rs2
+#                                          rs4  -  rs3
+#                                          
+# perfect            completed&incomplete
+# imperfect          completed&incomplete
+# 
+# perfect&imperfect  completed
+# perfect            completed
+# imperfect          completed
+# 
+# perfect&imperfect  incomplete
+# perfect            incomplete
+# imperfect          incomplete
+
+#library(tibble)
+rs_pair_data = tibble (comp_RS = c("Marxan_SA", "Marxan_SA_SS", "UR_Forward", 
+                                       "Marxan_SA_SS", "UR_Forward", 
+                                       "UR_Forward"), 
+                           base_RS = c("Gurobi", "Gurobi", "Gurobi", 
+                                       "Marxan_SA", "Marxan_SA", 
+                                       "Marxan_SA_SS"), 
+                           tot_col_name = c("diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi", 
+                                            "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA", 
+                                            "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS"), 
+                           rep_col_name = c("diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi", 
+                                            "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA", 
+                                            "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS"))
+
+if(FALSE)
+{
+for (perfection in c("both", "perfect", "imperfect"))
+    {
+    for (completion in c("both", "completed", "incomplete"))
+        {
+        cat ("\n\n", #cur_ct, "  ", 
+             perfection, "  ", 
+             completion, "  ", 
+             "\n", sep='')
+
+        cur_tib = app_wrap_tib
+        
+        if (perfection == "perfect")
+            {
+            cur_tib = filter (cur_tib, 
+                              is.na (rsp_wrap_is_imperfect) | ! rsp_wrap_is_imperfect) 
+          
+            } else if (perfection == "imperfect")
+            {
+            cur_tib = filter (cur_tib, rsp_wrap_is_imperfect) 
+            }
+        
+        if (completion == "completed")
+            {
+            cur_tib = filter (cur_tib, gurobi_status == "OPTIMAL") 
+
+            } else if (completion == "incomplete")
+            {
+            cur_tib = filter (cur_tib, gurobi_status != "OPTIMAL") 
+            }
+
+        for (cur_ct in 1:6)
+            {
+            cur_comp_RS = rs_pair_data [[cur_ct, "comp_RS"]]
+            cur_base_RS = rs_pair_data [[cur_ct, "base_RS"]]
+            cur_tot_col_name = rs_pair_data [[cur_ct, "tot_col_name"]]
+            cur_rep_col_name = rs_pair_data [[cur_ct, "rep_col_name"]]
+            
+            tot_err_0 = filter (cur_tib, tot_col_name == 0)
+            
+            cat ("\n", cur_ct, "  ", 
+                 perfection, "  ", 
+                 completion, "  ", 
+                 
+                 cur_comp_RS, "  ", 
+                 cur_base_RS, "  ", 
+                 cur_tot_col_name, "  ", 
+                 cur_rep_col_name, "  ", 
+
+                 # rs_pair_data [[cur_ct, "comp_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "base_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "tot_col_name"]], "  ", 
+                 # rs_pair_data [[cur_ct, "rep_col_name"]], "  ", 
+
+                 dim (cur_tib)[1], "  ",                      
+                 length (pull (cur_tib, cur_tot_col_name)), "  ", 
+                 length (pull (cur_tib, cur_rep_col_name)), "  ", 
+
+                 # rs_pair_data [[cur_ct, "comp_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "base_RS"]], "  ", 
+                 # rs_pair_data [[cur_ct, "tot_col_name"]], "  ", 
+                 # rs_pair_data [[cur_ct, "rep_col_name"]], "  ", 
+                 
+                 sep='')
+            }
+        cat ("\n")
+        }
+    }
+
+cat ("\n\n")
+}
+
+#===============================================================================
+
+```
+
+```{r, include=FALSE}
+
+##  Create tibs for each separate reserve selector for building fivenum() tables
+
+num_prob_per_rs = count (app_wrap_tib, rs_method_name)
+
+Gurobi_only_tib = filter (app_wrap_tib, rs_method_name == "Gurobi")
+Marxan_SA_only_tib = filter (app_wrap_tib, rs_method_name == "Marxan_SA")
+Marxan_SA_SS_only_tib = filter (app_wrap_tib, rs_method_name == "Marxan_SA_SS")
+UR_Forward_only_tib = filter (app_wrap_tib, rs_method_name == "UR_Forward")
+```
+
+```{r, fig.pos="h"}
+
+##  Overall counts for options (imperfect wrap, gurobi status, dominant error type)  
+
+count (Gurobi_only_tib, gurobi_status) %>%
+      mutate(fraction = n / sum(n)) -> gurobi_status_cts_table
+
+count (Gurobi_only_tib, dom_err_type) %>%
+      mutate(fraction = n / sum(n)) -> dom_err_type_cts_table
+```
+
+\newpage
+
+#  Overview  
+
+This supplemental information file only contains information relevant to Apparent data.  Information relevant to Correct data and problem generation are in the COR SI file.  Information about how to use the Shiny app is in the ShinySI file.
+
+Much of this document contains very specific tables and plots that are primarily intended to make it easier to answer a specific question not answered in the text.  You're more likely to want to just look up the value in a specific table or plot here than read straight through most of this, though many of the appendices have a brief overview of what's in that appendix.  
+
+# (APPENDIX) Appendix {-} 
+
+#  Appendix - Reproducibility and Availability {#appendixReproducibilityAndAvailability}  
+
+##  Software availability {#appendixSoftwareAvailability}
+
+All software for this paper was written in R (@rcoreteam2019).  All of the source code is freely available as part of an R package called `bdpg` (short for "BioDiversity Problem Generator").  The package can be installed from github at https://github.com/langfob/bdpg using the following commands in R:  
+
+```{r installBdpg, eval=FALSE, tidy=FALSE, highlight=TRUE, echo=TRUE}
+
+#install.packages ("devtools")    #  if devtools not installed already
+
+devtools::install_github ("langfob/bdpg")
+```
+
+The paper itself was written using Rmarkdown and the knitr package in RStudio.  The Rmd files used to generate the paper and its figures and tables are available in the data repository below.  
+
+All of the experiments and test code were run on Mac and linux systems, though we have tried to write the code as portably as possible.  
+
+Scheduling of experimental runs and managing input control and output data was done using software developed at RMIT University called Tsar.  The source code, documentation, and java jar file for tsar are freely available from the authors, however it is experimental software and not necessary for running the experiments described in this paper.  
+
+##  Data availability {#appendixDataAvailability}
+
+Data used in this paper will be freely available at the Open Science Foundation's public data repository.  This data consists of the input control files (yaml files), the raw output files, the aggregated results, and the filtered aggregated results (which removed unused variables and out of bounds values).
+
+## Hardware {#appendixHardware}
+
+The software for this paper was developed on a 2014 MacBook Pro under OS X High Sierra (10.13.6).  Final experiments were run using 40 CPUs in various configurations of Ubuntu linux virtual machines on the Nectar Research Cloud (http://nectar.org.au), a collaborative Australian research platform supported by the NCRIS-funded Australian Research Data Commons (ARDC; https://ardc.edu.au/).
+
+----------
+
+#  Appendix - Conventions for naming, display, etc. {#ConventionsAppendix}  
+
+##  Definitions {#appendixDefns}
+
+In what follows, we use the following terms and abbreviations:
+
+- "COR" means "correct"
+- "APP" means "apparent", i.e., problems that have error added to the inputs
+- "Base" means "generated by the RB model"
+- "Wrap" means "generated by wrapping a distribution around a base model"
+- "FP" means "false positive error rate"
+- "FN" means "false negative error rate"
+- "PU" means "planning unit"
+- "species" means "any conservation planning feature"
+
+For the purposes of these experiments, we define a problem to be:
+
+- a set of PUs, 
+- a set of species, 
+- a correct specification of which PUs are occupied by which species (labelled COR), 
+- an apparent set of species occupations and PU costs (labelled APP) where error may have been added to the species occupations in the COR set but this only the APP data is visible to the reserve selector, 
+- a representation target for each species
+- a cost for each PU
+- an error model for applying error to the COR data to generate corresponding APP data, and 
+- a minimal solution cost for the COR data.
+
+More generally, a problem statement would also include PU costs and representation targets as well as other possibilities such as solution compactness penalties.  Here, all representation targets are assumed to be the same, i.e., one occurrence of each species.  Similarly, each PU is assumed to have the same cost (one unit) and no error is applied to that PU cost.  
+
+Note that when we refer to cost error in what follows, we are referring to error in the total cost of the solution, not input error in the cost of the PUs.  That kind of input error may be at least as important and species presence errors and worth investigating but is beyond the scope of this paper.  
+
+##  Naming conventions {#appendixNamingConventions}  
+
+- "rsr" in a data set variable name stands for "reserve selector run".
+- "rsp" in a data set variable name stands for "reserve selection problem".
+- In tables, "FN" and "FP" stand for "false negative dominated" and "false positive dominated" rather than "false negative only" and "false positive only".
+- "_NO_cost_err" in a value of `rsp_combined_err_label` means that there was no input error in the cost of a PU.  It does not mean there was no output error in the solution cost.  All values of the combined error label in this paper will contain "_NO_cost_err" because we did not examine input cost error in this paper, though in some other exploratory experiments outside this paper we did use some very simple input cost errors.  We did not examine input cost error in this paper for two reasons: a) it would have doubled the already large number of experiments and long runtime, and b) we lacked good cost error models.
+- max_TOT_FN_FP in an error magnification variable name indicates that the magnification is computed with respect to the maximum of total input error, FN, and FP input errors rather than just the total input error.
+- max_TOT_FN_FP_tot_mag is the total output error magnification using max of total input error, FN, and FP input errors as the denominator.   
+
+##  Tables {#appendixTableConventions}  
+
+###  Confidence intervals on medians in tables {#appendixTableCIs} 
+
+We have not computed confidence intervals on the many medians shown in the tables in these appendices because we are interested primarily in showing the data distributions and not making serious claims about their median values in real-world problems.  The tables of medians are provided simply as convenient anchor points for exploration of the data which might seed more precise questions for future work.  The notches in the boxplots shown in the Shiny app do provide something like an approximation to a confidence interval, however in addition to being an approximation, the count of problems used in the ggplot2 geom_boxplot function's computation of notch width is inaccurate since the problems are not independent.  For example, the four FP-dominated and FN-dominated APP problems generated for each COR Wrap problem are all derived from the same underlying problem.   
+
+###  Most common table format in these Appendices and in Shiny app  {#appendixMostCommonTableFormat}
+
+Throughout the Appendices and the Shiny app, one table format is most commonly used, so we explain the format of that table here with two examples.  This format has one row for each reserve selector and some subset of all APP problems with input error less than or equal to 10%.  Each table displays values for one error measure such as total output error or representation shortfall magnification.  In the column explanations below, "value" refers to the error measure summarized by the given table.  
+
+```{r exampleKableFivenumTableAll, results = 'asis'}
+num_prob_per_rs = count (app_wrap_tib, rs_method_name)
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         app_wrap_tib,
+                         "rsr_COR_euc_out_err_frac", 
+                         num_prob_per_rs, 
+                         "Example Table: All problems - total output error")
+```
+
+```{r exampleKableFivenumTableFP, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, dom_err_type == "FP"),
+                         "rsr_COR_spp_rep_shortfall", 
+                         num_prob_per_rs, 
+                         "Example Table:  FP-dominated problems - rep shortfall")
+```
+
+The tables are fairly self-explanatory, with the possible exception of the `frac` column.  Table \@ref(tab:exampleKableFivenumTableAll) above shows total output error for all problems in the working dataset (i.e., after those with input error > 10% were removed), so the `frac` column contains "1".  Table \@ref(tab:exampleKableFivenumTableFP) shows values for FP problems only, so its `ct` shows the total number of FP-dominated problems in the same data and the `frac` column shows what fraction that `ct` is of the full problem `ct` value shown in in Table \@ref(tab:exampleKableFivenumTableAll).
+
+The columns are defined as follows:
+
+- ct: count of the number of problems in this subset  
+- frac: fraction of the total problem count that ct represents  
+- min: minimum value across all problems in this subset  
+- Q1: 25% quantile value for this subset   
+- median: median of this subset  
+- Q3: 75% quantile value for this subset  
+- max: maximum value across all problems in this subset  
+- mean: mean of this subset     
+- sd: standard deviation of this subset  
+- mad: median absolute deviation of this subset  
+
+----------
+
+# Appendix - Notes on parameter and equation choices {#MethodsParAndEqNotesAppendix}  
+
+We've generally tried to choose option settings which are fair to the reserve selectors and informative to the results.  However, there are four particular choices where our decisions may affect our conclusions:  
+
+  - Base value for error magnification computations
+  - Incommensurate bounds of solution cost error and rep shortfall error
+  - Inclusion of unfinished Gurobi runs
+  - Inclusion of imperfect wraps
+
+Some of these can be explored and changed directly in the Shiny app (imperfect wraps, base value for magnifications, inclusion of unfinished Gurobi runs), while others may be fodder for improvement in future work (incommensurate bounds, finishing Gurobi runs).  We discuss each of these four issues and the reasoning behind our choices below.  
+
+##  Error magnification base  {#ErrorMagnificationAppendix}
+
+A common belief is that if you have a small amount of error in your input, you will probably not have a large amount of error in your output.  We can test this belief by computing the ratio of the output error to the input error.  A value of 1 implies they're equal.  Smaller than 1 implies that some of the input error has been corrected, while greater than 1 implies that the input error has been amplified.  
+
+Another reason to calculate the error magnification is that it provides a mechanism for standardizing output errors so that they can be compared at different levels of input error. An output error of 10% when there is a 10% input error is not nearly so bad as that same 10% output error when there is only a 2% input error.  However, large magnification at tiny input error can still leave you with a possibly small and unimportant amount of output error, so magnification alone isn't helpful either.  You need both the raw error amount and the magnification to decide whether performance is acceptable.
+
+One issue in computing a magnification value is what to use as the value of the input error.  Our most immediate thought was to use the total input error rate defined with respect to the total possible combinations of species and PU assignments:
+
+\begin{equation}
+  \label{eq:totInputErrEqnUsingConfusionMatrix}
+  totInputErr = \frac{FPct + FNct}{TPct + FPct + FNct + TNct}
+\end{equation}
+
+However, when the input error primarily consists of FNs, this total input error tends to be very small compared to computing the same total input error for FPs made at the same *rate*.  This is because in most problems, there are far more Negatives (i.e., a given species is *not* present on a given PU) than Positives (i.e., a given species *is* present on a given PU).  For example, a 10% FP rate for a species over 1000 Negative PUs will mean FPct = 100, while an identical 10% FN rate for a species over the same landscape that has only 50 Positive PUs will mean an FPct = 5.  Since the totInputErr denominator is the same in either case, the count of each in the numerator controls the total input error value.  Consequently, FN only problems tend to have much smaller total input errors when measured this way, meaning that magnifications based on them can blow up to huge values easily when using the total input error as the magnification denominator.  
+
+We have chosen a more conservative base to avoid any appearance of exaggerating the magnifications:  
+
+\begin{equation}
+  \label{eq:maxTotFnFpRateEqn}
+  maxTotFnFpRate = max\:(totalOutputErr,\;FNrate,\;FPrate)
+\end{equation}
+
+where  
+
+- $totalOutputErr$ is as defined in Eq. 6 **\textcolor{red}{6}** in the paper
+- $FNrate$ is as defined in Eq. 2 **\textcolor{red}{2}** in the paper
+- $FPrate$ is as defined in Eq. 3 **\textcolor{red}{3}** in the paper
+
+This means that the input error we use in the magnification denominator is no longer tiny when there is primarily FN error but acts like the total input error when it's dominated by FP error.  You can see the consequences of magnification base choice by toggling between the two Input Error Measure choices ("max TOT FN FP Err" and "Total Input Err") in the Shiny app controls, for example, when you have chosen:  
+
+- Plot type = "Histogram"
+- Output error variable = "Total Output Error"
+- Show Out Error or Mag = "Error Magnification"
+- Dominant Error Type = "FN"
+
+Regardless of the choice of denominator, the point is not so much the exact values of the magnification as the fact that no matter what base you choose, the magnification is generally much larger than you might expect and does not decrease with increasing input error except when there is an upper bound on the possible amount of output error (e.g., 100% representation shortfall).  
+
+FN-dominated problems generally had extremely large error magnification that makes the interpretation of those magnifications difficult.  These huge magnifications come from a combination of two things.  First, is the the tiny *total* input error mentioned above.  Second, because the input errors are false negatives that can remove a large fraction of any species' occurrences, reserve selectors can be forced to choose normally unattractive PUs to get the last bits of a particular species, thus inflating the magnification numerator.  So, we generally do not discuss magnifications for FN-dominated problems in the body of the paper.  We also do not show combined FP-dominated and FN-dominated magnification values since those combinations are overwhelmed by the FN-dominated magnifications.  However, these things can be seen in the Shiny app if you wish.
+
+##  Incommensurate bounds of solution cost error and rep shortfall error  {#incommensurateBoundsAppendix}  
+
+FP-dominated problems had a smaller range of error and magnification than that found in FN-dominated problems, but they still had a large range of both (see FP-dominated and FN-dominated figures in the Shiny app).  Part of the range compression of error in FP-dominated problems is because, unlike FN-dominated problems, FP-dominated problems showed errors in both cost and representation shortfall, while FN-dominated problems only had errors that were overestimation of solution cost.  Unlike the virtually unbounded possible error in cost *over*estimation, both cost *under*estimation and representation shortfall errors are bounded at 100%.  
+
+As a consequence of the way total output error is calculated Eq. 6 **\textcolor{red}{6}** in the paper, the total output error when cost is *under*estimated is bounded at ~`r round (sqrt((-100)^2+100^2), 0)`%. Since FP-dominated problems generally underestimate cost, they show a much smaller upper bound on their possible values for total, shortfall, and cost underestimate errors than FN-dominated problems.  They also show a characteristic curvilinear banding that reflects this upper bound in representation shortfall magnification (Fig. 8 **\textcolor{red}{8}** in the paper).  Magnifications can still be virtually unbounded for these errors, since the magnification denominator is input error, which can be arbitrarily close to zero but the bound gets tighter as input error increases.  
+
+One other consequence of these differing error bounds is that the value of total output error is often dominated by the value of its cost *over*estimation constituent, particularly for FN-dominated problems.  This is because it can far exceed the largest possible value for the representation shortfall constituent.
+
+##  Unfinished Gurobi runs {#GurobiTextFromP1}  
+
+Gurobi finished all COR problems and all FN-dominated APP problems but failed to finish solving `r round (100 * gurobi_status_cts_table$fraction [2], 0)`% of APP problems in the time allotted (all of them FP-dominated).  This raises the question of whether unfinished problems should be included in the results.  We have chosen to include the unfinished problems for three reasons:  
+
+- First, the original total error plots for Gurobi, Marxan_SA, and UR_Forward look very similar, regardless of whether looking at finished or unfinished problems.  This suggests that even if Gurobi had finished, it may have gotten errors of the same order of magnitudes as the output errors of Marxan_SA.  However, that is a question that we have not pursued as it requires significantly more time and computational resources to answer.  Given those resources, all of the unfinished problems could be rerun without a time limitation.  However, even with the time limitation, Gurobi crashed repeatedly on some of the TIME_LIMIT problems and had to be rerun, sometimes multiple times, each time stepping up to a machine with more CPUs and more memory to get it to even make it to the time limit.  This means that effectively, many of these especially difficult Gurobi runs were already getting around the time limit by adding more resources to their processing power.  
+
+- Second, the fact that when Gurobi failed to finish, the other reserve selectors also scored poorly on these same problems suggests that these were the hardest problems in the data set.  Removing those problems from the data set would have removed the more difficult problems for all reserve selectors.  These problems are important in that they help to illustrate our point that there is a large range of difficulty that is not being reflected in most reserve selector tests.  
+
+- Third, even though Gurobi *did* finish all FN-dominated APP problems, it still had large errors and large error magnifications on those FN-dominated problems.  
+
+So, we include these problems and note that the results for Gurobi on unfinished FP-dominated problems are not certain.  On problems that Gurobi finished (gurobi_status = OPTIMAL), Gurobi and Marxan generally had very similar performance, with Gurobi slightly better.  However, without re-running Gurobi to completion on the unfinished problems, we are unable to determine whether  Gurobi's poor performance on TIME_LIMIT problems is due to not finishing or to problem difficulty or both.  
+
+Regardless, the Shiny app allows you to change whether unfinished problems are included or not so that you can see the consequences of this decision across all reserve selectors.  Even if you choose to ignore the Gurobi results on these problems, the results for the other reserve selectors are still informative.  
+
+We further explore the relative difficulty of the finished and unfinished problems for all reserve selectors in Appendix \ref{GurobiTimeLimitsAppendix}.
+
+##  Imperfect wraps {#appendixImperfectWraps}  
+
+```{r}
+count (Gurobi_only_tib, rsp_wrap_is_imperfect) %>%
+      mutate(fraction = n / sum(n)) -> imperfect_wrap_cts_table
+```
+
+Sometimes when building a Wrap problem, the optimization algorithm that searched for lognormal parameters of a desirable abundance distribution led to Wrap problems that did not satisfy the objective function's constraints.  In particular, the number of species occurring on exactly two PUs was less than the number in the Base problem.  This occurred in approximately `r round (100 * imperfect_wrap_cts_table$fraction [2], 0)`% of the problems.  In these cases, we fixed the problem by going in after the optimization was finished and adding a few so extra species that occurred on exactly two PUs so that the distribution no longer violated the Base problem size constraint.  This was to make sure that the solution to the Base problem was still the solution to the Wrap problem.  Also, the flag indicating that it was an imperfect wrap (`rsp_wrap_is_imperfect`) was set to TRUE.  Otherwise it was set to FALSE.  "Imperfect" here means that the distribution was not fully drawn just using the chosen lognormal parameters.  It was drawn from them and then slightly augmented by the addition of a few species occurring on only two PUs.  
+
+We have chosen to include these problems in the results in the paper because there were not huge numbers of them and because they did not appear to generally make harder problems than the more perfect wraps.  Data in support of this is given in Appendix \ref{ImperfectWrapsAppendix}.  
+
+-----  
+
+#  Appendix - Inclusion and relative difficulty of problems that Gurobi didn't finish {#GurobiTimeLimitsAppendix}
+
+##  Overview of unfinished Gurobi problems section {#appendixOverviewGurUnfinishedSection}  
+
+Visual inspection of the results led us to believe that the problems Gurobi didn't finish are harder for all of the reserve selectors.  In this appendix, we examine this belief by summarizing results for each reserve selector grouped by whether Gurobi finished the problem or not.  We provide median values in this section as exploratory values suggesting why we chose to include problems where Gurobi failed to complete.  If you prefer to see results without the inclusion of problems that Gurobi failed to complete, you can do that in the Shiny app.  
+
+We do not provide summary statistics over finished vs. unfinished problems for the combined FN and FP data because of the way that Gurobi's finishing behavior was very different for FN and FP problems.  Since Gurobi finished every FN-dominated problem, lumping that whole set in with the finished FP-dominated problems makes for a statistic that is automatically dominated by the FN results.  So, here we only provide results for splitting into finished and unfinished for FN-dominated and FP-dominated problems separately.  
+
+In the tables below, problems that Gurobi did finish are labelled with gurobi_status "OPTIMAL".  Problems that it didn't finish are labelled "TIME_LIMIT".  In each section, we provide a brief summary table of the corresponding median total output error and median total representation shortfall for each reserve selector.  We then provide more detailed tables for OPTIMAL/TIME_LIMIT and raw error/error magnification.
+
+###  Definition of mipgap {#appendixMipgapDefn}  
+
+At each step of solving a problem, Gurobi reports a relative measure of the upper bound on the distance to the correct solution as a proportion of the correct solution.  This value is returned in a variable called the  "mipgap".  For example, if the mipgap is 0.005, then the current best solution found is no further away from the correct solution than 0.5% of the value of an optimal solution.  When an optimum is found, the gap is 0.  In this section, we plot Gurobi's reported mipgap for all problems and show the corresponding value of various output error measures for the problems.  We also show the error measures for the other reserve selectors on the same problem to see if their difficulty increases as Gurobi's mipgap increases.  
+
+###  Inability to provably determine cause of unfinished problems {#appendixInabilityToProve}  
+
+For non-zero mipgaps (i.e., problems Gurobi did not finish), the non-zero errors could be due to either Gurobi not finishing where it would eventually have found the optimum, or it could be that the problems are more difficult and it would never have found the true optimum.  We cannot answer that question without giving Gurobi these problems again and letting them all run to completion, however, we suspect that increased difficulty is a large contributor.  We base that belief on the fact that the other plots in each panel show that the other reserve selectors (particularly Marxan_SA and UR_Forward) have a very similar appearance, just as they did in problems that Gurobi did finish.  
+
+```{r, fig.pos="h"}
+
+##  Overall counts for options (imperfect wrap, gurobi status, dominant error type)  
+
+if (params$show_excess_tables)
+{
+kable (gurobi_status_cts_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+kable (dom_err_type_cts_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+}
+```
+
+##  FN-dominated values {#appendixTimeLimitsFNdom}  
+
+###  FN-dominated raw error values {#appendixTimeLimitsFNdomRaw}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, gurobi_status) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       #linesep = c("", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+```
+
+```{r gurobiFivenumTableFNtotOutErr, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, dom_err_type == "FN"), 
+                         "rsr_COR_euc_out_err_frac", 
+                         num_prob_per_rs, 
+                         "FN-dominated problems - OPTIMAL - total output error")
+```
+
+###  FN-dominated error magnifications {#appendixTimeLimitsFNdomMag}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, gurobi_status) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       #linesep = c("", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+```
+
+```{r gurobiFivenumTableFNrepShortfallMag, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, dom_err_type == "FN"), 
+                         "max_TOT_FN_FP_tot_mag", 
+                         num_prob_per_rs, 
+                         "FN-dominated problems - OPTIMAL - total output error MAGNIFICATIONS")
+```
+
+##  FP-dominated values {#appendixTimeLimitsFPdom}
+
+In the tables below, the median error values for FP-dominated problems that Gurobi finished were substantially smaller than those where Gurobi didn't finish.  This is true for all reserve selectors and all error values so our guess is that the TIME_LIMIT problems were generally much harder than the OPTIMAL problems.  
+
+###  FP-dominated raw error values {#appendixTimeLimitsFPdomRaw}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, gurobi_status) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+####  FP-dominated total output error (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErr}  
+
+```{r gurobiFivenumTableFPtotOutErrOPT, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "OPTIMAL"))), 
+                         "rsr_COR_euc_out_err_frac", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - OPTIMAL - total output error")
+```
+
+```{r gurobiFivenumTableFPtotOutErrTL, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "TIME_LIMIT"))), 
+                         "rsr_COR_euc_out_err_frac", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - TIME_LIMIT - total output error")
+```
+
+####  FP-dominated rep shortfall  (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfall}  
+
+```{r gurobiFivenumTableFPrepShortfallOPT, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "OPTIMAL"))), 
+                         "rsr_COR_spp_rep_shortfall", 
+                         num_prob_per_rs, 
+                         "FN-dominated problems - OPTIMAL - rep shortfall")
+```
+
+```{r gurobiFivenumTableFPrepShortfallTL, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "TIME_LIMIT"))), 
+                         "rsr_COR_spp_rep_shortfall", 
+                         num_prob_per_rs, 
+                         "FN-dominated problems - TIME_LIMIT - rep shortfall")
+```
+
+###  FP-dominated error magnifications {#appendixTimeLimitsFPdomMags}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, gurobi_status) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+####  FP-dominated total output error MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomTotOutErrMag}  
+
+```{r gurobiFivenumTableFPtotOutErrMagOPT, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "OPTIMAL"))), 
+                         "max_TOT_FN_FP_tot_mag", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - OPTIMAL - total output error MAGNIFICATIONS")
+```
+
+```{r gurobiFivenumTableFPtotOutErrMagTL, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "TIME_LIMIT"))), 
+                         "max_TOT_FN_FP_tot_mag", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - TIME_LIMIT - total output error MAGNIFICATIONS")
+```
+
+####  FP-dominated representation shortfall MAGNIFICATION (finished & unfinished) {#appendixTimeLimitsFPdomRepShortfallMag}  
+
+```{r gurobiFivenumTableFPrepShortfallMagOPT, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "OPTIMAL"))), 
+                         "max_TOT_FN_FP_shortfall_mag", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - OPTIMAL - rep shortfall MAGNIFICATIONS")
+```
+
+```{r gurobiFivenumTableFPrepShortfallMagTL, results = 'asis'}
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (app_wrap_tib, 
+                                 ((dom_err_type == "FP") & 
+                                  (gurobi_status == "TIME_LIMIT"))), 
+                         "max_TOT_FN_FP_shortfall_mag", 
+                         num_prob_per_rs, 
+                         "FP-dominated problems - TIME_LIMIT - rep shortfall MAGNIFICATIONS")
+```
+
+##  Distributions of mipgap values {#appendixMipgapDists} 
+
+Here we plot distributions of mipgap values to document what is the prevalence of unfinished problems in our data.  Mipgap = 0 means the problem was finished and > 0 means it was unfinished.
+
+###  Density of Gurobi mipgaps {#appendixMipgapDensity}  
+
+```{r}
+color_breaks_and_values = force_dom_err_type_colors (app_wrap_tib$dom_err_type)
+
+scale_color_breaks = color_breaks_and_values$breaks
+scale_color_values = color_breaks_and_values$values
+```
+
+```{r plotGurobiMipgapDensity, fig.align="center", out.height = "60%", echo=FALSE}
+
+
+#plot_title = "Density of gurobi_mipgap (APP data)"
+
+density_gurobi_mipgap <- 
+    ggplot (filter (app_wrap_tib, rs_method_name_fac == "Gurobi"), 
+            aes(x=gurobi_mipgap)) + 
+  geom_density(alpha = .4, fill = "cyan") + 
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+#density_gurobi_mipgap
+```
+
+```{r plotGurobiMipgapHistogram, fig.align="center", out.height = "60%",  echo=FALSE}
+
+#plot_title = "Histogram of gurobi_mipgap (APP data)"
+
+hist_gurobi_mipgap <- 
+    ggplot (filter (app_wrap_tib, rs_method_name_fac == "Gurobi"), 
+            aes(x=gurobi_mipgap)) + 
+  geom_histogram() + 
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+#hist_gurobi_mipgap
+```
+
+```{r plotGurobiMipgapDensityAndHistogram, fig.align="center", out.width = "70%",  echo=FALSE}
+###  Combined tot and rep plot
+
+patched <- density_gurobi_mipgap + hist_gurobi_mipgap
+patched + plot_layout (guides="collect")
+```
+
+###  Gurobi mipgap as a function of problem size {#appendixMipgapAsFuncOfProbSize} 
+
+```{r plotLog10SppPUprodVsGurobiMipgap, fig.align="center", out.width = "90%",  fig.cap = "\\label{fig:log10SppPUprodVsGurobiMipgapInCORappendix}log10 (product of number of species and PUs) vs. Gurobi mipgap.", echo=FALSE}
+
+#mipgap_cutoff = 0.02
+
+plotLog10SppPUprodVsGurobiMipgap = 
+  ggplot (filter (app_wrap_tib, rs_method_name_fac == "Gurobi"), 
+             aes (x = log10_sppPUprod,
+                  y = gurobi_mipgap
+                  , color = dom_err_type
+                  )
+          ) +
+        geom_point (size=0.25, shape=15) +
+#        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+#ylim (NA, mipgap_cutoff) + 
+#coord_cartesian (ylim = c(NA, mipgap_cutoff)) + 
+  
+  xlab ("log10 (product of number of species and PUs)") + 
+  ylab ("Gurobi mipgap") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+#plotLog10SppPUprodVsGurobiMipgap
+```
+
+```{r plotSppPUprodVsGurobiMipgap, fig.align="center", out.width = "90%",  fig.cap = "\\label{fig:logSppPUprodVsGurobiMipgapInCORappendix}product of number of species and PUs vs. Gurobi mipgap.", echo=FALSE}
+
+plotSppPUprodVsGurobiMipgap = 
+  ggplot (filter (app_wrap_tib, rs_method_name_fac == "Gurobi"), 
+             aes (x = sppPUprod,
+                  y = gurobi_mipgap
+                  , color = dom_err_type
+                  )
+          ) +
+        geom_point (size=0.25, shape=15) +
+#        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+#ylim (NA, 0.02) + 
+#coord_cartesian (ylim = c(NA, mipgap_cutoff)) + 
+  
+  xlab ("product of number of species and PUs") + 
+  ylab ("Gurobi mipgap") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+#plotSppPUprodVsGurobiMipgap
+```
+
+```{r plotGurobiMipgapPlots, fig.align="center", out.width = "90%",  fig.cap = "\\label{fig:gurobimipgapPlots} Gurobi mipgaps (a) log10 (SppPUprod) vs. Gurobi mipgap, (b) SppPUprod vs. Gurobi mipgap.", echo=FALSE}
+
+patched <- #hist_gurobi_mipgap / 
+           plotSppPUprodVsGurobiMipgap / 
+           plotLog10SppPUprodVsGurobiMipgap
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+#          plot_layout (heights=c(1,3, 3))
+          plot_layout (heights=c(3, 3))
+```
+
+----------
+
+##  Gurobi mipgaps vs. error measures across all reserve selectors {#gurMipgapsVsErrorsAppendix}
+
+```{r computeMipgapVsUnequalAbsCostErrCts}
+temp_gurobi_only = filter (app_wrap_tib, rs_method_name == "Gurobi")
+num_gurobi_only = nrow (temp_gurobi_only)
+
+unique_abs_values = unique (temp_gurobi_only$abs_rs_solution_cost_err_frac)
+
+mipgap_equals_absSolCostErr = filter (temp_gurobi_only, 
+                                      gurobi_mipgap == abs_rs_solution_cost_err_frac)
+num_equal = nrow (mipgap_equals_absSolCostErr)
+frac_mipgap_equal_abSolCostErrs = num_equal / num_gurobi_only
+
+mipgap_GT_absSolCostErr = filter (temp_gurobi_only, 
+                                      gurobi_mipgap > abs_rs_solution_cost_err_frac)
+num_GT = nrow (mipgap_GT_absSolCostErr)
+frac_mipgap_GT_abSolCostErrs = num_GT / num_gurobi_only
+
+frac_mipgaps_really_are_an_upper_bound_on_error = 
+    frac_mipgap_equal_abSolCostErrs + frac_mipgap_GT_abSolCostErrs
+
+mipgap_LT_absSolCostErr = filter (temp_gurobi_only, 
+                                      gurobi_mipgap < abs_rs_solution_cost_err_frac)
+num_LT = nrow (mipgap_LT_absSolCostErr)
+frac_mipgap_LT_abSolCostErrs = num_LT / num_gurobi_only
+percent_mipgap_LT_abSolCostErrs = round (100*frac_mipgap_LT_abSolCostErrs, 0)
+```
+
+###  Gurobi mipgap vs. Abs solution cost error {#appendixMipgapVsAbsSolCostErr} 
+
+```{r plotGurobiMipgapVsAbsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsAbsCostErrInAPPappendix}Gurobi mipgap vs. solution cost error.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsAbsCostErr = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = abs_rs_solution_cost_err_frac,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(NA, 1.25)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+# geom_abline (intercept=0, slope=1, size=0.2)  + #, color="green") +  #, linetype, color, size
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Abs Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsAbsCostErr
+```
+
+####  Gurobi mipgap vs. Abs solution cost error MAGNIFICATION {#appendixMipgapVsAbsSolCostMag} 
+
+```{r plotGurobiMipgapVsAbsCostErrMag, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsAbsCostErrMagInAPPappendix}Gurobi mipgap vs. solution cost error magnification.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsAbsCostErrMag = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = max_TOT_FN_FP_abs_cost_mag,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(0, 15)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Abs Solution Cost Error Magnification") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsAbsCostErrMag
+```
+
+###  Gurobi mipgap vs. Signed solution cost error {#appendixMipgapVsSignedSolCostErr} 
+
+```{r plotGurobiMipgapVsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsCostErrInAPPappendix}Gurobi mipgap vs. solution cost error.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsCostErr = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = rs_solution_cost_err_frac,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(-1, 1.25)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+geom_hline (yintercept = 0) +   #, linetype="dashed", color = "black", size=0.25) + 
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Signed solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsCostErr
+```
+
+####  Gurobi mipgap vs. Signed solution cost error MAGNIFICATION {#appendixMipgapVsSignedSolCostMag} 
+
+```{r plotGurobiMipgapVsSignedCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsSignedCostErrInAPPappendix}Gurobi mipgap vs. solution cost error magnification.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsSignedCostErr = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = max_TOT_FN_FP_signed_cost_mag,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(-10, 15)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+geom_hline (yintercept = 0) +   #, linetype="dashed", color = "black", size=0.25) + 
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Signed solution Cost Error Magnification") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsSignedCostErr
+```
+
+###  Gurobi mipgap vs. Total output error {#appendixMipgapVsTotOutErr} 
+
+```{r plotGurobiMipgapVsTotOutErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsTotOutErrInAPPappendix}Gurobi mipgap vs. solution cost error.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsTotOutErr = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = rsr_COR_euc_out_err_frac,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(0, 1.25)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+# geom_abline (intercept=0, slope=1, size=0.2)  + #, color="green") +  #, linetype, color, size
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Total Output Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsTotOutErr
+```
+
+####  Gurobi mipgap vs. Total output error MAGNIFICATION {#appendixMipgapVsTotOutMag} 
+
+```{r plotGurobiMipgapVsTotOutErrMag, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsTotOutErrMagInAPPappendix}Gurobi mipgap vs. solution cost error magnification.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsTotOutErrMag = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = max_TOT_FN_FP_tot_mag
+,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(0, 20)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Total Output Error Magnification") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsTotOutErrMag
+```
+
+###  Gurobi mipgap vs. representation shortfall {#appendixMipgapVsRepShortfall} 
+
+```{r plotGurobiMipgapVsRepShortfall, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsRepShortfallInAPPappendix}Gurobi mipgap vs. representation shortfall.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsRepShortfall = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = rsr_COR_spp_rep_shortfall,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+  scale_y_continuous (labels = percent) + 
+#coord_cartesian (ylim = c(0, 1)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+# geom_abline (intercept=0, slope=1, size=0.2)  + #, color="green") +  #, linetype, color, size
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Representation Shortfall") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsRepShortfall
+```
+
+####  Gurobi mipgap vs. representation shortfall MAGNIFICATION {#appendixMipgapVsRepShortfallMag} 
+
+```{r plotGurobiMipgapVsRepShortfallMag, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:gurobiMipgapVsRepShortfallMagInAPPappendix}Gurobi mipgap vs. representation shortfall magnification.", echo=FALSE}
+
+#mipgap_cutoff = 0.04
+
+plotGurobiMipgapVsRepShortfallMag = 
+#  ggplot (data = filter (cor_tib__UR_Forward__Marxan_SA_SS__only, gurobi_mipgap <= mipgap_cutoff), 
+  ggplot (data = app_wrap_tib,    #filter (app_wrap_tib, gurobi_mipgap), 
+             aes (x = gurobi_mipgap,
+                  y = max_TOT_FN_FP_shortfall_mag,
+                  color = dom_err_type)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 2) + 
+  
+  scale_color_manual (breaks = scale_color_breaks,
+                                                values = scale_color_values,
+                                                name = "dominant\nerror type") +
+#  scale_y_continuous (labels = percent) + 
+coord_cartesian (ylim = c(0, 20)) + 
+  
+#geom_vline (xintercept = 0.05, linetype="dashed", color = "black", size=0.25) + 
+
+  xlab ("Gurobi mipgap") + 
+  ylab ("Representation Shortfall Magnification") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotGurobiMipgapVsRepShortfallMag
+```
+
+----------  
+
+#  Appendix - Inclusion and relative difficulty of imperfect Wrap problems  {#ImperfectWrapsAppendix}
+
+This appendix provides support for why we chose to include imperfect Wrap problems in the final results used in the paper.  We include tables here to demonstrate that claim using the median raw total output error and median raw representation shortfall, as well as both of their magnifications for problems.  We show summaries in three groups: All problems, FN-dominated problems, and FP-dominated problems.  In all cases, the imperfect wrap form for each reserve selector had very similar median error and median magnification to the "perfect" wrap form for the same reserve selector.  
+
+Note that if you prefer to see the results without imperfect wraps, you can tick that button in the Shiny app.  You will find that their inclusion has little effect on the plots and statistics of the resulting experiment set.
+
+##  All {#appendixImperfectWrapsAll}  
+
+###  All raw {#appendixImperfectWrapsAllRaw}  
+
+```{r}
+#if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+#  If you say format "latex", it centers the table onto the same line as the 
+#  FN raw header but does give you spacing between lines.  I have no idea why...
+#  If you say format "pandoc" to make it not get appended to the FN raw, 
+#  then you lose the spacing.
+#  So, all these first 4 line tables I'll set as pandoc but leave the others 
+#  as latex.
+#  Unfortunately, the latex ones are also not centered on the page...
+#  What a pain in the ass...
+
+# kable (cur_table, align = 'c', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+#        linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       #linesep = c("", "\\addlinespace"), 
+       , format = "pandoc"    # latex
+       , booktabs = TRUE
+       )
+
+# kable (cur_table, align = 'c', 
+#        digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+#        padding = 100,
+#        format = "pandoc",    #format = "latex", 
+#        #booktabs = TRUE, 
+#        caption = table_caption, 
+#       linesep = c("", "\\hline")
+#        linesep = c("", "\\addlinespace")
+#        #linesep = ""    #  w/o this, kable puts extra space between lines every 5 lines
+#        )
+#}
+```
+
+```{r}
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+```
+
+```{r}
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+#       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+```
+
+```{r}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+#       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+}
+```
+
+###  All mag {#appendixImperfectWrapsAllMag}
+
+```{r}
+#if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       #linesep = c("", "\\addlinespace"), 
+       format = "pandoc", booktabs = TRUE)
+#       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+#}
+```
+
+```{r}
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+#       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+```
+
+```{r}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+#       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+}
+```
+
+##  FN-dominated {#appendixImperfectWrapsFNdom}
+
+###  FN-dominated raw {#appendixImperfectWrapsFNdomRaw}  
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+#  If you say format "latex", it centers the table onto the same line as the 
+#  FN raw header but does give you spacing between lines.  I have no idea why...
+#  If you say format "pandoc" to make it not get appended to the FN raw, 
+#  then you lose the spacing.
+#  So, all these first 4 line tables I'll set as pandoc but leave the others 
+#  as latex.
+#  Unforunately, the latex ones are also not centered on the page...
+#  What a pain in the ass...
+
+# kable (cur_table, align = 'c', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+#        linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       #linesep = c("", "\\addlinespace"), 
+       , format = "pandoc"    # latex
+       , booktabs = TRUE
+       )
+
+# kable (cur_table, align = 'c', 
+#        digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+#        padding = 100,
+#        format = "pandoc",    #format = "latex", 
+#        #booktabs = TRUE, 
+#        caption = table_caption, 
+#       linesep = c("", "\\hline")
+#        linesep = c("", "\\addlinespace")
+#        #linesep = ""    #  w/o this, kable puts extra space between lines every 5 lines
+#        )
+```
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+#       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+```
+
+###  FN-dominated mag {#appendixImperfectWrapsFNdomMag}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FN") %>% 
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+```
+
+##  FP-dominated {#appendixImperfectWrapsFPdom}
+
+###  FP-dominated raw {#appendixImperfectWrapsFPdomRaw}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot = median (rsr_COR_euc_out_err_frac), 
+             median_shortfall = median (rsr_COR_spp_rep_shortfall))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+```
+
+###  FP-dominated mag {#appendixImperfectWrapsFPdomMag}
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "pandoc", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'llcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+```{r, fig.pos="h"}
+if (params$show_excess_tables){
+cur_table = 
+app_wrap_tib %>%
+  filter (dom_err_type == "FP") %>% 
+  group_by (rs_method_name, gurobi_status, rsp_wrap_is_imperfect) %>%
+  summarise (median_tot_mag = median (max_TOT_FN_FP_tot_mag), 
+             median_shortfall_mag = median (max_TOT_FN_FP_shortfall_mag))
+
+kable (cur_table, align = 'lllcc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+```
+
+----------
+
+#  Appendix - Differences between pairs of reserve selectors on individual problems {#DiffsAppendix}
+
+The point clouds in the scatterplots we show in the paper in the Shiny app are good for getting an overall sense of how the different reserve selectors behave on our problem set, but they don't allow comparison of reserve selectors on individual problems.  For that reason, in this appendix we summarize the differences in error values between pairs of reserve selectors on the same problem as a way to just explore those results as a seed for possible future work and hypotheses.  
+
+We make no attempt here to statistically answer which reserve selector is better than another for several reasons.  First, we did not bring hypotheses and tests about these pairings to this work at the start since we were primarily interested in seeing whether there was a large spread in problem difficulty.  Second, questions about this data would involve hypotheses about multiple pairings of reserve selectors and therefore, statistical corrections to deal with that.  Finally, we don't know how representative the problems in our data set are of the distributions of problems in the real world, so saying something about their differences here may have little relation to their differences in the real world.  Consequently, we provide this data simply as exploratory information about comparative questions that naturally arise when comparing the point clouds in our paper.  
+
+##  Structure of each section {#appendixDiffsSecStruct}  
+
+In each section below, we choose a reference reserve selector to compare another reserve selector against by subtracting the reference reserve selector's error or magnification value from the corresponding value on the same problem in the other reserve selector.  For example, we begin with Gurobi as the reference reserve selector and Marxan_SA as the compared selector to be compared on total output error.  For each problem, we then subtract Gurobi's total output error from Marxan_SA's total output error on each problem.  If the result on a given problem is negative then Marxan_SA did better than Gurobi on that error on that problem, and so on.  We then summarize the results in several different plots and tables for that reserve selector pairing.  There are twelve possible ordered pairings of the four reserve selectors, but we only present six since half of the twelve are just the negative of the others.  
+
+In the section for each pairing, we provide the following set of plots:  
+
+- scatterplots of differences in total output error and representation shortfall  
+- density plots for all problems for those same two variables  
+- density plots for just FP-dominated problems for those same two variables  
+- density plots for just FN-dominated problems for those same two variables  
+
+After the plots in each section, we then show four summary tables for the differences in total output error and then four more for the differences in representation shortfall.  The four tables in each subsection are the following:  
+
+- Summary of differences broken into groups of "All", "FN/FP", and "OPTIMAL/TIME_LIMIT".  
+- Summary of differences broken into groups of "OPTIMAL/TIME_LIMIT" broken down by what count and fraction of the time the compared reserve selector had a better error value, the same error value, or a worse error value than the reference reserve selector.  
+- Same as previous table but broken down by "FN-dominated/FP-dominated" instead of by "OPTIMAL/TIME_LIMIT".  
+- Same as previous table but broken down by pairings of "FN-dominated/FP-dominated" and "OPTIMAL/TIME_LIMIT".  
+
+In each of the last three tables listed above, the better/same/worse condition is indicated by a column labelled with an abbreviated string indicating the reserve selectors being compared.  For example, when the comparison is Marxan_SA minus Gurobi, the column heading is "MSA_G_tot".  The values in the column are "-1" to indicate the Marxan_SA error was less than the Gurobi error, "0" to indicate they had the same values, and "1" to indicate the Marxan_SA value was worse than the Gurobi value.  In addition to "MSA" and "G", the other two reserve selector abbreviations in the column heading are "MSASS" for Marxan_SA_SS and "URF" for UR_Forward.  
+
+The `count` column in each subgroup of the table sums to the total number of problems in the subgrouping and the `frac` column shows the fraction of that subgroup total count is represented by the current line.  This is slightly different from the meaning of the `frac` column in the overall summary tables described in Appendix \ref{appendixMostCommonTableFormat} where the fraction was computed against the total number of problems rather than the total problems in the subgroup.
+
+```{r}
+#show_hist_or_density = "hist"
+show_hist_or_density = "density"
+```
+
+##  Marxan_SA minus Gurobi {#appendixDiffsMsaGur}
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("Marxan_SA", "Gurobi", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi, 
+                      diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi)
+```
+
+```{r, fig.align="center", out.width = "60%", fig.cap = "\\label{fig:marxanSAminusGurobiHist} Histograms for Marxan\\_SA minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi, 
+             app_wrap_tib, 
+             "Marxan_SA", 
+             "Gurobi", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.cap = "\\label{fig:marxanSAminusGurobiTotErrAndRepFPHist} Histograms for FP-dominated problems only for Marxan\\_SA minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA",
+                      dom_err_type == "FP"),
+             "Marxan_SA", 
+             "Gurobi", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSAminusGurobiTotErrAndRepFNHist} Histograms for FN-dominated problems only for Marxan\\_SA minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA",
+                      dom_err_type == "FN"),
+             "Marxan_SA", 
+             "Gurobi", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+```{r, include=FALSE}
+
+cur_tib = filter (app_wrap_tib, rs_method_name == "Gurobi")
+dim (cur_tib)
+
+cur_tib = mutate (cur_tib, 
+                  diff_cls_tot_err__Marxan_SA__Gurobi = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_tot_err__Marxan_SA_SS__Gurobi = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_tot_err__UR_Forward__Gurobi = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_tot_err__Marxan_SA_SS__Marxan_SA = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA == 0, 0, 1)), 
+                  
+                  diff_cls_tot_err__UR_Forward__Marxan_SA = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA == 0, 0, 1)), 
+                  
+                  diff_cls_tot_err__UR_Forward__Marxan_SA_SS = 
+                      ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS == 0, 0, 1)) 
+)
+
+cur_tib = mutate (cur_tib, 
+                  diff_cls_rep_shortfall__Marxan_SA__Gurobi = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_rep_shortfall__Marxan_SA_SS__Gurobi = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_rep_shortfall__UR_Forward__Gurobi = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi == 0, 0, 1)), 
+                  
+                  diff_cls_rep_shortfall__Marxan_SA_SS__Marxan_SA = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA == 0, 0, 1)), 
+                  
+                  diff_cls_rep_shortfall__UR_Forward__Marxan_SA = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA == 0, 0, 1)), 
+                  
+                  diff_cls_rep_shortfall__UR_Forward__Marxan_SA_SS = 
+                      ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS < 0, 
+                              -1, 
+                              ifelse (diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS == 0, 0, 1)) 
+)
+```
+
+###  Marxan_SA minus Gurobi - Total error diff tables {#appendixDiffsMsaGurTotErr}
+
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  Marxan\\_SA minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+
+```
+
+```{r, fig.pos="h"}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__Marxan_SA__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSA_G_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  Marxan_SA minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsaGurRepShortfall}  
+
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  Marxan\\_SA minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r, fig.pos="h"}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__Marxan_SA__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSA_G_rep"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+-----  
+
+##  Marxan_SA_SS minus Gurobi {#appendixDiffsMsassGur}
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("Marxan_SA_SS", "Gurobi", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi, 
+                      diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi)
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusGurobiHist} Histograms for Marxan\\_SA\\_SS minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi, 
+             app_wrap_tib, 
+             "Marxan_SA_SS", 
+             "Gurobi", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusGurobiTotErrAndRepFPHist} Histograms for FP-dominated problems only for Marxan\\_SA\\_SS minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA_SS",
+                      dom_err_type == "FP"),
+             "Marxan_SA_SS", 
+             "Gurobi", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusGurobiTotErrAndRepFNHist} Histograms for FN-dominated problems only for Marxan\\_SA\\_SS minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA_SS",
+                      dom_err_type == "FN"),
+             "Marxan_SA_SS", 
+             "Gurobi", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+###  Marxan_SA_SS minus Gurobi - Total error diff tables {#appendixDiffsMsassGurTotErr}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_SS_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  Marxan\\_SA\\_SS minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__Marxan_SA_SS__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSASS_G_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  Marxan_SA_SS minus Gurobi - Rep shortfall diff tables {#appendixDiffsMsassGurRepShortfall}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_SS_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  Marxan\\_SA\\_SS minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__Marxan_SA_SS__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSASS_G_rep"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+-----  
+
+##  UR_Forward minus Gurobi {#appendixDiffsUrfGur}
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("UR_Forward", "Gurobi", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi, 
+                      diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi)
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusGurobiHist} Histograms for UR\\_Forward minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi, 
+             app_wrap_tib, 
+             "UR_Forward", 
+             "Gurobi", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusGurobiTotErrAndRepFPHist} Histograms for FP-dominated problems only for UR\\_Forward minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FP"),
+             "UR_Forward", 
+             "Gurobi", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusGurobiTotErrAndRepFNHist} Histograms for FN-dominated problems only for UR\\_Forward minus Gurobi.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FN"),
+             "UR_Forward", 
+             "Gurobi", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+###  UR_Forward minus Gurobi - Total error diff tables {#appendixDiffsUrfGurTotErr}
+
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  UR\\_Forward minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__UR_Forward__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_G_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  UR_Forward minus Gurobi - Rep shortfall diff tables {#appendixDiffsUrfGurRepShortfall}
+
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  UR\\_Forward minus Gurobi"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__UR_Forward__Gurobi)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_G_rep"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+-----  
+
+##  Marxan_SA_SS minus Marxan_SA {#appendixDiffsMsassMsa}  
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("Marxan_SA_SS", "Marxan_SA", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA, 
+                      diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA)
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusMarxanSAHist} Histograms for Marxan\\_SA\\_SS minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA, 
+             app_wrap_tib, 
+             "Marxan_SA_SS", 
+             "Marxan_SA", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusMarxanSATotErrAndRepFPHist} Histograms for FP-dominated problems only for Marxan\\_SA\\_SS minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA_SS",
+                      dom_err_type == "FP"),
+             "Marxan_SA_SS", 
+             "Marxan_SA", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:marxanSASSminusMarxanSATotErrAndRepFNHist} Histograms for FN-dominated problems only for Marxan\\_SA\\_SS minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA, 
+             filter (app_wrap_tib,
+                      rs_method_name == "Marxan_SA_SS",
+                      dom_err_type == "FN"),
+             "Marxan_SA_SS", 
+             "Marxan_SA", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+###  Marxan_SA_SS minus Marxan_SA - Total error diff tables {#appendixDiffsMsassMsaTotErr}
+
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_SS_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__Marxan_SA_SS__Marxan_SA", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  Marxan\\_SA\\_SS minus Marxan\\_SA"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__Marxan_SA_SS__Marxan_SA)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSASS_MSA_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+cur_tib %>%
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  Marxan_SA_SS minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsMsassMsaRepShortfall}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = Marxan_SA_SS_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__Marxan_SA_SS__Marxan_SA", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  Marxan\\_SA\\_SS minus Marxan\\_SA"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__Marxan_SA_SS__Marxan_SA)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "MSASS_MSA_rep"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                    "\\addlinespace"
+                  ), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+-----  
+
+##  UR_Forward minus Marxan_SA {#appendixDiffsUrfMsa}
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("UR_Forward", "Marxan_SA", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA, 
+                      diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA)
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSAHist} Histograms for UR\\_Forward minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA, 
+             app_wrap_tib, 
+             "UR_Forward", 
+             "Marxan_SA", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSATotErrAndRepFPHist} Histograms for FP-dominated problems only for UR\\_Forward minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FP"),
+             "UR_Forward", 
+             "Marxan_SA", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSATotErrAndRepFNHist} Histograms for FN-dominated problems only for UR\\_Forward minus Marxan\\_SA.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FN"),
+             "UR_Forward", 
+             "Marxan_SA", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+###  UR_Forward minus Marxan_SA - Total error diff tables {#appendixDiffsUrfMsaTotErr}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  UR\\_Forward minus Marxan\\_SA"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__UR_Forward__Marxan_SA)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_MSA_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+```
+
+**\textcolor{red}{NOTE that in the "TIME\_LIMIT" section of the table above}** (i.e., problems that were hard for Gurobi), 68% of the time UR_Forward has a lower total output error than Marxan_SA.  
+
+```{r}
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  UR_Forward minus Marxan_SA - Rep shortfall diff tables {#appendixDiffsUrfMsaRepShortfall}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  UR\\_Forward minus Marxan\\_SA"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__UR_Forward__Marxan_SA)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_MSA_rep"
+#####                                           #####
+
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", 
+       booktabs = TRUE
+       )
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", 
+       booktabs = TRUE, 
+       )
+```
+
+**\textcolor{red}{NOTE that in the "TIME\_LIMIT" section of the table above}** (i.e., problems that were hard for Gurobi), 77% of the time UR_Forward has a lower rep shortfall error than Marxan_SA.  
+
+```{r}
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+-----  
+
+##  UR_Forward minus Marxan_SA_SS {#appendixDiffsUrfMsass}
+
+```{r, echo=FALSE, cache=FALSE}
+double_scatter_diffs ("UR_Forward", "Marxan_SA_SS", app_wrap_tib, 
+                      diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS, 
+                      diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS)
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSASSHist} Histograms for UR\\_Forward minus Marxan\\_SA\\_SS.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS, 
+             app_wrap_tib, 
+             "UR_Forward", 
+             "Marxan_SA_SS", 
+             plot_title_str_finish = "both FN & FP")
+
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSASSTotErrAndRepFPHist} Histograms for FP-dominated problems only for UR\\_Forward minus Marxan\\_SA\\_SS.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FP"),
+             "UR_Forward", 
+             "Marxan_SA_SS", 
+             plot_title_str_finish = "FP only", 
+             color = "red")
+```
+
+```{r, fig.align="center", out.width = "60%",  fig.cap = "\\label{fig:urForwardMinusMarxanSASSTotErrAndRepFNHist} Histograms for FN-dominated problems only for UR\\_Forward minus Marxan\\_SA\\_SS.", eval=TRUE, echo=FALSE, cache=FALSE}
+
+double_hist (diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS, 
+             diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS, 
+             filter (app_wrap_tib,
+                      rs_method_name == "UR_Forward",
+                      dom_err_type == "FN"),
+             "UR_Forward", 
+             "Marxan_SA_SS", 
+             plot_title_str_finish = "FN only", 
+             color = "blue")
+```
+
+###  UR_Forward minus Marxan_SA_SS - Total error diff tables {#appendixDiffsUrfMsassTotErr}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_euc_out_err_frac__UR_Forward__Marxan_SA_SS", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "tot err diffs:  UR\\_Forward minus Marxan\\_SA\\_SS"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_tot_err__UR_Forward__Marxan_SA_SS)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_MSASS_tot"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE 
+       #, caption = "tot err diffs:  UR\\_Forward minus Marxan\\_SA\\_SS - by Gurobi status"
+       )
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE 
+       #, caption = "tot err diffs:  UR\\_Forward minus Marxan\\_SA\\_SS - by dominant error type"
+       )
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE
+       #, caption = "tot err diffs:  UR\\_Forward minus Marxan\\_SA\\_SS - by Gurobi status and dominant error type"
+       )
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "\\addlinespace"), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+###  UR_Forward minus Marxan_SA_SS - Rep shortfall diff tables {#appendixDiffsUrfMsassRepShortfall}
+ 
+```{r, results = 'asis'}
+create_five_rows_kable_table (tib_to_analyze = UR_Forward_only_tib, 
+                              colname_str = "diff__rsr_COR_spp_rep_shortfall__UR_Forward__Marxan_SA_SS", 
+                              rs_method_names_list, 
+                              num_prob_per_rs,
+                              #table_caption = "rep shortfall diffs:  UR\\_Forward minus Marxan\\_SA\\_SS"
+                              table_caption = NULL, 
+                              kable_format_str = "latex"
+                              ) 
+```
+
+```{r}
+#####  IMPORTANT TO RESET THIS IN EACH SECTION  #####
+cur_tib = mutate (cur_tib, diff_cls = diff_cls_rep_shortfall__UR_Forward__Marxan_SA_SS)
+diff_cls_name = "diff_cls"
+diff_cls_abbrev = "URF_MSASS_rep"
+#####                                           #####
+
+if (params$show_excess_tables)
+{
+# count (cur_tib, diff_cls) %>%
+#                 mutate(fraction = n / sum(n)) -> cur_table
+cur_tib %>%
+    group_by (diff_cls) %>%
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'ccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+}
+
+cur_tib %>% 
+    group_by (gurobi_status, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+cur_tib %>% 
+    group_by (gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'llccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace"), format = "latex", booktabs = TRUE)
+
+
+if (params$show_excess_tables)
+{
+cur_tib %>% 
+    group_by (rsp_wrap_is_imperfect, gurobi_status, dom_err_type, diff_cls) %>% 
+    summarize (count = n()) %>%
+    mutate (frac = prop.table (count)) -> cur_table
+names (cur_table) [which (names (cur_table) == diff_cls_name)] = diff_cls_abbrev
+kable (cur_table, align = 'lllccc', digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+       linesep = c("", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "", "", "\\addlinespace", 
+                   "\\addlinespace"
+                   ), 
+       format = "latex", booktabs = TRUE)
+}
+```
+
+----------
+
+# Appendix - Extended Discussion: *Sets* of problems  {#setsOfProblemsDiscussionAppendix}  
+
+**\textcolor{red}{2024 06 13:  This is the full Discussion section about benchmarks that has been pulled out of the main text in p8 v14 based on Ascelin's comments on p8 v13 in May, 2024 (bdpg paper, version 13_p8_v13_all_combined__body__2024-05-01-for-ascelin_AG3.docx).  He thought there was too much detail for the main text and he thought it should go in the SI.  Now, in p8 v14, I have taken the full text that is pasted in here and cut it way down and edited it there.  At the moment, I have not edited anything here, but it needs to be edited since it contains many notes to myself.  Since I have not touched what's here, there is some duplication with what's left in the v14 Discussion.}**
+
+Many other fields have had shared benchmark sets of real-world and synthetic problems for decades and have benefited tremendously from them [UCI, DIMACS, ... (\textcolor{red}{[Was it Maciá (or Smith-Miles or ???) that listed something like 11 or 13 different fields and their benchmark sets?]}).  Even the species distribution modelling literature has recently begun publicly sharing collected groups of data sets whose distributional characteristics could be measured (@elith2020bi).  Here, we've provided a single benchmark set whose goal is to help understand some kinds of problem structures that cause difficulties in optimization under uncertainty, but it's not the perfect, end-all benchmark.  There need to be other sets that serve different purposes and address the weaknesses of our benchmark.  However, creating a set of real-world problems to reasonably evaluate reserve selectors is a non-trivial project.  
+
+\textcolor{red}{NOTE: Should I add something here about how synthetic problems allow a) much larger samples, and b) composing of different problem elements to tease out which elements have greater impact on reserve selector accuracy?}
+
+Just as the design of species sampling within a single SCP problem is important, the sample of SCP problems chosen to include in a benchmark set can skew derived conclusions about tested methods.  Over the last 30 years and more, authors in other fields have been highlighting difficulties caused by the ad-hoc composition of existing benchmark sets and the benchmarking studies that use them \textcolor{blue}{[@crowder1979atms, @hooker1994or, @hooker1995jh, McGeogh book and thesis etc, ACM journal, Gomes? Walsh "How not to do it"?, Smith-Miles, @maciaUCIMindfulRepository2014, @macia2013pr (?), @beiranvand2017oea, ??? ]}.  For SCP, two of the most relevant issues these papers raise are the different *purposes* of different sets and the *coverage* of different sets.  
+
+Hooker flags the important distinction in *purpose* between comparing implementation performance vs. understanding algorithm behavior (@hooker1995jh).  Much benchmarking of algorithms has revolved around arbitrarily choosing a few small data sets of real-world problems and then having what he calls a "track meet" between some algorithms to demonstrate that one of them has some small edge over the others in the chosen data.  Hooker's view is that this is just a measure of implementation quality, which is only useful to the end developers of implementations.  He contends that what is missing is a set of tests designed to lead to better understanding of *why* the algorithms behave as they do and how they can be improved.  He says that tests leading to this kind of understanding will *not* be representative of the real world, but rather, should cover the space of possible problem structures in a way that probes the conditions where algorithm behavior varies.  This is what we have attempted to do using model RB and our wrapping extension of it for one corner of the universe of reserve selection problems.  
+
+The idea of *coverage* relates to problem structure in both synthetic and real-world problems.  Maciá et al. demonstrate how common benchmarking sets used in machine learning can draw from a number of real-world situations but still not cover the spread of different real-world problem structures (@macia2013pr ?) in the sense of what is sometimes referred to as "data complexity" (@lorenaHowComplexYour2019, @lorenaDataComplexityMetafeatures2018, @torquette2022, @tinkamhoComplexityMeasuresSupervised2002, and with respect to species distribution modelling in particular, @garcia-callejas2016em).   
+
+Two of the most relevant and important research threads for SCP are due to Smith-Miles et al. and Maciá et al.  In a number of papers that have influenced our work in this paper, Smith-Miles et al. address the understanding and prediction of optimization algorithm behavior through what they refer to as "instance space" (\textcolor{red}{need citations}).  Instance space is **\textcolor{red}{XXXXXX (get their defn)}**.  They provide an online tool called MATILDA to build a 2D projection of the combination of problem structural attributes and resulting performance measures that visualizes and quantifies the proportion of the instance space covered by a data set (\textcolor{red}{need citation}).  The span of the instance space is governed by the possible range of each problem attribute.  \textcolor{red}{(Need to add something here about difficulties with instance space information loss due to 2D projection?)}  
+
+Maciá et al. (@maciaUCIMindfulRepository2014) suggest that any measurement space should have the following properties:  
+
+- completeness, i.e. the complexity spectrum has to be covered, 
+- resolution, i.e. the dimensions used to build the space should provide sufficient granularity to reveal differences among problems, and 
+- representativeness, i.e. must be able to locate any problems somewhere in the space.  
+
+For both real-world and synthetic SCP problem sets, we would like to know how much of the instance space of possible problems they cover and how much do the instances overlap in that space?  For example, if we characterize each real-world SCP problem with a set of attributes that relate to a method's accuracy on the problem (like problem size and our graph measures), do all of the problems land close together or are they spread out?  \textcolor{red}{Need to mention Xu's point about spreading problems around?}  Is any given case study an outlier among the set of problems or is it representative of many problems in the set?  For synthetic problems, we would like to know similar things but we would also like to know to what degree the spread of our synthetic problems overlaps the set of real-world problems in the space?  While there are hundreds of individual SCP studies, currently, there are no shared collections of SCP problems to even begin to ask questions like these.  
+
+Problem attributes beyond the number of species and planning units as well as the distributions of those attributes across real problems, are largely missing in the literature of SCP method design and testing.  Here, we are not even referring to structural descriptors like our bipartite graph measures or the 509 different measures collected in Muñoz (@munozInstanceSpacesMachine2018) or the regression measures in Lorena (\textcolor{red}{need citation - probably @lorenaDataComplexityMetafeatures2018 but maybe  @torquette2022}).  \textcolor{blue}{[Should mention somewhere that the Muñoz ml paper also summarize 8 different groupings of the 509 features and that grouping might be useful here.]}  While internal problem structure attributes like these are the kind of measure we would like to see, what we are referring to here is more external attributes of a problem.  For example, given a single reserve selection problem, what is the shape of the distribution of costs across all its PUs (e.g., normal, uniform, etc.) and what are the values of the parameters of that distribution for the given problem (e.g., the mean and standard deviation if it was a normal distribution).  \textcolor{red}{Need to add something about the arbitrariness of choice of species to include and their sampling?}}  This kind of information is easily derived for most any case study.  
+
+Given that information for each problem in our set of problems, what we would then like to know is what does it look like across the set of all  problems?  For example, do they generally have one kind of cost distribution or are there multiple distribution types and what is the probability that a particular distribution type occurs in a given problem?  For each of the distribution types, what is the distribution of each of its parameter values across problems?  In other words, how would one generate a problem in a way that practitioners would say that it had the characteristics of a real-world problem?  
+
+This *distribution of distributions* information is one important thing that is currently missing for real-world problems because there is no shared set of SCP problems like those in other fields.  Without such a set, there can be no way to determine how representative any test problem, real or synthetic, is of the set of all real-world problems.  Moreover, we cannot have any idea of whether any problem set covers or even intersects the set of real-world problems or possible real-world problems.  The notion of "possible" problems is important because there will always be new problems added to the set of real-world problems and they may or may not be similar to current problems.  For example, over the history of SCP, both the size and complexity of problems attempted has evolved as hardware and software has improved.  
+
+For these reasons, we believe that determining the statistical distributions of characteristics (and structural attributes) that describe real-world reserve selection problems is arguably one of the most useful future projects that could be done to improve the accuracy of reserve selection methods. Without knowledge of what real conservation projects actually address, there is little support for being able to generalize accuracy results of any experiments to real-world problems, with or without uncertainty.   A good starting point for this approach could be the large pool of problems that have been addressed with Marxan and its variants, since these all share a straightforward input file format that could be easily anonymized to protect sensitive data.  Meanwhile, we can at least partially explore the space of attributes that control problem difficulty using solution planting methods for synthetic problems like the ones we have introduced here.  
+
+One hindrance in developing shared real-world SCP problem sets is the need sometimes to protect sensitive information about endangered species.  Similar problems occur in many other kinds of data sets where privacy is important, so there are efforts there that may be drawn on in dealing with these issues.  For example, the OpenSAFELY project (https://opensafely.org, @williamson2020n) shields healthcare data about individuals by having researchers submit their open source code to be run on the data at a sequestered site rather than giving copies of the data to researchers to run on their own machines.  They also provide a smaller, separate data set with similar structural characteristics for researchers to use in developing and testing the code that they will later submit to run on the real data.  
+ 
+One important note here is that we need to be sure to distinguish benchmark *data* from benchmark *studies*.  One flaw in our study is the restricted set of reserve selectors tested, but that's not the real problem, since anyone else can test other methods on the same data.  The flaws in our study are more to do with the restricted *structures* of the problems and the error models.  These can be addressed with different benchmark data sets.  
+
+Regardless though, our benchmark data set provides utility in pointing out i) that there is large variation in performance that is independent of uncertainty amount and problem size, and ii) that there are some measures of problem structure beyond problem size that begin to help us predict method performance under uncertainty.  Our real contribution is to demonstrate that reserve selection research can and should move beyond case studies toward purposefully designed, shared benchmark sets.
+
+----------
+
+# Appendix - Extended Discussion: Error models  {#errorModelsDiscussionAppendix}  
+
+**\textcolor{red}{2024 06 13:  This is the full Discussion section about Error Models that has been pulled out of the main text in p8 v14 based on Ascelin's comments on p8 v13 in May, 2024 (bdpg paper, version 13_p8_v13_all_combined__body__2024-05-01-for-ascelin_AG3.docx).  He thought there was too much detail for the main text and he thought it should go in the SI.  Now, in p8 v14, I have taken the full text that is pasted in here and cut it way down and edited it there.  I've pasted the long original version here and then made a second cut at it as a shortened version here too.  However, I've cut the whole section out of the main paper because a lot of it duplicates what appears in the main paper section on choice of methods where it talks about fairly evaluating methods and mentions Albers, etc.  I think that even this Appendix should probably be axed in the end or else have the stuff about "fairly evaluating" moved out of the Methods Tested section into a reinstated Error Models section.}**
+
+##  Longer original version:  
+
+\textcolor{red}{NOTE: This section is just a placeholder for the moment.  Not sure whether I want to have a section about this or not.  There's a ton of other stuff that could go in here that is laid out in the 07\_error\_models Rmd file.  I've just pasted in one quick paragraph from there as an example of what might go in a section like this.}  
+
+The unusual focus of this paper on the consequences of varying problem structure/difficulty and uncertainty highlights the need for better models of and understanding of error and uncertainty, in building both methods that deal with them and methods for testing.  While these might at first appear to be the same thing, one of the important issues for SCP methods to deal with is previously unexpected and/or types of error not included, which requires testing via new or adversarial models of error to find SCP method vulnerabilities.  Probabilistic methods currently only represent independent, point-wise uncertainty in the input data.  However, the biggest uncertainties may be error forms that are more difficult to represent as independent errors, such as loss of complementarity of species coverage through post-optimization political bargaining about what PUs to include in the implemented solution.  Some good examples of these other kinds of error are seen in @albers2016po, @albers2017i, @albers2020ere, @drira2019, @robillardAssessingShelfLife2017, @selwood2019cl, and @viscontiBuildingRobustConservation2015.  
+
+\textcolor{red}{NOTE: Transition from Error Models section to EFs section:  error models are both internal and external, which means you have to pay more attention to EFs.}
+
+##  Shortened version:  
+
+The error models that we have used in constructing problems are extremely simple, as are the error models used in most SCP literature that considers uncertainty.  Probabilistic reserve selection methods, as well as our own problem generator, currently only represent independent, point-wise uncertainty in the input data.  However, the biggest uncertainties may be error forms that are more difficult to represent as independent errors, such as loss of complementarity of species coverage through post-optimization political bargaining about what PUs to include in the final,implemented solution.  Some good examples of these other kinds of error are seen in @albers2016po, @albers2017i, @albers2020ere, @drira2019, @robillardAssessingShelfLife2017, @selwood2019cl, and @viscontiBuildingRobustConservation2015.  
+
+
+----------
+
+# Appendix - Interconversion of variable names between bipartite package and bdpg  {#bipartiteVarNameConversionAppendix}  
+
+Because the bipartite package is more oriented toward computing measures on  plant-pollinator networks, the names of some of those measures are confusing when applied to our experiments.  For example, "number of species" in bipartite's naming refers to both the total number of plant species and pollinator species, which is essentially the total number of nodes in the bipartite network.  In our experiments, this is the total number of both species *and* PUs.  To reduce naming confusion,  in our outputs we have replaced these kinds of `bipartite` package names with names that are more meaningful for this paper.  The `bipartite` package names and their equivalent `bdpg` package names for bipartite network metrics used are given in **Table 19 \textcolor{cyan}{\ref{tab:makeTableOfAllBdpgVsBipartiteVarNames}}**
+
+&nbsp;  
+
+```{r makeTableOfAllBdpgVsBipartiteVarNames}
+bdpgPkgBipartiteVarNames = c(
+                            #"connectance",   #  Shouldn't this be removed?  Same as edge_frac_of_possible?
+            "web_asymmetry", 
+            "links_per_PUsAndSpp", 
+            "cluster_coefficient", 
+            "specialisation_asymmetry", 
+            "linkage_density", 
+            "weighted_connectance", 
+            "Shannon_diversity", 
+            "interaction_evenness", 
+            "Alatalo_interaction_evenness", 
+                            #"number.of.Spp",  #  Shouldn't this be removed?  Same as rsp_num_spp?
+            "mean.number.of.shared.partners.PUs", 
+            "mean.number.of.shared.partners.Spp", 
+            "cluster.coefficient.PUs", 
+            "cluster.coefficient.Spp", 
+            "niche.overlap.PUs", 
+            "niche.overlap.Spp", 
+            "togetherness.PUs", 
+            "togetherness.Spp", 
+            "C.score.PUs", 
+            "C.score.Spp", 
+            "V.ratio.PUs", 
+            "V.ratio.Spp", 
+            "functional.complementarity.PUs", 
+            "functional.complementarity.Spp", 
+            "partner.diversity.PUs", 
+            "partner.diversity.Spp", 
+            "generality.PUs", 
+            "vulnerability.Spp" 
+            )
+
+#--------------------  
+
+#  Here is the bdpg code that converts bipartite package variable names to bdpg 
+#  package bipartite network variable names.  This is taken from the function 
+#  compute_network_measures_using_bipartite_package() in the file 
+#  gscp_11a_network_measures_using_bipartite_package.R.  
+#  
+#    x = gsub("HL",                "PUs",       x, fixed=TRUE)
+#    x = gsub("LL",                "Spp",       x, fixed=TRUE)
+#    x = gsub("number.of.species", "number.of", x, fixed=TRUE)
+#    x = gsub("species",           "PUsAndSpp", x, fixed=TRUE)
+#
+#  So, to reverse this action, we need to replace:
+#  
+#    "PUsAndSpp" with "species"
+#    "number.of" with "number.of.species"
+#    "Spp" with "LL"
+#    "PUs" with "HL"
+#   
+#  in the table of name substitutions to create the original names.  
+#   
+#-------- 
+
+bipartitePkgBipartiteVarNames = c(
+                            #"connectance",   #  Shouldn't this be removed?  Same as edge_frac_of_possible?
+            "web_asymmetry", 
+            "links_per_species", 
+            "cluster_coefficient", 
+            "specialisation_asymmetry", 
+            "linkage_density", 
+            "weighted_connectance", 
+            "Shannon_diversity", 
+            "interaction_evenness", 
+            "Alatalo_interaction_evenness", 
+                            #"number.of.Spp",  #  Shouldn't this be removed?  Same as rsp_num_spp?
+            "mean.number.of.species.shared.partners.HL", 
+            "mean.number.of.species.shared.partners.LL", 
+            "cluster.coefficient.HL", 
+            "cluster.coefficient.LL", 
+            "niche.overlap.HL", 
+            "niche.overlap.LL", 
+            "togetherness.HL", 
+            "togetherness.LL", 
+            "C.score.HL", 
+            "C.score.LL", 
+            "V.ratio.HL", 
+            "V.ratio.LL", 
+            "functional.complementarity.HL", 
+            "functional.complementarity.LL", 
+            "partner.diversity.HL", 
+            "partner.diversity.LL", 
+            "generality.HL", 
+            "vulnerability.LL" 
+            )
+
+#--------------------  
+
+bipartiteVarNames_table_caption = "Equivalent names for variables in bdpg and bipartite R packages."
+
+#-----  
+
+equivalentBipartiteVarNames = 
+  data.frame (bdpgPkgBipartiteVarNames = bdpgPkgBipartiteVarNames, 
+              bipartitePkgBipartiteVarNames = bipartitePkgBipartiteVarNames)
+names (equivalentBipartiteVarNames) = c("bdpg package", "bipartite package")
+kable (equivalentBipartiteVarNames, 
+       #align = 'lcc', 
+       #digits = digits_to_show,    #c(3, 3, 3, 4, 6), 
+       caption = bipartiteVarNames_table_caption, 
+       format = "latex", 
+       booktabs = TRUE, 
+       longtable = T
+       )
+```
+
+----------
+
+# Appendix - Prediction input variable names and definitions  {#predInputVarNamesAndDefnsAppendix}  
+
+The list of all available prediction input variables and there definitions is shown in **Table 20 \textcolor{cyan}{\ref{tab:makeTableOfAllInputVars}}** below.  Some of the definitions are also either incorrect or unclear and need more work, but the main structure of the table is here now.  Notes about what still needs to be fixed in the table are shown before the table.  
+
+**\textcolor{red}{Have added "XXX" to entries in the table that look like they have an error (e.g., same text for PU and spp versions).  Need to fix these.}**
+
+**\textcolor{red}{Need to reference the R libraries and settings used.  Also need to explain the Latapy variables since they're not in the libraries.}**
+
+**\textcolor{blue}{Many of the definitions are taken directly from the documentation of the bipartite package and a fair number of them don't make a lot of sense to me.  Here are some sources that I've used to collect information about the different metrics:}**
+
+- @dormannIndicesGraphsNull2009 (paper on bipartite package and correlations and how many of the indices are just proxies for things like the size of the network)
+- Much of the information about variable definitions is in the Excel spreadsheet with the short explanations of variables and their names: bdpgtext\/Excel\_files\/initial\_app\_wrap\_tib.xlsx
+- @dormannMethodDetectingModules2014 might also be useful for looking for motifs/modules in the problems
+- bdpgtext/Notes/Notes-Methods-GraphMeasures.Rmd has some good explanations of some of the measures (e.g., bipartite clustering measure, Latapy's redundancy measure, etc.)  
+
+&nbsp;  
+
+```{r makeTableOfAllInputVars}
+#  2025 04 18 - BTL
+#  I could not get latex and/or kable() to wrap the variable definitions 
+#  column in spite of much fooling around with things like kableExtra and 
+#  flextable.  Without wrapping, many of the entries go off the right side 
+#  of the page.  The only way I could fix it was to manually go in and wrap 
+#  them myself and add dummy empty strings in the other columns when a 
+#  definition line had to wrap.  This was ugly and extremely time-consuming, 
+#  so it would be great to find a better solution...
+
+invars_table <- tribble(
+  ~invars, ~varIsKnowableInRealWorldAppData, ~in_var_defns,
+
+"rsp_num_occupied_PUs",                "Yes",   "number of occupied PUs", 
+"rsp_num_spp",                         "Yes",   "number of species", 
+"sppPUprod",                           "Yes",   "product of number of species and number of PUs,", 
+"",                                    "",      "i.e, size of adjacency matrix",  
+"rsp_alpha__",                         "No",    "Exponent driving number of nodes per clique in", 
+"",                                    "",      "model RB generator for current Base problem.", 
+"rsp_n__num_groups",                   "No",    "Number of cliques in model RB generator of", 
+"",                                    "",      "current Base problem.", 
+"rsp_p__prop_of_links_between_groups", "No",    "Constraint density, i.e., proportion driving", 
+"",                                    "",      "number of links per round in model RB generator", 
+"",                                    "",      "of current Base problem.  ", 
+"rsp_r__density",                      "No",    "Constraint tightness, i.e., multiplier driving", 
+"",                                    "",      "number of rounds of linking in model RB generator", 
+"",                                    "",      "of current Base problem.", 
+"rsp_d__number_of_nodes_per_group",    "No",    "Number of nodes per clique.", 
+"actual_sol_frac_of_landscape",        "No",    "Fraction of the landscape contained in correct ", 
+"",                                    "",      "solution", 
+"ig_num_edges_m",                      "Yes",   "Total number of adjacency matrix cells containing", 
+"",                                    "",      "a 1, i.e., total number of links between spp and",
+"",                                    "",      "PUs.", 
+"ig_ktop",                             "Yes",   "Mean number of PUs occupied by each spp (i.e.,", 
+"",                                    "",      "mean degree of top nodes).", 
+"ig_lcctop",                           "Yes",   "Size of largest connected component for spp.", 
+"ig_lccbottom",                        "Yes",   "Size of largest connected component for PUs.", 
+"ig_distop",                           "Yes",   "Mean distance (shortest path) between spp.", 
+"ig_disbottom",                        "Yes",   "Mean distance (shortest path) between PUs.", 
+"ig_cctop",                            "Yes",   "UNCLEAR - A clustering coefficient for spp.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_ccbottom",                         "Yes",   "UNCLEAR - A clustering coefficient for PUs.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_cclowdottop",                      "Yes",   "UNCLEAR - A clustering coefficient for spp.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_cclowdotbottom",                   "Yes",   "UNCLEAR - A clustering coefficient for PUs.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_cctopdottop",                      "Yes",   "UNCLEAR - A clustering coefficient for spp.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_cctopdotbottom",                   "Yes",   "UNCLEAR - A clustering coefficient for PUs.", 
+"",                                    "",      "Unsure of exact meaning from code.", 
+"ig_median_bottom_bg_redundancy",      "Yes",   "Median of the fraction of pairs of neighbours", 
+"",                                    "",      "of a PU P linked to another node than P.", 
+"",                                    "",      "In the projection, these nodes would be linked", 
+"",                                    "",      "together even if P were not there.", 
+"",                                    "",      "If it is equal to 1 then the projection would", 
+"",                                    "",      "be exactly the same without P;", 
+"",                                    "",      "if it is 0 it means that none of its neighbours", 
+"",                                    "",      "would be linked together in the projection.", 
+"ig_median_top_bg_redundancy",         "Yes",   "Median of the fraction of pairs of neighbours", 
+"",                                    "",      "of a species S linked to another node than S.", 
+"",                                    "",      "In the projection, these nodes would be linked", 
+"",                                    "",      "together even if S were not there.", 
+"",                                    "",      "If it is equal to 1 then the projection would", 
+"",                                    "",      "be exactly the same without S;", 
+"",                                    "",      "if it is 0 it means that none of its neighbours", 
+"",                                    "",      "would be linked together in the projection.", 
+"web_asymmetry",                       "Yes",   "Balance between numbers in the two levels:", 
+"",                                    "",      "positive values indicate more PUs negative more spp.", 
+"",                                    "",      "Implemented as (num_PUs - num_spp)/2", 
+"links_per_PUsAndSpp",                 "Yes",   "average number of links per node, where species", 
+"",                                    "",      "and PUs are nodes", 
+"cluster_coefficient",                 "Yes",   "Mean, across all nodes of the number of realized", 
+"",                                    "",      "links divided by the number of possible links", 
+"",                                    "",      "for each node (i.e. average per-node connectance).", 
+"",                                    "",      "(Modified text from Dormann et al (2009))" , 
+"specialisation_asymmetry",            "Yes",   "Asymmetry (PU level vs. spp level) of ", 
+"",                                    "",      "specialisation now based on d' (see XXXdfun),", 
+"",                                    "",      "which is insensitive to the dimensions of the web.", 
+"linkage_density",                     "Yes",   "Marginal totals-weighted diversity of interactions", 
+"",                                    "",      "per species (quantitative). Actually, this is", 
+"",                                    "",      "computed as the average of vulnerability and",  
+"",                                    "",      "generality (Bersier et al. 2002).", 
+"weighted_connectance",                "Yes",   "Linkage density divided by number of nodes in", 
+"",                                    "",      "the network (Bersier et al. 2002). This will ", 
+"",                                    "",      "respond to whether non-interacting nodes are ", 
+"",                                    "",      "included or not.", 
+"Shannon_diversity",                   "Yes",   "Shannon's diversity of interactions (i.e. ", 
+"",                                    "",      "network XXXentries).", 
+"interaction_evenness",                "Yes",   "Shannon's evenness for the web XXXentries.", 
+"Alatalo_interaction_evenness",        "Yes",   "A different measure for web XXXentry evenness,", 
+"",                                    "",      "as proposed by Muller et al. (1999).", 
+"mean.number.of.shared.partners.PUs",  "Yes",   "Based on the distance matrix between PUs", 
+"",                                    "",      "counting the number of spp that both PUs", 
+"",                                    "",      "interact with.", 
+"mean.number.of.shared.partners.Spp",  "Yes",   "Based on the distance matrix between spp", 
+"",                                    "",      "counting the number of PUs that both spp", 
+"",                                    "",      "interact with.", 
+"cluster.coefficient.PUs",             "Yes",   "Mean across all PUs of the number of realized", 
+"",                                    "",      "links divided by the number of possible links", 
+"",                                    "",      "for each PU (i.e. average per-PU connectance).", 
+"cluster.coefficient.Spp",             "Yes",   "Mean across all spp of the number of realized", 
+"",                                    "",      "links divided by the number of possible links", 
+"",                                    "",      "for each spp (i.e. average per-spp connectance).", 
+"niche.overlap.PUs",                   "Yes",   "Mean similarity in interaction pattern between PUs", 
+"",                                    "",      "calculated e.g. as Horn-Morisita similarity", 
+"",                                    "",      "(Krebs 1989) or as Bray-Curtis similarity", 
+"",                                    "",      "(Mouillot et al. 2008).", 
+"",                                    "",      "Values near 0 indicate no common use of niches,", 
+"",                                    "",      "1 indicates perfect niche overlap.", 
+"niche.overlap.Spp",                   "Yes",   "Mean similarity in interaction pattern between spp,", 
+"",                                    "",      "calculated e.g. as Horn-Morisita similarity ", 
+"",                                    "",      "(Krebs 1989) or as Bray-Curtis similarity ", 
+"",                                    "",      "(Mouillot et al. 2008).", 
+"",                                    "",      "Values near 0 indicate no common use of niches,", 
+"",                                    "",      "1 indicates perfect niche overlap." , 
+"XXXtogetherness.PUs",                    "Yes",   "UNCLEAR - Mean number of co-occupancies across", 
+"",                                    "",      "all species-combinations.", 
+"XXXtogetherness.Spp",                    "Yes",   "UNCLEAR - Mean number of co-occupancies across", 
+"",                                    "",      "all species-combinations.", 
+"XXXC.score.PUs",                         "Yes",   "UNCLEAR -  (Normalised) mean number of ", 
+"",                                    "",      "checkerboard combinations across all species ", 
+"",                                    "",      "of the level." , 
+"XXXC.score.Spp",                         "Yes",   "UNCLEAR -  (Normalised) mean number of ", 
+"",                                    "",      "checkerboard combinations across all species of the level." , 
+"XXXV.ratio.PUs",                         "Yes",   "UNCLEAR - Variance-ratio of species numbers to", 
+"",                                    "",      "interaction numbers within species of a level" , 
+"XXXV.ratio.Spp",                         "Yes",   "UNCLEAR - Variance-ratio of species numbers to", 
+"",                                    "",      "interaction numbers within species of a level." , 
+"XXXfunctional.complementarity.PUs",      "Yes",   "UNCLEAR - Functional complementarity for a given", 
+"",                                    "",      "level. This measure of niche complementarity ", 
+"",                                    "",      "(as described by Devoto et al. 2012), is computed", 
+"",                                    "",      "as the total branch length of a functional ", 
+"",                                    "",      "dendrogram based on qualitative differences of", 
+"",                                    "",      "interactions of one level with the other. Thus,",  
+"",                                    "",      "the functional aspect of functional ", 
+"",                                    "",      "complementarity refers to the function of ", 
+"",                                    "",      "sharing interactions. Should be highly correlated", 
+"",                                    "",      "with niche overlap, only binary.", 
+"XXXfunctional.complementarity.Spp",      "Yes",   "UNCLEAR - Functional complementarity for a given", 
+"",                                    "",      "level. This measure of niche complementarity", 
+"",                                    "",      "(as described by Devoto et al. 2012), is computed", 
+"",                                    "",      "as the total branch length of a functional", 
+"",                                    "",      "dendrogram based on qualitative differences", 
+"",                                    "",      "of interactions of one level with the other.", 
+"",                                    "",      "Thus, the functional aspect of functional", 
+"",                                    "",      "complementarity refers to the function of", 
+"",                                    "",      "sharing interactions. Should be highly correlated", 
+"",                                    "",      "with niche overlap, only binary.", 
+"partner.diversity.PUs",               "Yes",   "Mean Shannon diversity of the number of", 
+"",                                    "",      "interactions for PUs." ,  
+"partner.diversity.Spp",               "Yes",   "Mean Shannon diversity of the number of", 
+"",                                    "",      "interactions for spp." ,  
+"generality.PUs",                      "Yes",   "Mean number of spp per PU.", 
+"vulnerability.Spp",                   "Yes",   "Mean number of PUs per spp.", 
+"rsp_realized_FP_rate",                "No",    "Proportion of false positives in the APP", 
+"",                                    "",      "adjacency matrix.", 
+"rsp_realized_FN_rate",                "No",    "Proportion of false negatives in the APP", 
+"",                                    "",      "adjacency matrix.", 
+"rsp_realized_Ftot_rate",              "No",    "Combined proportion of false positives and ", 
+"",                                    "",      "false negatives in the APP adjacency matrix.",  
+"gurobi_mipgap",                       "Yes",   "Relative measure of the upper bound on the", 
+"",                                    "",      "distance to the correct solution as a", 
+"",                                    "",      "proportion of the correct solution.", 
+"edge_frac_of_possible",               "Yes",   "proportion of links made out of all possible", 
+"",                                    "",      "links between species and PUs"
+)
+
+#---------
+
+invars_table_caption = "All measured and computed input features, both knowable and unknowable for real-world APP data."
+
+# invars_table = data.frame (inputFeatures = inVars, 
+#                            knowable = varIsKnowableInRealWorldAppData, 
+#                            inputFeatureDefns = in_var_defns)
+
+#---------
+
+names (invars_table) = c("Feature Names", "Knowable", "Feature Definitions")
+kable (invars_table,
+      #align = 'lcc',
+      #digits = digits_to_show,    #c(3, 3, 3, 4, 6),
+      caption = invars_table_caption,
+      format = "latex",
+#      booktabs = TRUE,
+      longtable = T
+      )
+
+```
+
+----------
+
+#  Appendix - APP SI Supplemental References {#appendixAppSuppRefs}  
+
+<div id="refs"></div>
+
+----------
+

@@ -1,0 +1,1813 @@
+---
+params:
+  initialDate: "2022-01-05"
+  gurobi_problem_filter: "all"    # "all" OR "completed" OR "unfinished"
+  exclude_imperfect_wraps: FALSE    #  2020 06 09 unfinished fails w/ both T & F
+  exclude_ZL: TRUE
+  do_all_batches: TRUE
+  exclude_APP_0_inErr: TRUE
+  remove_probs_with_gt_10_pct_input_err: TRUE
+  near_1_tol: 0.05
+  write_tibs_to_csv: FALSE
+  write_most_important_tibs_to_csv: FALSE
+  add_gen_time_to_csv_name: TRUE
+  relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
+  data_out_loc: "Data/TempOutput"
+  build_appendices: TRUE
+  bdpg_p_needs_fixing: TRUE
+  file_type_to_write: "rds"
+  mag_base_col_name_str: "max_TOT_FN_FP_rate"    #"max_TOT_FN_FP_rate"    #  "rsp_euc_realized_Ftot_and_cost_in_err_frac"
+title: | 
+    | Supplemental Information for COR problems for
+    | Learning to predict reserve selection error under uncertainty 
+    | p9 v01
+author: |  
+    | William T. Langford^1,3^, Ascelin Gordon^2^
+    | 
+    | 1 Romsey VIC 3434, Australia
+    | 2 School of Global, Urban and Social Studies, RMIT University, Melbourne, VIC 3000, Australia
+    | 3 Corresponding author email: btlangford.work\@gmail.com
+    | `r paste0 ('[gur probs: ', params$gurobi_problem_filter, ']')` 
+    | `r paste0 ('[exc imperfect: ', params$exclude_imperfect_wraps, ']')`
+    | `r paste0 ('[exc ZL: ', params$exclude_ZL, ']')`
+    | `r paste0 ('[do all batches: ', params$do_all_batches, ']')`
+    | `r paste0 ('[exc 0 APP inErr: ', params$exclude_APP_0_inErr, ']')`
+    | `r paste0 ('[exc > 10% inErr: ', params$remove_probs_with_gt_10_pct_input_err, ']')`
+    | `r paste0 ('[near_1_tol: ', params$near_1_tol, ']')`
+    | `r paste0 ('[write_tibs_to_csv: ', params$write_tibs_to_csv, ']')`
+    | `r paste0 ('[write_most_important_tibs_to_csv: ', params$write_most_important_tibs_to_csv, ']')`
+    | `r paste0 ('[add_gen_time_to_csv_name: ', params$add_gen_time_to_csv_name, ']')`
+    | `r paste0 ('[relative_path_to_input_data: ', params$relative_path_to_input_data, ']')`
+    | `r paste0 ('[data_out_loc: ', params$data_out_loc, ']')`
+    | `r paste0 ('[build_appendices: ', params$build_appendices, ']')`
+    | `r paste0 ('[bdpg_p_needs_fixing: ', params$bdpg_p_needs_fixing, ']')`
+    | `r paste0 ('[file_type_to_write: ', params$file_type_to_write, ']')`
+    | `r paste0 ('[mag_base_col_name_str: ', params$mag_base_col_name_str, ']')`
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/methods-in-ecology-and-evolution.csl
+---
+
+```{r, eval=FALSE, echo=FALSE}
+#  Version history
+
+##  p9 v01 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v17_all_combined____COR__supplemental_information.Rmd.  
+
+Need to greatly abridge p8, so I'm creating p9 to do that.  
+
+##  p8 v17 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v16_all_combined____COR__supplemental_information.Rmd.  
+
+Need to change all references to Gurobi, Marxan_SA, and Marxan_SA_SS to ILP, SA, and SA_SS.  I've done a couple of these in the version 16, but I want to separate this action out as much as possible in case it causes any problems.  So, I'm going to do only this in version 17.  This could also be done using a fork for this name changing and another for many other changes, but merging the name change fork with all kinds of other changes made on another fork will be just as messy, if not more so.  I'm putting it in a separate version number as a compromise to make it easier to revert back to the end of v16 if there are unanticipated issues down the road after changing the names.
+
+##  p8 v16 April 16, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v15_all_combined____COR__supplemental_information.Rmd.  
+
+Made a fairly complete, somewhat reduced version of the fully body of the paper in v15, however, there are a fair number of small details that need to be repaired.  Creating v16 to make those repairs, such as entering the correct definitions of variables in the tables of variables.  
+
+I'm also going to remove all uses of and references to the Latapy variables in both the text and the data loading, since they were of almost no use and greatly complicate the writing up.
+
+##  p8 v15 August 4, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v14_all_combined____COR__supplemental_information.Rmd
+
+Edited v14 with respect to Ascelin comments up through most of Discussion but stopped at beginning of Predictions section of Discussion.  I've decided to try to shrink the paper and as much as possible and get rid of as much controversial stuff as possible.  If I change my mind later about doing that, I should go back to the latest version of v14 and continue with the editing I had been doing there.  At the moment, continuing with those edits seems like a waste of time if I'm going to slash things, so I'm creating a new version 15 for slashing.  
+
+##  p8 v14 June 6, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v13_all_combined____COR__supplemental_information.Rmd
+
+Updating this version to keep in step with change to v14 in main body of p8.  
+
+##  v13 (of paper 8) April 22, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/older_Rmd_versions/v12_Paper_6_p1p2_combined____COR__supplemental_information.Rmd.  
+
+Updating this version to keep in step with change to v13 in main body of p8.  
+
+##  v12 (of paper 8) March 10, 2024  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/older_Rmd_versions/v11_Paper_6_p1p2_combined____COR__supplemental_information.Rmd.  
+
+I'm taking the revised versions of the SI files that were submitted to MEE with Paper 6 and using them with Paper 8.  I'm sure that they will need some modification to work with Paper 8, but they're a very good starting point that I don't think will require a lot of modification.  
+
+##  v11 (of paper 6) July 1, 2022  
+
+Cloned from bdpgtext/v10_Paper_6_p1p2_combined____COR__supplemental_information.Rmd
+
+Revising for resubmission after second MEE rejection.
+
+##  v10 (of paper 6) March 13, 2022  
+
+Cloned from bdpgtext/v09_Paper_6_p1p2_combined____COR__supplemental_information.Rmd
+
+Finished making revisions to the submitted appendix Rmd files and main body Rmd file after finding some cross-referencing errors in the submitted versions of the appendix files and a little bit of wording error in the main body Methods section on reserve selectors.  Renaming now to v10 of appendices to differentiate from what was submitted.  Should have done this renaming before I made the post resubmission changes, 
+but I didn't, so I'm doing it now.  
+
+##  v09 (of paper 6) January 22, 2022  
+
+Cloned from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/v08_Paper_6_p1p2_combined____COR__supplemental_information.Rmd
+
+Finished incorporating edits from Ascelin's review v6 of main body.  Now splitting up the appendices into smaller units to make them easier to manage.  Will probably have to recombine them all again later.
+
+##  v08 (of paper 6 COR Supplemental Information) January 21, 2022  
+
+Cloned from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/v07_Paper_6_p1p2_combined____COR__supplemental_information.Rmd
+
+Creating a new version to incorporate edits from Ascelin's review v6 of main body.  
+
+##  v07 (of paper 6 COR Supplemental Information) January 6, 2022  
+
+Cloned from Cloned from Cloned from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_6_p1p2_combined/v06_Paper_6_p1p2_combined____COR__supplemental_information.Rmd.
+
+The p6 main body, COR SI, and APP SI files all have different startup settings and code.  I'm creating v7 to try to synchronize/unify all of them as much as possible so that the appendices and main paper body don't end up with mismatched results because of how they start up.  It should also make it easier to maintain if I can make the startup for all three call one function that they all share.  
+
+##  v06 (of paper 6 COR Supplemental Information) December 31, 2021  
+
+Cloned from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_1_method/v12_Paper_1_method__supplemental_information.Rmd.
+
+Have decided to split the SI for p6 into two files, COR and APP, based on the SI files for p1 and p2.  Will probably end up having to combine them into one giant file to get the appendix numbering to work correctly, but for now, it's easier to manage them separately since there will be little or no change to the COR file.
+
+##  v12 (of paper 1 Supplemental Information) November 22, 2021  
+
+Cloned from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_1_method/v11_Paper_1_method__supplemental_information.Rmd.
+
+v11 was the version submitted to MEE in August, 2021 and then rejected in November, 2021.  v12 is now beginning to incorporate changes in response to reviewer comments, particularly reviewer 2.
+
+##  v11 (of paper 1 Supplemental Information) May 10, 2021  
+
+Split out of /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_1_method/v11_Paper_1_method__body.Rmd
+
+Needs to be a separate file in submission and may need to have separate reference list, so I'm cutting it out of the main Rmd file for p1.  
+
+```
+
+```{r echo=FALSE}
+#  Header code chunks (option setting, history, etc.)
+
+##  Set latex and knitr options
+```
+
+```{cat, engine.opts = list(file = "header.tex")}
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
+```
+
+```{r global_options, include=FALSE}
+
+    #  Global options are set here based on some examples in:
+    #      https://kbroman.org/knitr_knutshell/pages/Rmarkdown.html
+    #      https://kbroman.org/knitr_knutshell/pages/figs_tables.html
+
+knitr::opts_chunk$set(#fig.width=12, 
+                      #fig.height=8, 
+                      fig.path='Figs/',  #  Save figures to indiv files in Figs/
+                      echo=FALSE,        #  Don't echo code to output
+                      
+                      warning=FALSE,  
+                      message=FALSE, 
+
+                      fig.pos = "H", out.extra = ""    #  Keep latex from floating figures
+                     )
+```
+
+```{r echo=FALSE}
+##  Load R libraries  
+```
+
+```{r loadLibraries, echo=FALSE}
+
+library (knitr)    #  For include_graphics()
+library (ggplot2)
+library (patchwork)
+library (here)
+library (readr)
+```
+
+```{r setDifficultOptions, include=FALSE}
+
+    #  Two options are either used globally or are hard to set in 
+    #  the header params list, so set them here.
+
+    #  This is both hard to set in params header and used globally.
+if (as.logical (params$exclude_ZL))
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "Marxan_SA_SS")
+    } else
+    {
+    rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+                             "ZL_Backward", "Marxan_SA_SS")
+    }
+
+file_type_to_write = params$file_type_to_write
+
+    #  This is easy to set but used globally.
+near_1_tol = as.numeric (params$near_1_tol)
+```
+
+```{r echo=FALSE}
+##  Set bdpg options  
+```
+
+```{r setechoOptions, include=FALSE}
+
+    #  Echo the values of the main options.
+
+cat ("\nMain options are:\n")
+
+for (idx in 1:length(params))   
+  cat ("\n", names(params)[idx], ": ", params[[idx]], sep="")
+
+cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
+```
+
+```{r echo=FALSE}
+##  Load bdpg functions  
+```
+
+```{r setFilePaths, include=FALSE}
+
+#  Set file paths
+
+library (here)
+
+proj_dir = here()
+#cat ("\n\nproj_dir = here() = ", proj_dir, "\n", sep='')
+```
+
+```{r loadP1andP2FunctionDefns, include=FALSE}
+
+#  Load R functions
+
+#  2020 08 20 - BTL
+#  "Rmarkdown Cookbook" section	"16.1 Source external R scripts" says to 
+#  include the "local" argument.
+#       https://bookdown.org/yihui/rmarkdown-cookbook/source-script.html
+#       "We recommend that you use the argument local in source() or envir in 
+#        sys.source() explicitly to make sure the code is evaluated in the 
+#        correct environment, i.e., knitr::knit_global(). The default values 
+#        for them may not be the appropriate environment: you may end up 
+#        creating variables in the wrong environment, and being surprised 
+#        that certain objects are not found in later code chunks."
+#  I haven't noticed a problem with this, but maybe it's been there and 
+#  I just haven't had it affect something important enough to notice.
+
+# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
+#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
+#         local = knitr::knit_global())  
+# 
+# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
+#         local = knitr::knit_global())
+
+source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
+        local = knitr::knit_global())
+
+```
+
+```{r echo=FALSE}
+##  Load full bdpg data set  
+```
+
+```{r loadFullBdpgDataSet, include=FALSE}
+
+# source ("/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/R/v06_Paper_6.R")
+
+retVals = load_p6_data (params, 
+                        proj_dir, 
+                        rs_method_names_list, 
+                        file_type_to_write)
+
+min_base_spp = retVals$min_base_spp
+max_base_spp = retVals$max_base_spp
+
+min_wrap_spp = retVals$min_wrap_spp
+max_wrap_spp = retVals$max_wrap_spp
+
+min_base_PUs = retVals$min_base_PUs
+max_base_PUs = retVals$max_base_PUs
+
+min_wrap_PUs = retVals$min_wrap_PUs
+max_wrap_PUs = retVals$max_wrap_PUs
+
+cor_tib = retVals$cor_tib 
+cor_base_tib = retVals$cor_base_tib
+cor_wrap_tib = retVals$cor_wrap_tib 
+```
+
+```{r createLog10sppPUprodColumn, echo=FALSE}
+#cor_tib = mutate (cor_tib, log10_sppPUprod = log10 (sppPUprod))
+```
+
+```{r createReducedBaseAndWrapTibs, echo=FALSE}
+##### cor_base_tib = filter (cor_tib, rsp_base_wrap_str == "Base")
+##### cor_wrap_tib = filter (cor_tib, rsp_base_wrap_str == "Wrap")
+
+    #  Arbitrarily choosing UR_Forward to select down to a set of rows 
+    #  that represent all of the Base problems once and all of the Wrap 
+    #  problems a single time.
+    #  Need something like this to compute histograms that produce counts of 
+    #  values that don't double or quadruple count things because they were 
+    #  using each a row for each of run of all the reserve selectors on the 
+    #  same problem.  
+
+single_rs_cor_tib = filter (cor_tib, rs_method_name == "UR_Forward")
+single_rs_cor_base_tib = filter (cor_base_tib, rs_method_name == "UR_Forward")
+##### single_rs_cor_wrap_tib = filter (cor_wrap_tib, rs_method_name == "UR_Forward")
+```
+
+```{r ctNumCorProbPerRS, include=FALSE}
+
+###  All COR 
+
+#num_cor_prob_per_rs = length (which (cor_tib$rs_method_name == "Gurobi"))
+
+# cor_tib %>% 
+#     group_by (rs_method_name) %>% 
+#     summarize (num_prob = n()) %>% 
+#     ungroup ()  ->  num_cor_prob_per_rs
+
+
+
+num_cor_prob_per_rs = count (cor_tib, rs_method_name)
+##### num_single_cor_prob_per_rs = count (single_rs_cor_tib, rs_method_name)
+##### num_base_cor_prob_per_rs = count (single_rs_cor_base_tib, rs_method_name)
+##### num_wrap_cor_prob_per_rs = count (single_rs_cor_wrap_tib, rs_method_name)
+
+UR_Forward_tot_ct_line_idx = which (num_cor_prob_per_rs$rs_method_name == "UR_Forward")
+tot_num_base_and_wrap_problems = 
+    (num_cor_prob_per_rs [UR_Forward_tot_ct_line_idx, ])$n
+```
+
+```{r, echo=FALSE}
+##### num_hist_breaks = 20
+```
+
+```{r computeSppAndPUranges, echo=FALSE}
+##### min_base_spp = min (cor_base_tib$rsp_num_spp)
+##### max_base_spp = max (cor_base_tib$rsp_num_spp)
+##### min_base_PUs = min (cor_base_tib$rsp_num_PUs)
+##### max_base_PUs = max (cor_base_tib$rsp_num_PUs)
+
+##### min_wrap_spp = min (cor_wrap_tib$rsp_num_spp)
+##### max_wrap_spp = max (cor_wrap_tib$rsp_num_spp)
+##### min_wrap_PUs = min (cor_wrap_tib$rsp_num_PUs)
+##### max_wrap_PUs = max (cor_wrap_tib$rsp_num_PUs)
+```
+
+```{r computeURforwardPcts, eval=FALSE, echo=FALSE}
+#  2022 02 08 - BTL - No longer used?
+cor_tib %>% 
+    filter (rs_method_name == "UR_Forward") %>% 
+    select (rs_solution_cost_err_frac) -> UR_Forward_tib
+
+num_problems = dim (UR_Forward_tib)[1]
+UR_Forward_non_zero_cost_err_tib = filter (UR_Forward_tib, 
+                                           rs_solution_cost_err_frac > 0)
+
+num_non_zero_UR_Forward_cost_errs = dim (UR_Forward_non_zero_cost_err_tib)[1]
+UR_Forward_non_zero_cost_err_pct = 
+    round (100 * (num_non_zero_UR_Forward_cost_errs / num_problems), 0)
+
+UR_Forward_median_non_zero_cost_err_pct = 
+    round (100 * median (UR_Forward_non_zero_cost_err_tib$rs_solution_cost_err_frac), 0)
+
+UR_Forward_max_non_zero_cost_err_pct = 
+    round (100 * max (UR_Forward_non_zero_cost_err_tib$rs_solution_cost_err_frac), 0)
+```
+
+```{r computeMarxanSASSPcts, eval=FALSE, echo=FALSE}
+#  2022 02 08 - BTL - No longer used?
+
+cor_tib %>% 
+    filter (rs_method_name == "Marxan_SA_SS") %>% 
+    select (rs_solution_cost_err_frac) -> Marxan_SA_SS_tib
+
+num_problems = dim (Marxan_SA_SS_tib)[1]
+Marxan_SA_SS_non_zero_cost_err_tib = filter (Marxan_SA_SS_tib, 
+                                           rs_solution_cost_err_frac > 0)
+
+num_non_zero_Marxan_SA_SS_cost_errs = dim (Marxan_SA_SS_non_zero_cost_err_tib)[1]
+Marxan_SA_SS_non_zero_cost_err_pct = 
+    round (100 * (num_non_zero_Marxan_SA_SS_cost_errs / num_problems), 0)
+
+Marxan_SA_SS_median_non_zero_cost_err_pct = 
+    round (100 * median (Marxan_SA_SS_non_zero_cost_err_tib$rs_solution_cost_err_frac), 0)
+
+Marxan_SA_SS_max_non_zero_cost_err_pct = 
+    round (100 * max (Marxan_SA_SS_non_zero_cost_err_tib$rs_solution_cost_err_frac), 0)
+```
+
+\newpage
+
+#  Overview  
+
+This supplemental information file only contains information relevant to problem generation and Correct data.  Information relevant to Apparent data is in the APP SI file.  Information about how to use the Shiny app is in the Shiny SI file.
+
+# (APPENDIX) Appendix {-} 
+
+----------
+
+#  Appendix - Algorithm for model RB generating Base reserve selection problem  {#appendixPseudocodeModelRB}
+
+Here is the algorithm for model RB as applied to generating a maximum independent set problem and its solution.  This is elaborating on and adapting the explanation given in the Xu graph benchmarks web page  (http://sites.nlsde.buaa.edu.cn/~kexu/benchmarks/graph-benchmarks.htm) (@xuke2014).  Note that $n$ and $\alpha$ control the total number of nodes in the problem (number of PUs), while $p$ and $r$ control the number of links (number of species).  The size of the maximum independent set is always $n$, so $n$ and $\alpha$ also control the size of its complement, i.e., the size of the optimal reserve selection is $n(n^\alpha - 1)$.
+
+The full code used for creating a Base problem from the four parameters is currently given in function `create_Xu_problem_from_scratch_given_4_Xu_metaparams()` in the `bdpg` package source file gen_single_bdprob.R.  Functions that call this function are also given in that file.  Supporting functions are in file gscp_5_derive_control_parameters.R.
+
+We should also note that after our experiments were complete we found out that one of Xu's former students (FANG Zhiwen) had written a python implementation of the model RB graph generator, which can be seen at https://github.com/notbad/RB/tree/master/generator (Xu, personal communication; Fang personal communication).  
+
+**(NOTE: In all operations below, where an integer result is required, results are rounded.  To simplify the exposition here, we leave out the rounding operations.)**
+
+- **Given:**
+  - $n > 1$      : number of cliques
+  - $\alpha > 0$ : exponent driving number of nodes per clique
+  - $r > 0$      : multiplier driving number of rounds of linking
+  - $0 < p < 1$ : proportion driving number of links per round  
+
+- **Generate n disjoint cliques**, each of which has $d = n^\alpha$ nodes;  
+
+- **Build maximum independent set of size $n$** by randomly selecting one node from each of the $n$ cliques  
+
+- **Randomly link cliques**, i.e., for $m = rn~ln(n)$ times
+  - Randomly select two different cliques 
+  - Generate without repetitions $pd^2$ random links between these two cliques, where:
+    - No link is allowed to connect two nodes in the independent set (the link *can* connect a node in the independent set to one outside the independent set).
+    - "Without repetitions" only applies within a single round.  The same pair of nodes can be linked again (as a different species) in a different round.
+    
+- **Define correct solution cost**: $n_{sol} = n(d-1)$
+    
+----------
+
+#  Appendix - Algorithm for wrapping Base model RB reserve selection problem {#appendixPseudocodeWrap}
+
+There are two parts to wrapping a rank abundance distribution around a Base model RB problem and preserving the same planted solution: i) choosing the distribution to be wrapped around the Base problem, and ii) building the wrapping distribution.  
+
+- Generally, the more complicated part of the wrapping is fitting a chosen type of distribution that meets practical criteria such as the maximum number of species you want to allow but still includes all of the species found in the Base problem that occur on exactly two PUs.  This is done through the selection of parameters that encode the chosen type of distribution and through the design of an evaluation function that guides an optimizer.  The evaluation and optimization is described in the next section of this appendix (Section \ref{appendixPseudocodeLognormal}).  
+- The simpler part of wrapping is the creation of new PUs and assigning new species from the wrapping distribution to Base PUs and Wrapping PUs.  This part is the same regardless of the wrapping distribution.  Though our experiments have used a lognormal as a wrapping distribution and searched for parameters to fit it, you could use any distribution you have derived in any way (e.g., making up values by hand or copying them from a real-world distribution).  The only requirements are:  
+  - it must have at least as many species occurring on exactly two PUs as the Base problem has,  
+  - any new wrapped species must have at least one occurrence in the Base problem solution PUs, and 
+  - the Base problem independent set criteria is not violated by any of the new species (i.e., no wrapped species can occur on more than one of the Base problem independent set).  
+
+The procedure for part i) is discussed below in Section  \ref{appendixPseudocodeLognormal} and the results of that optimization will be the set of species abundances that is handed to the wrapping procedure discussed in Section 
+\ref{appendixPseudocodeAssignNewSppAndPUsForWrap}.  The full code used for the top level wrapping function `gen_wrapped_bdprob_COR()` and functions that it calls are currently in the `bdpg` package source file `gen_wrapped_bdprob.R`.  
+
+**(NOTE: In all operations below, where an integer result is required, results are rounded.  To simplify the exposition here, we leave out the rounding operations.)**
+
+##  Search for Wrap distribution parameters and build distribution {#appendixPseudocodeLognormal}
+
+The basic idea here applies to any functional form you want to use to build a wrapping distribution.  
+
+- **Choose distribution form and identify its required parameters**
+  - We used the lognormal as our functional form and it has two parameters, `meanlog` and `sdlog`.  `meanlog` is the mean of the log of the abundances in the wrapping distribution.  `sdlog` is the standard deviation of the logs of the abundances in the wrapping distribution.
+- **Build an evaluation function** that, given meanlog and sdlog values for a candidate lognormal distribution, computes a score for how well the computed function fits our constraints at those parameters.
+  - We built an R function called `EF` that: 
+    - takes a parameter setting for a (`meanlog`,`sdlog`) pair and a pair of penalizing parameters for exceeding a maximum allowed number of species or falling below the minimum number of species on exactly 2 PUs, 
+    - derives abundance values from the corresponding lognormal at integer values until the rounded abundance value falls below 2, 
+    - computes and returns a score that is 0 if no constraints are violated, but a penalized score > 0 if constraints are violated (where the penalty increases with greater violation of constraint).
+- **Give the evaluation function to any optimizing function** that searches for a parameter setting that minimizes the value of the penalizing evaluation function `EF()`.
+  - We used R's `optim()` function as the optimizer.
+  - The call to `optim()` with its embedded call to `EF()` can be seen  in the function `search_for_approximating_lognormal()` in the `bdpg` package source file `gen_lognormal_overlay.R`.
+
+We now give some stripped down R-like pseudocode for searching for a lognormal wrapping distribution.  In the `bdpg` package, this work is done by functions `find_lognormal_to_wrap_around_Xu()` and `search_for_approximating_lognormal()` which call the optimizer and the evaluation function `EF()`.  The full R code for these and other functions that support them are currently in the `bdpg` package source file `gen_lognormal_overlay.R`.  
+
+The pseudocode shown here removes extraneous variables, error checking, write statements, etc. for simplicity of explanation.  It also simplifies the evalution function.  The R code in the package is the definitive source of what was used in the experiments.  The intent here is to illustrate the basic ideas in wrapping.  We use an R-like syntax for this section because the algorithm is more complicated than the algorithms illustrated in other sections of these appendices.
+
+###  Compute controlling variables for wrapping process given a Base problem {#appendixComputeControllingVarsForWrap}
+
+- Given:  
+  - Species variables  
+    - `tot_num_spp_in_base_prob`:  Total number of species in Base model RB problem
+    - `desired_base_prob_spp_frac_of_all_spp`:  Desired fraction of wrapped problem species that should be Base problem species
+    - `max_abundance_frac`:  Maximum fraction of full wrapped landscape that any one species should be allowed to occur on, i.e., how widespread can the most common species be  
+  - PU variables
+    - `num_base_prob_solution_set_nodes`:  Number of PUs in Base problem solution
+    - `solution_frac_of_landscape`:  Desired fraction of full wrapped landscape that the problem solution should take up
+    - `tot_num_PUs_in_landscape`:  Total number of PUs in full wrapped landscape
+    
+- Compute controlling variables  
+  
+This is illustrated with the R-like pseudocode below: 
+
+```
+        min_num_spp_on_2_PUs = tot_num_spp_in_base_prob
+        tot_num_PUs_in_landscape = num_base_prob_solution_set_nodes / solution_frac_of_landscape
+        
+            #  Total number of species to have in full wrapped distribution, 
+            #  including the original Base problem species with the constraint 
+            #  that the Base problem species make up the given desired fraction 
+            #  of the total species count in the wrapped problem.
+        num_spp_to_generate = tot_num_spp_in_base_prob * 
+                                  (1 - desired_base_prob_spp_frac_of_all_spp) / 
+                                  desired_base_prob_spp_frac_of_all_spp
+        
+              #  Desired max number of PUs to allow any one species to occur on.
+        target_max_abundance_ct = tot_num_PUs_in_landscape * max_abundance_frac)
+```
+
+###  Search for wrapping distribution given Wrap control variables and Base problem {#appendixSearchForWrapDist} 
+
+**Call optimizer to search for good wrapping distribution parameters**
+
+Call any optimizer that can take an evaluation function EF() and use it to compute a score for each candidate parameter set and generate new parameter sets to try to minimize the score returned by EF().  When using the lognormal as the target distribution, each candidate parameter set contains the meanlog and the sdlog.  If using some other distribution, both the parameter set and the EF() function would be different.  This is illustrated with the R-like pseudocode below: 
+
+```
+        abundances = optimize (EF, 
+                               initial_candidate_parameter_set, 
+                               num_spp_to_generate,
+                               min_num_spp_on_exactly_2_PUs,
+                               target_max_abundance)
+```
+
+**Evaluation function used to find good wrapping distribution**
+
+Evaluate one (meanlog, sdlog) parameter pair by using it to draw a set of species abundances of the designated size.  Return a score that is small if the set of abundances has at least as many species occurring on exactly 2 PUs as desired and the most abundant species occurs on fewer patches than the desired maximum number.  This is illustrated with the R-like pseudocode below: 
+
+
+```
+      EF = function (num_spp_to_generate, 
+                   min_num_spp_on_exactly_2_PUs, 
+                   target_max_abundance, 
+                   meanlog, sdlog)
+        {
+            #  Draw random sample of abundances from a lognormal based on 
+            #  the candidate log mean and log std deviation using R's 
+            #  function for random sampling from a given lognormal.
+        abundances = rlnorm (num_spp_to_generate, meanlog = meanlog, sdlog = sdlog)
+        
+        diff_2_score = 
+            score_match_to_min_num_spp_on_exactly_2_PUs (abundances, 
+                                                         min_num_spp_on_exactly_2_PUs, 
+                                                         diff_2_penalty_exponent = 5))
+        diff_max_score = 
+            score_match_to_max_desired_abundance (abundances, 
+                                                  target_max_abundance, 
+                                                  max_abundance_penalty_exponent = 2)
+        
+        score = max (diff_2_score, diff_max_score)
+        } 
+```
+
+**Function to compute penalty for not matching number of species on exactly 2 PUs**
+
+We chose to heavily penalize undershooting minimum number of spp on exactly 2 PUs and more lightly penalize overshooting that number.  This is illustrated with the R-like pseudocode below: 
+
+```
+        score_match_to_min_num_spp_on_exactly_2_PUs = 
+                                        function (abundances, 
+                                                  min_num_spp_on_exactly_2_PUs, 
+                                                  diff_2_penalty_exponent = 5)
+            {
+            num_spp_on_exactly_2_PUs = length (which (abundances == 2))
+            diff_2 = abs (num_spp_on_exactly_2_PUs - min_num_spp_on_exactly_2_PUs)
+            
+                #  Add 1 to the diff_2 in penalizing because if diff_2 
+                #  has an absolute value of 1, raising it to a power will not
+                #  change its value.
+            if (num_spp_on_exactly_2_PUs < num_spp_on_exactly_2_PUs)  
+                diff_2 = diff_2 + ((diff_2 + 1) ^ diff_2_penalty_exponent)
+         
+                #  Normalize diff_2 to make it more equitably comparable to diff_max.
+            diff_2 = diff_2 / min_num_spp_on_exactly_2_PUs
+            }
+```
+
+**Function to compute penalty for overshooting the maximum desired abundance**
+
+We chose to penalize having the largest abundance greater than desired, but not penalize that nearly as much as for undershooting the number of species on exactly 2 PUs.  This is illustrated with the R-like pseudocode below: 
+
+```
+        score_match_to_max_desired_abundance = 
+                                  function (abundances, 
+                                            target_max_abundance, 
+                                            max_abundance_penalty_exponent = 2)
+            {
+            max_abundance = max (abundances)
+            diff_max = abs (max_abundance - target_max_abundance)
+            
+            if (max_abundance > target_max_abundance)
+                diff_max = diff_max + (diff_max ^ max_abundance_penalty_exponent)
+        
+                #  Normalize diff_max to make it more equitably comparable to diff_2.
+            diff_max = diff_max / target_max_abundance
+            }
+```
+
+##  Wrapping a given distribution around a given Base problem {#appendixPseudocodeAssignNewSppAndPUsForWrap}  
+
+Here is the algorithm for wrapping a given distribution, such as the one computed in Section \ref{appendixPseudocodeLognormal} above, around a given Base model RB problem.  In the `bdpg` package, this work is done by function `wrap_abundance_dist_around_Xu_problem()` and functions that call or support it.  They are currently in the `bdpg` package source file called `gen_wrapped_bdprob.R`.
+
+- **Constraints:**
+  - All species in the Base problem occur in the same configuration in the Wrapped problem.
+  - A correct solution set of PUs for the Wrapped problem is the same correct solution set for the Base problem.  
+
+- **Given:**  
+
+  - a Base problem and its solution generated using model RB containing:  
+  
+    - $n_{bspp}$: total number of species in Base problem (each on exactly 2 PUs)
+    - $n_{sol}$: number of PUs in correct Base problem solution
+    - $n_{ind}$: number of PUs in independent set  
+    
+  - an arbitrary rank abundance distribution containing:  
+  
+    - at least $n_{bspp}$ species each occurring on exactly 2 PUs
+    - 1 or more other (wrapping) species that can occur on any number of PUs > 1  
+      
+  - $f_{des}$: desired fraction of the wrapped landscape for the solution, where:
+  
+  $~~~~~~~~~~~~0 < f_{des} = \frac{n_{sol}}{n_{add} + n_{sol} + n_{ind}}$  \newline  
+  
+- **Compute $n_{add}$ (number of new wrapping problem PUs to add):**  
+
+$~~~~~~~~~~~~n_{add} = \frac{n_{sol}}{f_{des}} - (n_{sol} + n_{ind})$\newline  
+    
+- **Assume all Base problem species occurrences are still on same PUs as in Base problem.**  \newline
+
+- **Add new wrapping species to Base and Wrapping PUs:**  
+
+  - For each new species $i$ in the wrapping distribution, where $1 \leq i \leq n_{add}$,
+    - Let $n_i$ be the number of occurrences of the current new species
+    - Randomly assign 1 occurrence of the current species to any PU Base *solution* PU
+    - Without replacement, randomly assign each of the $n_i-1$ remaining occurrences 
+      of that species to any PU in the full wrapped landscape *except* PUs in 
+      the Base problem *independent set*.
+      - (Note: In our experiments, we only assigned these $n_i-1$ wrapping species occurrences to the newly created, extra wrapping PUs, but that is not required.  For example, see Section \ref{appendixPseudocodeMoreRealisticTargets} below for another possible variation.)
+
+##  More realistic representation targets {#appendixPseudocodeMoreRealisticTargets}
+
+We can extend the wrapping method to allow a much larger range of targets for any wrapping species as long as the target for the wrapping species is no larger than the size of the Base solution set.  We just need to drop at least the target number of occurrences of each Wrap species on that number of PUs in the solution set instead of dropping just one occurrence as we had done previously:  
+
+- Let  
+    - $S$ = the set of PUs in the optimal solution ($|S| = n_{sol}$)
+    - $n_i$ = number of PUs that wrapping species $i$ occurs on, where:
+      - a wrapping species is any species in the Wrap problem but not in the Base problem, and 
+      - $n_i > 1$
+    - $t_i$ = representation target number of PUs for wrapping species $i$
+- Constraints
+    - $1 < t_i < n_i$ 
+      - to avoid automatically forcing solution to include all PUs occupied by species $i$ and therefore, trivially reducing the problem to a simpler problem that excludes those PUs
+    - $t_i \le n_{sol}$
+      - to force target amount to fit in solution set $S$
+- Procedure
+    - When creating the wrapped problem using the method described in Section \ref{appendixPseudocodeAssignNewSppAndPUsForWrap}, instead of assigning one occurrence of each wrapping species to a single PU in the solution set $S$, assign each of $t_i$ occurrences into separate PUs in the solution set $S$, 
+    - assign each of the remaining $n_i - t_i$ occurrences into separate PUs not occupied so far by species $i$ in $S$ and/or in the added wrapping PUs but not in the independent set PUs.
+
+Since $t_i$ is required to be no larger than $n_{sol}$, the solution to the Base problem is still forced to hold a solution to the Wrap problem even with the extended range of targets.  Since the wrapping procedure does not allow the addition of any occurrence of Base species beyond the Base problem PUs, no smaller solution set can exist for the Wrap problem because that would imply that there is a smaller solution to the Base problem, which was guaranteed to be impossible.  
+
+----------
+
+#  Appendix - Implementation parameters {#appendixImplementationParameters}
+
+##  Model RB parameters  {#appendixModelRBparams}
+
+The four model RB input parameter values used in our experiments were derived from looking at parameter choices in (@xu2005ipnijcai).  We defined a set of intervals from which to uniform randomly choose combinations of these parameters with the aim of  getting an interesting range of problem size and difficulty but not so large or difficult that Gurobi would have little chance of running to completion. Since our primary interest was to see whether there is a lot of variation in problem difficulty, the choice of specific input parameters was not critical unless it yielded little variation.  The resulting variation is only a lower bound on the amount of variation possible.  Base model RB settings used are given in the R list below to make them easier to manipulate and add to the full `bdpg` parameters list used in the example code given in these appendices.  
+
+```{r setModelRBparameters, eval=FALSE, echo=TRUE}
+
+base_parameters = list (duplicate_links_allowed = FALSE, 
+                        max_allowed_num_spp = 700, 
+                        num_prob_size_retries_allowed = 20, 
+                        
+                        use_unif_rand_alpha__ = TRUE, 
+                        alpha___lower_bound = 0.2, 
+                        alpha___upper_bound = 0.6, 
+                        
+                        use_unif_rand_n__num_groups = TRUE, 
+                        n__num_groups_lower_bound = 8, 
+                        n__num_groups_upper_bound = 20, 
+                        
+                        use_unif_rand_r__density = TRUE, 
+                        r__density_lower_bound = 0.8, 
+                        r__density_upper_bound = 3, 
+                        
+                        use_unif_rand_p__prop_of_links_between_groups = TRUE, 
+                        p__prop_of_links_between_groups_lower_bound = 0.14, 
+                        p__prop_of_links_between_groups_upper_bound = 0.36
+                        )
+```
+
+```{r filterBaseAndWrap, echo=FALSE}
+
+# cor_base_tib = filter (cor_tib, rsp_base_wrap_str == "Base")
+# cor_wrap_tib = filter (cor_tib, rsp_base_wrap_str == "Wrap")
+```
+
+```{r computeBaseOutputBounds, echo=FALSE}
+
+base_min_effective_p = min (cor_base_tib$rsp_p__prop_of_links_between_groups)
+base_max_effective_p = max (cor_base_tib$rsp_p__prop_of_links_between_groups)
+
+base_min_nominal_p = min (cor_base_tib$rsp_nominal_p__prop_of_links_between_groups)
+base_max_nominal_p = max (cor_base_tib$rsp_nominal_p__prop_of_links_between_groups)
+
+base_min_num_spp = min (cor_base_tib$rsp_num_spp)
+base_max_num_spp = max (cor_base_tib$rsp_num_spp)
+
+base_min_num_PUs = min (cor_base_tib$rsp_num_PUs)
+base_max_num_PUs = max (cor_base_tib$rsp_num_PUs)
+
+base_min_sol_pct = 100 * min (cor_base_tib$actual_sol_frac_of_landscape)
+base_max_sol_pct = 100 * max (cor_base_tib$actual_sol_frac_of_landscape)
+```
+
+These choices resulted in the generation of Base problems with the number of species in the range [`r base_min_num_spp`, `r base_max_num_spp`], the number of PUs in the range [`r base_min_num_PUs`, `r base_max_num_PUs`], and correct solution sizes in the range  [`r signif (base_min_sol_pct, 3)`, `r signif (base_max_sol_pct, 3)`]% of the Base landscape.  However, there was a small issue in the code related to the translation of the input values for $p$ (p__prop_of_links_between_groups) into species counts.  This issue resulted in a smaller range of total species counts than planned, however that did not affect either our conclusions or the correctness of our results.  It only affected the realized bounds of the species counts.  More detail is given in Appendix  \ref{appendixNominalVsEffectiveP}.  
+
+##  Wrap parameters  {#appendixWrapParams}
+
+The species abundance distribution used in the wrapping function was lognormal.  The representation target for all species was one occurrence and all PUs have equal cost.  While this is not true in real-world problems, it still allows us to generate a wide range of problem difficulties to explore.  
+
+Wrap settings used are given in the R list below to make them easier to manipulate and add to the full `bdpg` parameters list used in the example code given in these appendices.  
+
+```{r computeWrapOutputBounds, echo=FALSE}
+
+wrap_min_num_spp = min (cor_wrap_tib$rsp_num_spp)
+wrap_max_num_spp = max (cor_wrap_tib$rsp_num_spp)
+
+wrap_min_num_PUs = min (cor_wrap_tib$rsp_num_PUs)
+wrap_max_num_PUs = max (cor_wrap_tib$rsp_num_PUs)
+```
+
+For Wrap problems, the number of species fell in the range [`r wrap_min_num_spp`, `r wrap_max_num_spp`] and number of PUs in the range [`r wrap_min_num_PUs`, `r wrap_max_num_PUs`].  
+
+```{r setWrapParameters, eval=FALSE, echo=TRUE}
+
+wrap_parameters = list (wrap_lognormal_dist_around_Xu = TRUE, 
+                        
+                        max_search_iterations = 500, 
+                        allow_imperfect_wrap = TRUE, 
+                        dep_set_PUs_eligible = FALSE, 
+                        add_one_to_lognormal_abundances = FALSE, 
+                        plot_rounded_abundances = TRUE, 
+
+                            #  Species abundance-related variables
+                        desired_Xu_spp_frac_of_all_spp = 0.25, 
+                        maximum_allowed_number_of_species = 1200, 
+                        desired_Base_species_fraction_of_all_species = 0.25, 
+
+                            #  PU-related variables                        
+                        solution_fraction_of_landscape = 0.15, 
+                        desired_maximum_abundance_fraction = 0.7
+                        )
+```
+
+###  Solution fraction of landscape {#appendixSolFracOfLandscape}  
+
+While the the solution percentage of the landscape for Base problems was not explicitly constrained, the size of the correct solution to the Wrap problems was always chosen to be 15% of the full PU set (to within rounding error).  This was done so that it represented a somewhat realistic ecological goal of selecting 15% of the landscape rather than the much larger percentages that often occur in the Base problems generated by model RB.  However, there was an issue in the code that derived the Wrap landscape size from the fraction taken up by the full Base problem rather than by just the Base problem's solution.  This resulted in slightly larger Wrap landscapes than intended, which in turn, resulted in Wrap solution size fractions being less than 15% and not being constant at 15%.  However, this did not affect our conclusions or the correctness of our results.  It only affected the range of Wrap landscape sizes and the range of correct solution fractions of those landscapes.  More detail is given in Appendix \ref{appendixActualSolutionFractions}.  
+
+----------
+
+#  Appendix - Distributions of problem structure characteristics {#probCharacteristicsAppendix}
+
+This appendix documents the distributions of problem size and structure values realized from drawing random configuration parameters for the Base and Wrap problem generators in these experiments.  
+
+##  Distributions of resulting model RB control values {#distModelRBcontrols}
+
+This section documents the distributions of the four model RB input control variables ($n, \alpha, p, r$) and the clique size variable $d$ derived from $n^{\alpha}$.  
+
+###  Distributions of model RB variables driving PU counts {#appendixDistModelRBvarsDrivingPUcts}
+
+```{r plotModelRBvarsNADhistograms, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:modelRBvarsNADhists} Distributions of model RB control variables that determine PU counts in a Base problem: (a) distribution of $n$, which is both the number of cliques and the size of the independent set, (b) $alpha$, which scales $n$ to determine the number of PUs in each clique, (c) distribution of $d$, the number of PUs per clique.  $n$ and $alpha$ were both drawn from a uniform random distribution, while $d$ was derived from their combination and is not uniform random.", echo=FALSE, eval=TRUE}
+
+nPlot =   
+    ggplot (single_rs_cor_base_tib, aes(x=rsp_n__num_groups)) +
+  geom_histogram() + 
+  xlab ("n (number of cliques and independent set size)") + 
+  ylab ("Count")
+
+alphaPlot =   
+    ggplot (single_rs_cor_base_tib, aes(x=rsp_alpha__)) +
+  geom_histogram() + 
+  xlab ("alpha") + 
+  ylab ("Count")
+
+dPlot =   
+    ggplot (single_rs_cor_base_tib, aes(x=rsp_d__number_of_nodes_per_group)) +
+  geom_histogram() + 
+  xlab ("d (number of PUs per clique)") + 
+  ylab ("Count")
+
+patched <- nPlot / alphaPlot / dPlot
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1,1))
+
+```
+
+###  Distributions of model RB variables driving species counts {#appendixDistModelRBvarsDrivingSppCts}
+
+```{r plotModelRBvarPRhistograms, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:modelRBvarPRhists} Distributions of model RB control variables driving problem species counts in a Base problem: (a) distribution of $p$, which controls the number of links between two cliques in a single round, (b) distribution of $r$, which, in combination with $n$, controls the number of rounds of linking between cliques.", echo=FALSE, eval=TRUE}
+
+pPlot =   
+    ggplot (single_rs_cor_base_tib, aes(x=rsp_p__prop_of_links_between_groups)) +
+  geom_histogram() + 
+  xlab ("p (proportion of links between cliques)") + 
+  ylab ("Count")
+
+rPlot =   
+    ggplot (single_rs_cor_base_tib, aes(x=rsp_r__density)) +
+  geom_histogram() + 
+  xlab ("r (link density)") + 
+  ylab ("Count")
+
+patched <- pPlot / rPlot
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+
+```
+
+Note that the distribution of $p$ in Fig. \ref{fig:modelRBvarPRhists}a is not as uniform as the other three model RB variables because this plot is showing the effective value of $p$ rather than the nominal value of $p$.  See Appendix \ref{appendixNominalVsEffectiveP} for more details about this.  
+
+##  Distributions of resulting problem size variables {#appendixDistResultingProbSizeVars}
+
+```{r}
+plot_title = "Histogram of rsp_num_spp"
+
+hist_rsp_num_spp <- 
+    ggplot (single_rs_cor_tib, aes(x=rsp_num_spp)) + 
+  geom_histogram() + 
+  xlab ("Number of species") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r}
+plot_title = "Histogram of rsp_num_PUs"
+
+hist_rsp_num_PUs <- 
+    ggplot (single_rs_cor_tib, aes(x=rsp_num_PUs)) + 
+  geom_histogram() + 
+  xlab ("Number of PUs") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r}
+plot_title = "Histogram of rsp_num_spp_per_PU"
+
+hist_rsp_num_spp_per_PU <- 
+    ggplot (single_rs_cor_tib, aes(x=rsp_num_spp_per_PU)) + 
+  geom_histogram() + 
+  xlab ("Number of species per PU") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r plotProbSizePlots, fig.align="center", fig.cap = "\\label{fig:probSizeHistograms} Distributions of problem size variables characterizing generated Base and Wrapped problems: (a) number of species, (b) number of PUs, (c) ratio of number of species to number of PUs.", echo=FALSE}
+
+patched <- hist_rsp_num_spp / 
+           hist_rsp_num_PUs / 
+           hist_rsp_num_spp_per_PU
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1,1))
+```
+
+```{r}
+# plot_title = "Histogram of sppPUsum"
+
+hist_sppPUsum <- 
+    ggplot (single_rs_cor_tib, aes(x=sppPUsum)) + 
+  geom_histogram() + 
+  xlab ("Sum of number of Species and PUs") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r}
+# plot_title = "Histogram of sppPUprod"
+
+hist_sppPUprod <- 
+    ggplot (single_rs_cor_tib, aes(x=sppPUprod)) + 
+  geom_histogram() + 
+  xlab ("Product of number of Species and PUs") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r plotProbSizeAggregatesPlots, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:probSizeAggregateseHistograms} Distributions of problem size aggregate variables characterizing generated Base and Wrapped problems: (a) sum of number of species and PUs, (b) product of number of species and PUs, which expresses the total number of presence/absence assignments possible in a problem.", echo=FALSE}
+
+patched <- hist_sppPUsum / hist_sppPUprod
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+```
+
+```{r}
+# plot_title = "Histogram of log10_sppPUsum"
+
+hist_log10_sppPUsum <- 
+    ggplot (single_rs_cor_tib, aes(x=log10_sppPUsum)) + 
+  geom_histogram() + 
+  xlab ("log10 (Sum of number of Species and PUs)") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r}
+# plot_title = "Histogram of log10_sppPUprod"
+
+hist_log10_sppPUprod <- 
+    ggplot (single_rs_cor_tib, aes(x=log10_sppPUprod)) + 
+  geom_histogram() + 
+  xlab ("log10 (Product of number of Species and PUs)") + 
+  ylab ("Count") + 
+  
+            facet_wrap ( ~ rsp_base_wrap_str, nrow = 1) 
+
+```
+
+```{r plotProbSizeLogAggregatesPlots, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:probSizeLogAggregateseHistograms} Distributions of logged problem size aggregate variables characterizing generated Base and Wrapped problems: (a) log10 of sum of number of species and PUs, (b) log10 of product of number of species and PUs.", echo=FALSE}
+
+patched <- hist_log10_sppPUsum / hist_log10_sppPUprod
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+
+```
+
+----------
+
+#  Appendix - Reserve selector parameters {#appendixReserveSelectorParameters}
+
+We ran four reserve selectors, two greedy and two non-greedy.  The non-greedy methods were designated Gurobi and Marxan_SA (Marxan simulated annealing).  The greedy methods were designated Marxan_SA_SS (Marxan simulated annealing summed solution) and UR_Forward (unprotected richness).  
+
+*Gurobi* is a commercial package for solving linear programming problems (@gurobioptimizationllc2020).  We used version 8.0 under its default settings and options derived from examples in @beyer2016em  *Marxan_SA* uses the simulated annealing option of Marxan (@watts2009em&s), version 2.4.3 for OS X and linux.  We used default settings and problem description files described in the user manual (@game2008), including 100 random restarts of the search, each of which generates a candidate solution.  Each of these restart solutions is then used in the summed solution method *Marxan_SA_SS* described below.  
+
+The greedy methods build a solution by computing a measure of value for each PU, then ranking all PUs by that value.  Stepping down through the rankings from most valuable PU to least valuable, all species occurring on the PU are added to a running set of protected species occurrences.  Ties are broken by uniform randomly choosing one of the tied PUs.  The process stops when all species have met their targets and the PUs included at that point are considered the method's solution for that problem.  The *Marxan_SA_SS* PU ranking is determined by computing for each PU, the number of restart solutions that PU occurs in.  The *UR_Forward* PU ranking starts from the full set of PUs and examines each PU to see how many species in that PU have not yet met their protection target in the PUs included in the current solution.  It then repeats this process for all remaining PUs (reranking all PUs after each new PU is added to the solution) until all PUs are ranked.  Both greedy methods were implemented in R but the *Marxan_SA_SS* method also relies on *Marxan_SA* having already been run on the problem multiple times before the voting can begin.
+
+##  Gurobi parameter settings used in `bdpg` parameters list {#appendixGurParSettingsUsed}
+
+Gurobi settings for `bdpg` are given in the R list below to make them easier to manipulate and add to the full `bdpg` parameters list used in the example code given in these appendices.  All Gurobi inputs are generated by the `bdpg` package based on the Base and Wrap problems it has already built.  Gurobi problem description variables are set in the function `run_gurobi()` in the file `do_gurobi_analysis_and_output.R` in the `bdpg` package.  Settings are based on the Gurobi defaults (@gurobioptimizationllc2020) and options derived from examples in @beyer2016em  No user intervention is required except if limits are desired on how long Gurobi will be allowed to run.  Gurobi allows the user to specify a limit on the amount of runtime and/or on the maximum gap to the optimal solution, so those options are allowed in the `bdpg` package too.  
+
+```{r setGurobiParameters, eval=FALSE, echo=TRUE}
+
+gurobi_parameters = list (do_gurobi = TRUE, 
+
+                          use_given_time_as_limit = FALSE, 
+                          # time_limit = 600,     #  in seconds
+                          
+                          use_gap_limit = FALSE
+                          # gap_limit = 0.005
+                          )
+```
+
+##  Marxan and Marxan_SA_SS parameter settings used in `bdpg` parameters list {#appendixMarxanParSettingsUsed}
+
+Marxan settings for `bdpg` are given in the R list below to make them easier to manipulate and add to the full `bdpg` parameters list used in the example code given in these appendices.  If `marxan_use_default_input_parameters` is set to TRUE, then all of the other Marxan parameters do not need to be supplied, but if they are in the list, they are ignored and marxan's default values are used instead.  
+
+```{r setMarxanParameters, eval=FALSE, echo=TRUE}
+
+marxan_parameters = list (run_marxan = TRUE, 
+                          
+                          marxan_use_default_input_parameters = FALSE, 
+                          marxan_spf_rule = "POWER_OF_10", 
+                          
+                          marxan_pu_file_name = "pu.dat", 
+                          marxan_spec_file_name = "spec.dat", 
+                          marxan_puvspr_file_name = "puvspr.dat", 
+                          
+                          marxan_runmode = 1, 
+                          marxan_heurtype = -1, 
+                          marxan_num_reps = 100, 
+                          marxan_num_iterations = "1000000"
+                          )
+```
+
+The one exception to this is the variable `marxan_spf_const`, which is not changed when  `marxan_use_default_input_parameters` is set to TRUE.  It specifies a species penalty factor added to the objective function in an attempt to insure that solutions meet their representation targets by penalizing candidate solutions that fail to meet their targets.  According to pp. 97-98 of the Marxan manual (@game2008):  
+
+```
+        When calculating the value of the objective function, Marxan will first 
+        calculate the penalty for any features that are under represented, 
+        multiply these penalties by the appropriate SPF value for each feature, 
+        and then sum these values across all features. 
+        Any features whose representation targets are met satisfactorily will 
+        have a penalty of zero and will therefore not increase the objective 
+        function value.
+```
+
+The spf is treated a bit differently from all the other parameters in our code and is set according to the chosen `marxan_spf_rule` variable in this list.  The "POWER_OF_10" rule used here is derived from Marxan manual advice (@game2008).  The penalty factor is computed as:  $round (0.95 * 10^{floor(log_{10}(numSpp))})$.  This is the rule used in all of our experiments, however, the `bdpg` code also allows the rule to be specified as "CONSTANT".  In that case, another variable must be supplied in the list, "marxan_spf_const", and it must be assigned a numeric value, e.g., "marxan_spf_const = 10".
+
+All Marxan input files are generated by the `bdpg` package based on the Base and Wrap problems it has already built.  No user intervention is required.  
+
+###  Marxan_SA_SS details  
+
+Note that Marxan_SA_SS values are computed and output as a side effect of running Marxan.  If only Marxan is of interest, Marxan_SA_SS output will still be generated.  Likewise, if only Marxan_SA_SS output is of interest, Marxan still has to run first and will produce its output in addition to the Marxan_SA_SS output.  
+
+\textcolor{red}{Need to fill this in with reference to some of these details from the manual.}  
+
+**Quotes from Marxan manual (using the page numbers on the page in the manual, not the page numbers of the pdf that you see when you search for a term and it shows a page number in the sidebar)**
+
+**p. 70, section 5.3.8 Summed solution:**
+
+5.3.8 Summed solution
+
+Description: Summed solution provides the selection frequency of each planning unit across all runs. Each line has the ID number of a planning unit (see Section 3.2.3.1) and the number of times that planning unit was selected in the final solution across all repeat runs 9. This is perhaps the most commonly used of the Marxan output files and certainly the most commonly displayed. It provides an indication of how useful each planning unit is for creating an efficient reserve system. A map of summed solution output across your planning region can be viewed rather like a map of conservation priority. Those planning units that are commonly selected in final reserve solution (e.g. >70% of the time) are likely to be required for an efficient reserve system. Planning units that are rarely selected are less urgent, as the conservation features they contain can probably be also acquired in other locations. 
+
+Note, however, that even if a planning unit is selected in nearly every solution, this does not that mean you cannot get the same features in other places. It simply means that this planning unit helps provide efficient solutions. In reality, this may have little to do with the conservation features present at the site and more to do with either the cost or location of the planning unit.
+
+**p. 77:**  
+
+**Selection frequency**: Also commonly known as **irreplaceability**. How often a given planning unit is selected in the final reserve system across a series of Marxan solutions. This value is **reported in the “Summed Solutions”** output file.
+
+**p. 19:**
+
+Looks like there is SAVESUMSOLN option that I could have used instead of adding them up myself.  
+
+**p. 63, 5.2.1.7 Shortfall:**  
+
+Looks like there's also a Shortfall output that I could have used.  
+
+**p. 65, 5.3 Output Files:**  
+
+Looks like there's a Summed solution output file called scenario_ssoln.dat.  
+
+**p. 66, 5.3.2 Solutions for each run:**
+
+"... however, as you should nearly always do multiple repeat runs, a useful output file is the ‘summed solution’ file (see Section 5.3.7)."
+
+
+##  UR_Forward parameter settings used in `bdpg` parameters list {#appendixURforwardParSettingsUsed}
+
+The unprotected richness reserve selector has no parameter settings other than telling `bdpg` to run it.
+
+```{r setURparameters, eval=FALSE, echo=TRUE}
+
+UR_Forward_parameters = list (do_unprotected_richness_forward = TRUE)
+```
+
+----------
+
+#  Appendix - Are COR Wrap problems harder than the COR Base problem they wrap? {#appendixBaseWrapCompare}
+
+Adding more PUs and species to Base problems to get Wrap problems intuitively seems like it would make problems more difficult, but it's not always the case.  
+
+Gurobi and Marxan_SA correctly solved all COR problems, so there is no difference in difficulty as measured through error.  However, their runtimes could indicate more or less difficulty in arriving at the correct solution.  Unfortunately, the Nectar cluster of virtual machines that we used for these experiments doesn't guarantee reliable and commensurate runtime measurements, so we can't answer the question for Gurobi and Marxan_SA.  
+
+Marxan_SA_SS and UR_Forward do have some errors in their solutions, so we can compare the relative difficulty of our Base and Wrap problems in terms of error differences on those reserve selectors.  In the histogram of Wrap scores minus Base scores below, we can see that most Base/Wrap problem pairs had the identical score for Marxan_SA_SS, while there was more variation for UR_Forward.  The table below it shows the same information in tabular form.  Marxan_SA_SS found most problems to be of equal difficulty (i.e., Wrap error minus Base error was zero).  However for problems of unequal difficulty, it generally found Base problems more difficult than Wrap problems (i.e., Wrap error minus Base error was negative).  UR_Forward did not find as many to be of equal difficulty and in unequal difficulty cases, its behavior was the reverse of Marxan_SA_SS, i.e., it generally found Wrap problems harder than Base problems.
+
+```{r}
+selected_cor_base_tib = select (cor_base_tib, 
+                                rsp_UUID, 
+                                rsp_base_wrap_str, 
+                                rsr_UUID, 
+                                rs_method_name, 
+                                rs_method_name_fac, 
+                                rs_solution_cost_err_frac) %>% 
+                        mutate (Base_rsp_UUID = rsp_UUID) %>% 
+                        select (-rsp_UUID)
+
+selected_cor_wrap_tib = select (cor_wrap_tib, 
+                                rsp_UUID, 
+                                rsp_base_wrap_str, 
+                                rsp_UUID_of_base_problem_that_is_wrapped, 
+                                rsr_UUID, 
+                                rs_method_name, 
+                                rs_method_name_fac, 
+                                rs_solution_cost_err_frac) %>% 
+                        mutate (Wrap_rsp_UUID = rsp_UUID) %>% 
+                        select (-rsp_UUID)
+
+joined_cor_base_wrap_tibs = left_join (selected_cor_base_tib, selected_cor_wrap_tib, 
+                          by = c("Base_rsp_UUID" = "rsp_UUID_of_base_problem_that_is_wrapped", 
+                                 "rs_method_name_fac"))
+
+wrap_minus_base_diffs_tib = mutate (joined_cor_base_wrap_tibs, 
+                                    diff_rs_solution_cost_err_frac = 
+                                      rs_solution_cost_err_frac.y - rs_solution_cost_err_frac.x)
+
+names(wrap_minus_base_diffs_tib)[which(names(wrap_minus_base_diffs_tib) == "rs_method_name.x")] = "rs_method_name"
+
+# filtered_wrap_minus_base_diffs_tib = wrap_minus_base_diffs_tib
+filtered_wrap_minus_base_diffs_tib = 
+    filter (wrap_minus_base_diffs_tib, 
+            ((rs_method_name == "UR_Forward") | (rs_method_name == "Marxan_SA_SS")))
+
+num_prob_per_rs_for_wrap_base_diffs = count (filtered_wrap_minus_base_diffs_tib,     #wrap_minus_base_diffs_tib, 
+                                             rs_method_name)    #.x)
+#names(num_prob_per_rs_for_wrap_base_diffs)[1] = "rs_method_name"
+
+```
+
+
+
+```{r}
+plot_title = "Wrap score minus Base score wrt same Base problem"
+
+wrap_minus_base_plot <- 
+    ggplot (filtered_wrap_minus_base_diffs_tib, 
+            aes(x=diff_rs_solution_cost_err_frac)) + 
+  
+  geom_histogram() + 
+
+      #scale_x_continuous (labels = percent) + 
+  
+  xlab ("Wrap err minus Base err") + 
+  ylab ("Count") + 
+  
+  #facet_wrap ( ~ rs_method_name_fac, nrow = 2) 
+  facet_wrap ( ~ rs_method_name_fac, nrow = 1) 
+
+wrap_minus_base_plot
+```
+
+```{r baseWrapCompareFivenumTable, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filtered_wrap_minus_base_diffs_tib,    #wrap_minus_base_diffs_tib,
+                         "diff_rs_solution_cost_err_frac", 
+                         num_prob_per_rs_for_wrap_base_diffs, 
+                         "Wrap error - Base error (positive => Wrap is harder)")
+
+# create_rs_fivenum_table (rs_method_names_list, 
+#                          wrap_minus_base_diffs_tib,
+#                          "rs_solution_cost_err_frac.x", 
+#                          num_prob_per_rs_for_wrap_base_diffs, 
+#                          "All problems: BASE rs_solution_cost_err_frac")
+
+# create_rs_fivenum_table (rs_method_names_list, 
+#                          wrap_minus_base_diffs_tib,
+#                          "rs_solution_cost_err_frac.y", 
+#                          num_prob_per_rs_for_wrap_base_diffs, 
+#                          "All problems: WRAP rs_solution_cost_err_frac")
+
+```
+
+```{r}
+plot_title = "Wrap error when Base problem solved correctly"
+
+base_solved_correctly_tib = filter (filtered_wrap_minus_base_diffs_tib, 
+                                    rs_solution_cost_err_frac.x == 0)
+wrap_when_base_solved_correctly_plot <- 
+    ggplot (base_solved_correctly_tib, 
+            aes(x=rs_solution_cost_err_frac.y)) + 
+  
+  geom_histogram() + 
+
+      #scale_x_continuous (labels = percent) + 
+  
+  xlab ("Wrap err when its Base was solved correctly") + 
+  ylab ("Count") + 
+  
+  #facet_wrap ( ~ rs_method_name_fac, nrow = 2) 
+  facet_wrap ( ~ rs_method_name_fac, nrow = 1) 
+
+wrap_when_base_solved_correctly_plot
+```
+
+
+```{r}
+plot_title = "Base error when Wrap problem solved correctly"
+
+base_solved_correctly_tib = filter (filtered_wrap_minus_base_diffs_tib, 
+                                    rs_solution_cost_err_frac.y == 0)
+base_when_wrap_solved_correctly_plot <- 
+    ggplot (base_solved_correctly_tib, 
+            aes(x=rs_solution_cost_err_frac.x)) + 
+  
+  geom_histogram() + 
+
+      #scale_x_continuous (labels = percent) + 
+  
+  xlab ("Base err when its Wrap was solved correctly") + 
+  ylab ("Count") + 
+  
+  #facet_wrap ( ~ rs_method_name_fac, nrow = 2) 
+  facet_wrap ( ~ rs_method_name_fac, nrow = 1) 
+
+base_when_wrap_solved_correctly_plot
+```
+
+```{r results = 'asis', include=FALSE}
+
+#  How many have the Base problem solved correctly?
+#  How many have the Wrap problem solved correctly?
+#  How many Base optimum problems had non-zero Wrap and is it positive or negative?
+#  How many Wrap optimum problems had non-zero Base and is it positive or negative?
+
+# optimal_base_diffs_tib = filter (filtered_wrap_minus_base_diffs_tib, 
+#                                  (rs_solution_cost_err_frac.x == 0) & 
+#                                    (rs_method_name == "UR_Forward"))
+
+optimal_base_diffs_tib = 
+    filter (filtered_wrap_minus_base_diffs_tib, rs_solution_cost_err_frac.x == 0)
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         optimal_base_diffs_tib,    #wrap_minus_base_diffs_tib,
+                         "diff_rs_solution_cost_err_frac", 
+                         num_prob_per_rs_for_wrap_base_diffs, 
+                         "(Wrap error - Base error) when BASE solved correctly")
+                                 
+subopt_base_diffs_tib =
+    filter (filtered_wrap_minus_base_diffs_tib, rs_solution_cost_err_frac.x != 0)
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         subopt_base_diffs_tib,    #wrap_minus_base_diffs_tib,
+                         "diff_rs_solution_cost_err_frac", 
+                         num_prob_per_rs_for_wrap_base_diffs, 
+                         "(Wrap error - Base error) when BASE NOT solved")
+                                 
+#-----------------------
+   
+optimal_wrap_diffs_tib = 
+    filter (filtered_wrap_minus_base_diffs_tib, rs_solution_cost_err_frac.y == 0)
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         optimal_wrap_diffs_tib,    #wrap_minus_base_diffs_tib,
+                         "diff_rs_solution_cost_err_frac", 
+                         num_prob_per_rs_for_wrap_base_diffs, 
+                         "(Wrap error - Base error) when WRAP solved correctly")
+                    
+subopt_wrap_diffs_tib =
+    filter (filtered_wrap_minus_base_diffs_tib, rs_solution_cost_err_frac.y != 0)
+
+create_rs_fivenum_table (rs_method_names_list, 
+                         subopt_wrap_diffs_tib,    #wrap_minus_base_diffs_tib,
+                         "diff_rs_solution_cost_err_frac", 
+                         num_prob_per_rs_for_wrap_base_diffs, 
+                         "(Wrap error - Base error) when WRAP NOT solved")
+       
+```
+
+----------
+
+#  Appendix - Detailed solution cost error results {#corResultsAppendix}
+
+In this appendix, we give more detailed results for a variety of variables that don't fit in the paper but may be of explanatory interest.  
+
+##  Solution cost error summary tables {#appendixSolCostErrSummaryTables}
+
+All summary tables below have the same structure.  Rows contain information for a single reserve selector.  Columns report the following values for each reserve selector, where the first two columns relate to the number of problems in the subset of problems and the remaining columns summarize solution cost error values in that subset.
+
+- **ct**: Count of the number of problems being summarized for the reserve selector on that line
+- **frac**: Fraction of the total number of Base and Wrap problems analyzed in the study (where the total number of problems is `r tot_num_base_and_wrap_problems`)
+- **min**: Minimum
+- **Q1**: 25% quantile
+- **median**: Median
+- **Q3**: 75% quantile
+- **max**: Maximum
+- **mean**: Mean
+- **sd**: Standard deviation
+- **mad**: Median absolute deviation
+
+###  Base and Wrap combined {#appendixBaseAndWrapCombined}  
+
+As is common in the reserve selection literature, solution cost error is 0 for the vast majority of problems in this study where there is no input error.  Consequently,  distributions of error values are highly skewed and overall statistics are not very informative about problems where errors did occur.  However, we would like to see what were the characteristics of problems where errors did occur, so we have split the summary statistics below into tables for all problems and tables for just problems where error did occur.  Since neither Gurobi nor Marxan_SA had any errors on any problems, their values are not shown in the second kind of table.  
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         cor_tib,
+                         "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction (All problems)")
+```
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (cor_tib, rs_solution_cost_err_frac > 0),
+                         "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction where error > 0 (All problems)")
+```
+
+###  Base only {#appendixBaseOnly}  
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (cor_tib, rsp_base_wrap_str == "Base"),                             "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction (Base only)")
+```
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (cor_tib, (rsp_base_wrap_str == "Base") & 
+                                          (rs_solution_cost_err_frac > 0)),
+                         "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction where error > 0 (Base only)")
+```
+
+###  Wrap only {#appendixWrapOnly}  
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (cor_tib, rsp_base_wrap_str == "Wrap"),                             "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction (Wrap only)")
+```
+
+```{r, results = 'asis'}
+create_rs_fivenum_table (rs_method_names_list, 
+                         filter (cor_tib, (rsp_base_wrap_str == "Wrap") & 
+                                          (rs_solution_cost_err_frac > 0)),
+                         "rs_solution_cost_err_frac", 
+                         num_cor_prob_per_rs, 
+                         "Solution cost error fraction where error > 0 (Wrap only)")
+```
+
+##  Distributions of solution cost errors {#appendixDistSolCostErrors}
+
+In this section we show distributions of solution cost errors for Marxan_SA_SS and UR_Forward but not for the other two reserve selectors since they had no non-zero errors.  First we show distributions for all errors, both zero and non-zero, then we show distributions for just the non-zero errors.
+
+```{r reduceCorTibToNonZeroRSonly, echo=FALSE}
+cor_tib %>% 
+  filter ((rs_method_name == "UR_Forward") | 
+          (rs_method_name == "Marxan_SA_SS")) -> cor_tib__UR_Forward__Marxan_SA_SS__only  
+```
+
+###  Distributions of all solution cost errors (zero and non-zero) {#appendixDistAllSolCostErrors}
+
+```{r plotSolCostErrHist, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:solCostErrHist} Distributions of solution cost error percentages for both zero and non-zero errors for the two reserve selectors that had some non-zero errors: (a) counts for Base problems, (b) counts for Wrap problems.", echo=FALSE, eval=TRUE}
+
+solCostErrHistPlotBASE =   
+    ggplot (filter (cor_tib__UR_Forward__Marxan_SA_SS__only,    #cor_tib,
+                    rsp_base_wrap_str == "Base"
+                    # , (rs_method_name_fac == "UR_Forward" |
+                    #    rs_method_name_fac == "Marxan_SA_SS")
+                    ), 
+            aes(x=rs_solution_cost_err_frac)) +
+    ggtitle("Base") +
+    xlab ("Solution cost error percent") + 
+    scale_x_continuous (labels = percent) + 
+    geom_histogram() +
+    facet_wrap ( ~ rs_method_name_fac, nrow = 1)
+  
+solCostErrHistPlotWRAP =   
+    ggplot (filter (cor_tib__UR_Forward__Marxan_SA_SS__only,    #cor_tib,
+                    rsp_base_wrap_str == "Wrap"
+                    # , (rs_method_name_fac == "UR_Forward" |
+                    #    rs_method_name_fac == "Marxan_SA_SS")
+                    ), 
+            aes(x=rs_solution_cost_err_frac)) +
+    ggtitle("Wrap") +
+    xlab ("Solution cost error percent") + 
+    scale_x_continuous (labels = percent) + 
+    geom_histogram() +
+    facet_wrap ( ~ rs_method_name_fac, nrow = 1)
+  
+patched <- solCostErrHistPlotBASE / solCostErrHistPlotWRAP
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+```
+
+###  Distributions of only *non-zero* solution cost errors {#appendixDistNonZeroSolCostErrors} 
+
+```{r plotNonZeroSolCostErrHist, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:nonZeroSolCostErrHist} Distributions of solution cost error percentages for only non-zero errors for the two reserve selectors that had some non-zero errors: (a) counts for Base problems, (b) counts for Wrap problems.", echo=FALSE, eval=TRUE}
+
+nonZeroSolCostErrHistPlotBASE =   
+    ggplot (filter (cor_tib__UR_Forward__Marxan_SA_SS__only,    #cor_tib,
+                    rs_solution_cost_err_frac > 0, 
+                    rsp_base_wrap_str == "Base"
+                    # ,
+                    # (rs_method_name_fac == "UR_Forward" |
+                    #  rs_method_name_fac == "Marxan_SA_SS")
+                    ),
+            aes(x=rs_solution_cost_err_frac)) +
+    ggtitle("Base") +
+    xlab ("Solution cost error percent") + 
+    scale_x_continuous (labels = percent) + 
+    geom_histogram() +
+    facet_wrap ( ~ rs_method_name_fac, nrow = 1)
+  
+nonZeroSolCostErrHistPlotWRAP =   
+    ggplot (filter (cor_tib__UR_Forward__Marxan_SA_SS__only,    #cor_tib,
+                    rs_solution_cost_err_frac > 0, 
+                    rsp_base_wrap_str == "Wrap"
+                    # ,
+                    # (rs_method_name_fac == "UR_Forward" |
+                    #  rs_method_name_fac == "Marxan_SA_SS")
+                    ),
+            aes(x=rs_solution_cost_err_frac)) +
+    ggtitle("Wrap") +
+    xlab ("Solution cost error percent") + 
+    scale_x_continuous (labels = percent) + 
+    geom_histogram() +
+    facet_wrap ( ~ rs_method_name_fac, nrow = 1)
+  
+patched <- nonZeroSolCostErrHistPlotBASE / nonZeroSolCostErrHistPlotWRAP
+
+patched + plot_annotation(tag_levels = 'a'
+                          # , title = 'Non-zero solution cost errors', 
+                          # , theme = theme (plot.title = 
+                          #                  element_text(hjust = 0.5))
+                          ) + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(2,2))
+```
+
+##  Plots of problem size variables vs. Solution cost error {#appendixPlotsOfProbSizeVsSolCostErr}
+
+When there is non-zero solution cost error in our method demonstration, the amount of error varies widely at many levels of all problem size descriptors and differ based on reserve selector and problem type (Base or Wrap).  We showed this for two variables related to this in the main body of the paper, but for completeness, here we show this for many other variables.  Each section below shows a plot of solution cost error percentage as a function of one of the size variables.
+
+###  Number of species {#appendixNumSpp}  
+
+```{r plotRspNumSppVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:rspNumSppVsCostErrInCORappendix}Number of species vs. solution cost error.", echo=FALSE}
+
+plotRspNumSppVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = rsp_num_spp,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Number of species") +    #("sppPUsum") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotRspNumSppVsCostErr
+```
+
+###  Number of PUs {#appendixNumPUs}  
+
+```{r plotRspNumPUsVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:rspNumPUsVsCostErrInCORappendix}Number of PUs vs. solution cost error.", echo=FALSE}
+
+plotRspNumPUsVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = rsp_num_PUs,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Number of PUs") +    #("sppPUsum") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotRspNumPUsVsCostErr
+```
+
+###  Number of species per PU {#appendixNumSppPerPU}  
+
+```{r plotRspNumSppPerPUvsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:rspNumSppPerPUvsCostErrInCORappendix}Number of species per PU vs. solution cost error.", echo=FALSE}
+plotRspNumSppPerPUVsCostErr =
+#plotRspNumSppPerPUvsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = rsp_num_spp_per_PU,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Number of species per PU") +    #("rsp_num_spp_per_PU") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+plotRspNumSppPerPUVsCostErr
+#plotRspNumSppPerPUvsCostErr
+```
+
+###  Sum of number of species and PUs {#appendixSumSppPU}  
+
+```{r plotSppPUsumVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:sppPUsumVsCostErrInCORappendix}Sum of number of species and PUs vs. solution cost error.", echo=FALSE}
+
+plotSppPUsumVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = sppPUsum,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Sum of number of species and PUs") +    #("sppPUsum") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotSppPUsumVsCostErr
+```
+
+###  log10 (sum of number of species and PUs) {#appendixLogSumSppPU}  
+
+```{r plotLog10SppPUsumVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:log10SppPUsumVsCostErrInCORappendix}log10(number of species and PUs) vs. solution cost error.", echo=FALSE}
+
+plotLog10SppPUsumVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = log10_sppPUsum,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("log10 (sum of number of species and PUs)") +    #("sppPUsum") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotLog10SppPUsumVsCostErr
+```
+
+###  Product of number of species and PUs {#appendixProductSppPU}  
+
+```{r plotSppPUprodVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:sppPUprodVsCostErrInCORappendix}product of number of species and PUs vs. solution cost error.", echo=FALSE}
+
+plotSppPUprodVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = sppPUprod,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Product of number of species and PUs") +    #("sppPUprod") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotSppPUprodVsCostErr
+```
+
+###  log10 (product of number of species and PUs) {#appendixLogProductSppPU}  
+
+```{r plotLog10SppPUprodVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:log10SppPUprodVsCostErrInCORappendix}log10 (product of number of species and PUs) vs. solution cost error.", echo=FALSE}
+
+plotLog10SppPUprodVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = log10_sppPUprod,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("log10 (product of number of species and PUs)") +    #("log10_sppPUprod") +
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotLog10SppPUprodVsCostErr
+```
+
+###  Correct solution cost {#appendixCorSolCost}
+
+```{r plotCorSolCostVsCostErr, fig.align="center", out.width = "70%",  fig.cap = "\\label{fig:corSolCostVsCostErrInCORappendix}Correct solution cost vs. solution cost error.", echo=FALSE}
+
+plotCorSolCostVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = rsp_correct_solution_cost,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Correct Solution Cost") + 
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotCorSolCostVsCostErr
+```
+
+###  Correct solution fraction of total landscape {#appendixCorSolFrac}  
+
+```{r plotActualSolFracOfLandscapeVsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:actualSolFracOfLandscapeVsCostErrInCORappendix}Actual solution fraction of landscape vs. solution cost error.", echo=FALSE}
+
+plotActualSolFracOfLandscapeVsCostErr = 
+  ggplot (data = cor_tib__UR_Forward__Marxan_SA_SS__only,
+             aes (x = actual_sol_frac_of_landscape,
+                  y = rs_solution_cost_err_frac,
+                  color = rsp_base_wrap_str)) +
+        geom_point (size=0.25, shape=15) +
+        facet_wrap ( ~ rs_method_name_fac, nrow = 1) + 
+  
+  scale_y_continuous (labels = percent) + 
+  
+  xlab ("Correct solution fraction of total landscape") + 
+  ylab ("Solution Cost Error") +
+      theme (legend.title=element_blank())    #  Don't show legend title
+
+plotActualSolFracOfLandscapeVsCostErr
+```
+
+```{r echo=FALSE}
+###  Grouped versions of plots of problem size variables vs. Solution cost error
+
+# Not sure whether to leave the individual plots in or to use these panels instead.  I'll leave both in for now, but I suspect I'll ditch the panels in the end because you can see so much more detail in the individual plots.
+
+```
+
+```{r plotSppProbSizeVsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:sppProbSizeVsCostErrPlots} Logged problem size aggregate variables vs. Solution cost error for Base and Wrapped problems: (a) number of species, (b) number of PUs, (c) ratio of number of species to number of PUs.", echo=FALSE, eval=FALSE}
+
+patched <- plotRspNumSppVsCostErr / plotRspNumPUsVsCostErr / plotRspNumSppPerPUVsCostErr
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1,1))
+```
+
+```{r plotSppProbSizeAggregatesVsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:sppProbSizeAggregatesVsCostErrPlots} Logged problem size aggregate variables vs. Solution cost error for Base and Wrapped problems: (a) sum of number of species and PUs, (b) product of number of species and PUs.", echo=FALSE, eval=FALSE}
+
+patched <- plotSppPUsumVsCostErr / plotSppPUprodVsCostErr
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+```
+
+```{r plotLog10SppProbSizeAggregatesVsCostErr, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:log10SppProbSizeAggregatesVsCostErrPlots} Logged problem size aggregate variables vs. Solution cost error for Base and Wrapped problems: (a) log10 (sum of number of species and PUs), (b) log10 (product of number of species and PUs).", echo=FALSE, eval=FALSE}
+
+patched <- plotLog10SppPUsumVsCostErr / plotLog10SppPUprodVsCostErr
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+```
+
+----------
+
+#  Appendix - Implementation bugs {#appendixIssueNotes}
+
+Two small bugs in the `bdpg` code used in these experiments had minor consequences that affected the range of problem sizes generated but not our conclusions or the correctness of the results.  Both bugs have since been fixed in the latest version of the R code in package `bdpg`, but it was too late to rerun all of the experiments since they were a subset of a larger group of experiments that included problems both with and without uncertainty and took several months to run.  Below, we give a short explanation of the two bugs and their consequences.
+
+##  Nominal $p$ vs. effective $p'$ {#appendixNominalVsEffectiveP}
+
+An early issue in the R code meant that the effective range of model RB's parameter $p$ (called `p__prop_of_links_between_groups` in the R parameter lists and code) was smaller than what was specified in the input data, but did not affect the correctness of the problems and their solutions.  The error in the code was that the correct number of links between a pair of cliques in a single round ($\theta = pd^2$) was incorrectly programmed without the exponent, i.e., as $\theta = pd$.  This meant that the incorrect value of $p$ used in building model RB problems was equivalent to using a correct or effective value $p'=\frac{p}{d}$ since $p'd^2 = pd$ generates the same number of links between a pair of cliques in a single round.  
+
+The effects on the distribution of $p$ across the set of generated problems is shown in Fig. \ref{fig:nominalAndEffectivePHistograms}.  The input or nominal $p$ ranged from `r signif (base_min_nominal_p, 3)` to `r signif (base_max_nominal_p, 3)`, but the effective $p'$ ranged from `r signif (base_min_effective_p, 3)` to `r signif (base_max_effective_p, 3)`.  As desired, the nominal $p$ values were fairly uniformly distributed, however the effective $p'$ values were shifted lower and were no longer uniform.  In particular, they had far fewer values at the upper end of the distribution.  
+
+```{r, fig.align="center", out.width = "80%"}
+plot_title = "Histogram of nominal_p"
+
+hist_nominal_p <- 
+    ggplot (filter (cor_tib, 
+                    rsp_base_wrap_str == "Base", 
+                    rs_method_name == "UR_Forward"), 
+                    aes(x=rsp_nominal_p__prop_of_links_between_groups)) + 
+  geom_histogram() + 
+  xlab ("nominal value p") + 
+  ylab ("Count")
+
+```
+
+```{r, fig.align="center", out.width = "80%"}
+plot_title = "Histogram of effective p"
+
+hist_effective_p <- 
+    ggplot (filter (cor_tib, 
+                    rsp_base_wrap_str == "Base", 
+                    rs_method_name == "UR_Forward"), 
+                    aes(x=rsp_p__prop_of_links_between_groups)) + 
+  geom_histogram() + 
+  xlab ("effective value p'") + 
+  ylab ("Count")
+```
+
+```{r plotRepairPlots, fig.align="center", out.width = "80%",  fig.cap = "\\label{fig:nominalAndEffectivePHistograms} Histograms of $p$ and $p'$ variables that contribute to the number of species generated in Base problems by specifying the number of links between pairs of cliques in a single round of linking: (a) Uniformly distributed nominal value of $p$ given as input to problem generator, (b) Non-uniform distribution of effective value of $p$, i.e., $p'$, that resulted from issue distorting the nominal $p$.", echo=FALSE}
+
+patched <- hist_nominal_p / hist_effective_p
+
+patched + plot_annotation(tag_levels = 'a') + 
+          plot_layout (guides="collect") + 
+          plot_layout (heights=c(1,1))
+```
+
+Since the effective $p'$ was smaller than the nominal $p$ specified in the input parameters used in our experiments, there were fewer links per round than the correct $p$ would have given and therefore, fewer total species in each problem.  There was no other effect on the experiment, e.g., the correct solution set and the number of links between a pair of cliques were the same either way.  The only consequence is a poorer fit of the nominal $p$ to theoretical predictions of the difficulty of each problem than would be found if using the corresponding effective $p'$.  We had chosen the range of $p$ values to be from 0.14 to 0.36 in anticipation of generating larger values of $p$ than we got with the effective $p'$ values from `r signif (base_min_effective_p, 2)` to `r signif (base_max_effective_p, 2)`.  We had chosen the larger range with the intent of getting a larger range of difficulty, however, even with the smaller effective range of $p'$, we still got a large range of difficulty, so the impact of the error is not important to our conclusions.  
+
+----------
+
+##  Actual solution fraction of landscape vs. desired fraction {#appendixActualSolutionFractions}
+
+```{r computeActualSolSizeBounds, echo=FALSE}
+wrap_min_sol_pct = 100 * min (cor_wrap_tib$actual_sol_frac_of_landscape)
+wrap_max_sol_pct = 100 * max (cor_wrap_tib$actual_sol_frac_of_landscape)
+```
+
+```{r computeShouldHaveBeenWrapPUcts, echo=FALSE}
+
+base_min_correct_solution_cost = min (cor_base_tib$rsp_correct_solution_cost)
+base_max_correct_solution_cost = max (cor_base_tib$rsp_correct_solution_cost)
+  
+should_have_been_min_wrap_num_PUs = round (base_min_correct_solution_cost / 0.15, 0)
+should_have_been_max_wrap_num_PUs = round (base_max_correct_solution_cost / 0.15, 0)
+```
+
+Given a desired fraction of the Wrap landscape for the correct solution to occupy, the Wrap landscape total size should be calculated as:  
+
+$$
+total~Wrap~landscape~size = \frac{num~PUs~in~Base~problem~solution}{desired~Wrap~solution~fraction}  
+$$
+
+However, an issue in the early `bdpg` code used the *full size* of the Base problem in the numerator instead of just the *solution size* of the Base problem.  This had two consequences.  First, the actual solution fraction of the Wrap landscape didn't match the desired fraction of the full landscape size and second, the range of values for the number of PUs in a Wrap problem was shifted higher than what it should have been.  
+
+Wrap problem solutions should have all been 15% of the total Wrap landscape size, but instead, they were in the range  [`r signif (wrap_min_sol_pct, 3)`, `r signif (wrap_max_sol_pct, 3)`]% of the Wrap landscape.  Similarly, total Wrap problem landscape sizes should have been in the range [`r should_have_been_min_wrap_num_PUs`, `r should_have_been_max_wrap_num_PUs`] PUs, but instead were in the range [`r wrap_min_num_PUs`, `r wrap_max_num_PUs`] PUs.  
+
+Neither of these consequences affected our conclusions or the correctness of our results.  It only affected the range of Wrap landscape sizes and the range of correct solution fractions of those landscapes.  
+
+----------
+
+#  Appendix - Related Work {#appendixp1RelatedWork}  
+
+##  Related ecological work {#appendixRelatedEcoWork}    
+
+To our knowledge, no reserve selection studies consider synthetic data generators to explicitly provide both known solutions and a range of problem structure/difficulty and size.  We know of only two reserve selection studies that explore variation in species co-occurrence structure as a factor in reserve selector performance.  @presseyEffectsDataCharacteristics1999 explores efficiency and sub-optimality of four methods based on size variation of PUs, size of data set, and feature nestedness and rarity within variants of a single 1886 PU landscape with 248 features.  @viscontiBuildingRobustConservation2015 examines robustness of solutions to changes in implementation based on varying a complementarity measure within many versions of four synthetic 20 PU landscapes with 5 species.  Other case studies, such as @warmanSensitivitySystematicReserve2004, @cheokSympathyDevilDetailing2016, and @rodewaldTradeoffsValueBiodiversity2019,  explore combinations of problem attributes such as PU size and shape, targets, thematic resolution, and costs on a single landscape.  While these studies do sample different input values for problems, none of them attempt to theoretically guarantee a generalizable population of problem structures with a range of difficulty. The theoretical guarantee matters because without it, varying the input data may still lead to many problems of similar difficulty even if the inputs varied widely.  There are other theoretical issues discussed in the computational literature that relate to the density/clustering of solutions [ **\textcolor{red}{Need to find this citation again.  I think that it was in one of the Xu papers.} }**]
+
+##  Related computational work {#appendixRelatedCompWork}
+
+The relationship between problem structure and difficulty has attracted attention in theory of computation since at least the early 1980s.  The proven difficulty of NP-hard problems is based on worst-case performance, but early work such as @goldberg1982ipl suggested that average-case problems might be comparatively easy.  However, later work showed this was likely a consequence of choosing a test distribution containing primarily easy problems (@franco1983dam, @mitchell1992ptncaia).  Simultaneously, interest was sparked by work proposing the existence of abrupt phase transitions in the difficulty of NP-complete decision problems around threshold values of problem structural descriptors  (@huberman1987ai, @cheeseman1991ip1ijcai).  The proximity of parameter values to the threshold indicated the problem's relative difficulty (which is how our parameters for model RB were chosen).  
+
+[ **\textcolor{red}{Need some explanation and citation for the genesis and meaning of the model names, i.e., A-D and RB and RD(?) ?  I think that I have a large note file about this whole evolution of phase transition stuff.  I can't remember the name of the file at the moment.} }**]
+The 1990s and 2000s saw numerous papers attempting to identify the threshold location and algorithm behavior in its neighborhood by using and improving random problem generators (@smithLocatingPhaseTransition1996, @achlioptas1997papocp, @gent2001c), including model RB (@xu2005ipnijcai).  Independent of phase transitions and following from @krishnamurthy1987itc,  Sanchis was simultaneously developing different generators for testing approximation algorithms for NP-complete problems, including vertex cover (@sanchis1989, @sanchisExperimentalTheoreticalResults1996a).  We have not explored her methods here but they may be of future interest.  
+
+----------
+
+#  Appendix - COR SI Supplemental References {#appendixCorSuppRefs}  
+
+<div id="refs"></div>
+
+----------
+
