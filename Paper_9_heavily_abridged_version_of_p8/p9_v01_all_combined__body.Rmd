@@ -108,7 +108,8 @@ output:
     toc: yes
     toc_depth: 6
 bibliography: ../btl_zotero_lib.bib
-csl: ../Zotero/styles/ecological-monographs.csl
+#csl: ../Zotero/styles/ecological-monographs.csl
+csl: ../Zotero/styles/ecology.csl
 ---
 
 ```{r include=FALSE}
