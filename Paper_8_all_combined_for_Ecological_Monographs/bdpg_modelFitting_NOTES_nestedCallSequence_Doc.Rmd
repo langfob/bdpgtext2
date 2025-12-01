@@ -1,0 +1,115 @@
+---
+params:
+  initialDate: "2022-12-29"
+title: "Nested call sequence notes for model fitting code in bdpg"
+author: |  
+    | Bill Langford
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+---
+
+```{r version_history, eval=FALSE, echo=FALSE, cache=TRUE}
+
+#  Version history
+
+##  bdpg_modelFitting_NOTES_nestedCallSequence_Doc.Rmd v01 December 31, 2022  
+
+Renamed from an R file created around 2022 12 27 called bdpgtext/R_new/.
+```
+
+#  Nested call sequence starting at fit_cost_err_frac()  
+
+I went through by hand and traced who called who when I was fitting a linear model because I couldn't figure out where things were getting done and what was returned.  This is now (2022 12 31) slightly outdated since I've been abstracting the top layer (fit_cost_err_frac()) in the last few days so that it doesn't need to have a separate function for each output error.  
+
+[Skip to new page so that whole sequence fits on one page.  I think there might also be a latex command that forces something to fit on a page by shrinking the font, but I can't remember the command.]
+\pagebreak
+
+```{r nestedCallSequence, eval=FALSE}
+fit_cost_err_frac()
+    {
+    full_fits_plot = fit_to_target_var()
+        {
+        for (cur_rs_name in rs_names_vec)
+            {
+            cur_test_eval_list = fit_one_rs (cur_rs_name) 
+                {
+                test_eval_list = fit_and_plot ()
+                    {
+                    test_eval_list = f_lm ()
+                        {
+                        test_eval_list = ppe_for_train_and_test()
+                            {
+                            test_eval_list = ppe_for_train_and_test_given_preds ()
+                                {
+                                test_eval_list  = eval_model_on_train_or_test_data ()
+                                        true_vs_pred_df = 
+                                            data.frame (ds_label = rep (test_or_train_string, 
+                                                                        length (true_values_vec)), 
+                                                        true_values  = true_values_vec, 
+                                                        pred_values  = predicted_vec, 
+                                                        dom_err_type = dom_err_type)
+                                        
+                                        return (list (
+                                                    true_vs_pred_df = true_vs_pred_df, 
+                                                    rmse_value      = rmse_value, 
+                                                    R2              = R2, 
+                                                    adj_R2          = adj_R2))
+
+                                return (test_eval_list)
+                                }
+                                
+                            return (test_eval_list)
+                            }
+                        
+                        return (test_eval_list)
+                        }
+                
+                    return (test_eval_list)
+                    }
+            
+                return (test_eval_list)
+                }
+    
+            cur_test_eval_list$true_vs_pred_df %>% 
+                mutate (rs_method_name = cur_rs_name, 
+                        resid_pred_minus_true = pred_values - true_values) -> cur_true_vs_pred_df
+                
+            full_true_vs_pred_df = cur_true_vs_pred_df
+            }
+        
+        full_fits_plot = ggplot (data = full_true_vs_pred_df)  
+    
+        return (full_fits_plot)
+        }
+
+    return (full_fits_plot)
+    }
+```
+

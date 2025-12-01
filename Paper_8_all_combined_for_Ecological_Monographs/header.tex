@@ -1,0 +1,37 @@
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
