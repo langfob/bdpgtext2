@@ -1,0 +1,230 @@
+---
+params:
+  initialDate: "2020-11-19"
+  model_RB_img_path: "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Figures/Figure_RB.png"
+  wrap_img_path: "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Figures/figure wrap from powerpoint.png"
+title: "Varying Problem Difficulty in Uncertain Reserve Selection"
+author: "Bill Langford - `r format(Sys.time(), '%b %d, %Y')`"
+#date: "`r paste(Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    fig_caption: yes
+    toc: false
+    number_sections: false
+  bookdown::word_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    fig_caption: yes
+    toc: false
+    number_sections: false
+  html_document:
+    fig_caption: false
+    toc: false
+---
+
+```{r version_history, eval=FALSE, echo=FALSE}
+#  Version history
+
+##  v1 of 3 paper short summary November 19, 2020  
+
+Cloned header material from /Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_2_comparison_of_reserve_selectors/v13_Paper_2_comparison_of_reserve_selectors__body.Rmd.   
+```
+
+```{cat, engine.opts = list(file = "header.tex")}
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
+```
+
+```{r loadLibraries, echo=FALSE}
+library (knitr)    #  For include_graphics()
+```
+
+```{r setechoOptions, include=FALSE}
+
+    #  Echo the values of the main options.
+
+cat ("\nMain options are:\n")
+for (idx in 1:length(params))   
+  cat ("\n", names(params)[idx], ": ", params[[idx]], sep="")
+```
+
+```{r global_options, include=FALSE}
+
+    #  Global options are set here based on some examples in:
+    #      https://kbroman.org/knitr_knutshell/pages/Rmarkdown.html
+    #      https://kbroman.org/knitr_knutshell/pages/figs_tables.html
+
+knitr::opts_chunk$set(#fig.width=12, 
+                      #fig.height=8, 
+                      fig.path='Figs/',  #  Save figures to indiv files in Figs/
+                      echo=FALSE,        #  Don't echo code to output
+              warning=FALSE,    #TRUE,     #FALSE, 
+                      message=FALSE)
+```
+
+Reserve selection research and testing optimistically ignores the fact that each reserve selection problem has a different relative difficulty and uncertainty.  This summary looks at 3 draft papers that borrow techniques from computational theory to build problems with known solutions and varying difficulty and then analyze the consequences.  After this first page, I've included a couple of plots from each draft to give you an idea of the kind of analysis and conclusions that they allow.  *Figure \ref{fig:p2InVsTotOutERrrLE125inResults} is the most important plot in this document.*  
+
+**Paper 1:  Explanation of new problem generation method using solution planting**  
+The first paper explains the method that I've borrowed from computational theory and enhanced to enable it to use arbitrary, ecologically plausible species distributions. It also shows some results for running 4 reserve selectors on 3,000 problems created using the 2 new problem generators and *assuming no input uncertainty*.  They're primarily a demo, since the methods themselves are the real results for the paper.  
+
+**Paper 2:  Reserve selector comparision under uncertainty and varying problem difficulty**  
+The second paper takes the problems from the first paper, which already have varying difficulty, and creates 4 different variations of each problem by adding different kinds of uncertainty.  It then runs 4 reserve selectors on each of those 12,000 problems.  Figures \ref{fig:p2InVsTotOutERrrLE125inResults} and \ref{fig:p2RepShortfallVsCostErrLE125inResults} here show the results of those 48,000 runs, i.e., huge errors and huge variation in error.  One big message is that, for this data, the more exact the optimizer is on error-free input, the more error you get in the solution when there *is*  input error.
+
+**Paper 3:  Learning to predict given single problem error based only on problem structure**  
+Given huge variation in problem difficulty and input uncertainty, knowing the average output error across all problems has little utility for a single, specific  conservation decision.  Consequently, the third paper looks at whether it's possible to predict how much error a given reserve selector is likely to have on *the user's own problem*.  In real problems, we can't know things like the true amount of input error or the correct solution, so we need performance predictors that can be measured on the problem as given to us with all its erroneous inputs.  Problem size is one family of knowable predictor, but Figure \ref{fig:p3predictCostUsingProbSizeFig} shows that it's a poor predictor.  Another lens is to look at measures of problem complexity, so I converted each problem from a list of species and planning units into a bipartite graph and measured various attributes of that graph to use as predictors.  I then fit models to predict what the total output error would be *on a given problem* using different kinds of *knowable* predictors (examples are in Figures \ref{fig:p3predictCostUsingProbSizeFig} and \ref{fig:p3predictCostUsingGraphFig}).  The bipartite measures did surprisingly well and much better than any of the other input variables.  
+
+**General notes about the plots**  
+
+- In all but Figure \ref{fig:BaseProbExampleDiagram}, red dots are problems where the added uncertainty was dominated by False Positives (i.e., input data declared a species to be on a Planning Unit where it actually does not occur) and blue dots are dominated by False Negative errors (species that actually occur on a Planning Unit are not reported there).  Behavior is very different for FP and FN dominated problems.  
+
+- In what follows, "cost error" does not refer to errors in the *input* Planning Unit costs.  It refers to errors in the reserve selector's estimate of the optimal total solution cost, i.e., the total number of planning units required to meet all species targets.  
+
+- Results here are from 4 reserve selectors: Gurobi (mixed integer programming),   Marxan (Simulated Annealing), Marxan's Summed Solution (voting), and UR_Forward (a simple greedy "unprotected richness" heuristic).  Only the voting method Marxan_SA_SS differs much from the others.  
+
+
+\newpage
+
+#  Paper 1 - Explanation of problem generator methods
+
+Figure \ref{fig:BaseProbExampleDiagram} shows one of the figures from Paper 1 that helps explain the methods there.  I don't expect you to have any clue about how the methods work from reading just the figure caption here.  The **main message** is only *to illustrate the kind of thing that's in paper 1*.  Also note that the kind of graph used in paper 1 (and the diagram below) is not the bipartite graph used for prediction in paper 3, so don't be confused by this graph not looking like a bipartite graph.  This is a different kind of graph that serves a different purpose in generating the problems.
+
+```{r BaseFig, echo=FALSE, out.height = "50%", fig.cap = "\\label{fig:BaseProbExampleDiagram}Diagram for example Base problem.  Each subpane corresponds to a step in the problem generation process.  Dashed line indicates separation between maximum independent set nodes and minimum vertex cover nodes, with the 3 nodes above the line constituting the maximum independent set of PUs and the 9 nodes below the line constituting the minimum vertex cover PUs, which is also an optimal reserve selection.  Each link represents a species that occurs on the two connected PU nodes and nowhere else.  Colors of links in c) and d) distinguish different rounds of linking."}
+
+base_img_path = "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Figures/Figure_RB.png"
+include_graphics(base_img_path)
+
+#old code# ![Figure RB.](/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Figures/Figure_RB.png)
+```
+
+\newpage
+
+#  Paper 2 - Comparison of reserve selectors
+
+Figure \ref{fig:p2InVsTotOutERrrLE125inResults} is the most important figure out of all the papers.  The **main messages** are the *huge variation* in both *performance* and *error magnification* as well as the frequently *huge amount* of error in the solutions (up to and beyond 100% error) given that all input errors are less than 10%.  
+
+```{r p2InVsTotOutERrrLE125inResults, echo=FALSE, out.height = "50%", fig.cap = "\\label{fig:p2InVsTotOutERrrLE125inResults}\\textbf{Input error vs. total output error with magnification rays}."}
+
+img_path = "Figs/plotInVsTotOutErrLE125inResults-1.pdf"
+
+# img_path = "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_2_comparison_of_reserve_selectors/Figs/plotInVsTotOutErrLE125inResults-1.pdf"
+
+include_graphics (img_path)
+```
+
+- Each of the 12,000 points on each subplot represents one reserve selection problem.  
+- The **x axis** shows amount of input error on each problem, all of which are small, i.e., $\leq$ 10%.  
+- The **y axis** shows the total output error in the reserve selector's solution on the given problem.  The axis is truncated at *only* 125% output error since there are fewer values $>$ 125%.  
+- The **3 rays** on the plot show the **error magnification (1x, 5x, 10x)**.  The 1x ray at the bottom is input error equals output error.  The middle ray is output error equals 5 times input error and the top is 10 times input error.  Note that many values are even above 10x.  
+- The **median magnification** for each method isn't shown but each is ~**5x**, so **at least half of all problems had $>$ 5 times as much output error as input error!**  Mean values are even larger.  
+- You can also see from the plot that users would be **unable to predict the amount of output error** on any given problem even if they were able to know the amount of input error, i.e., you can find almost any amount of output error you want at almost any input error.  
+
+\newpage
+
+Figure \ref{fig:p2RepShortfallVsCostErrLE125inResults} below, breaks down the 2 types of output error that go into the total output error for each point shown in Figure \ref{fig:p2InVsTotOutERrrLE125inResults}, but Figure \ref{fig:p2RepShortfallVsCostErrLE125inResults} differs in not displaying input error amounts.  The **main message** is the very *different types of risk* when input errors are dominated by False Negatives vs. dominated by False Positives (e.g., from species distribution models).  In particular, FPs can give big species representation shortfalls.
+
+```{r p2RepShortfallVsCostErrLE125inResults, echo=FALSE, out.height = "50%", fig.cap = "\\label{fig:p2RepShortfallVsCostErrLE125inResults}\\textbf{Representation error vs. Solution cost error}"}
+
+img_path = "Figs/plotRepShortfallVsCostErrLE125inResults-1.pdf"
+
+# img_path = "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_2_comparison_of_reserve_selectors/Figs/plotRepShortfallVsCostErrLE125inResults-1.pdf"
+
+include_graphics (img_path)
+```
+
+
+- **Representation shortfall** on the **x axis** shows the percent of species in the given problem that failed to meet their target.  
+- **Solution cost error** on the **y axis** shows percentage error the reserve selector's solution has with respect to the known true optimal solution cost from the correct input data.  
+  - Negative values mean that the reserve selector has underestimated the optimal cost, so it can't go lower than -100%.  
+  - Overestimation can be unbounded but I've truncated positive y values at 125% error since there aren't as many points beyond that (though the maximum is over 500%).
+- The **tiny box at the origin is 10%** on each side.  If everything was well-behaved and all output errors were less than or equal to the largest tested input error of 10%, they would fall in that box.  
+- The **larger box in the lower right shows the hardest problems**, i.e, all problems where both representation shortfall AND solution cost error are greater than 50%.  About 5% of all problems fall in this box.  
+- **Total output error** in Figure \ref{fig:p2InVsTotOutERrrLE125inResults} is the **vector magnitude** of corresponding point in Figure \ref{fig:p2RepShortfallVsCostErrLE125inResults}.  
+
+\newpage
+
+#  Paper 3 - Learning to predict output error from problem structure
+
+**Figures \ref{fig:p3predictCostUsingProbSizeFig} and \ref{fig:p3predictCostUsingGraphFig}** compare results of predicting individual problem output error using problem size vs. bipartite graph measures.  The **main messages** are that *problem size is a poor predictor* but it's possible to get a *surprisingly reasonable predictor from the graph measures* even without any knowledge of input error.  
+
+```{r p3predictCostUsingProbSizeFig, echo=FALSE, out.height = "33%", fig.cap = "\\label{fig:p3predictCostUsingProbSize}Results of fitting solution cost error using just PROBLEM SIZE variables."}
+
+img_path = "Figs/predictCostErrorUsingProbSize-1.pdf"
+
+# img_path = "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_3_learn_to_predict_output_error/Figs/predictCostErrorUsingProbSize-1.pdf"
+
+include_graphics (img_path)
+```
+
+```{r p3predictCostUsingGraphFig, echo=FALSE, out.height = "33%", fig.cap = "\\label{fig:p3predictCostUsingGraph}Results of fitting solution cost error using just BIPARTITE GRAPH measures."}
+
+img_path = "Figs/predictCostErrorUsingGraph-1.pdf"
+
+# img_path = "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext/Paper_3_learn_to_predict_output_error/Figs/predictCostErrorUsingGraph-1.pdf"
+
+include_graphics (img_path)
+```
+
+**Figure \ref{fig:p3predictCostUsingProbSizeFig} shows results of learning a model to predict total output error for a given reserve selector and problem based on size of the problem **(number of species, etc).  
+
+- The **x-axis** is the total output error value predicted for a given problem by the learned model.  
+- The **y-axis** is the true amount of total output error for the given reserve selector on the given problem.  
+- The **diagonal line** shows the desired outcome of predicted = true.  
+- I think that many people's intuition is that as the problem gets bigger, it gets harder.  However, as you can see in Figure \ref{fig:p3predictCostUsingProbSizeFig}, **size matters some, but not much**.  
+
+**Figure \ref{fig:p3predictCostUsingGraphFig} shows an alternative, where I mapped each problem as a bipartite graph** with planning units as one type of node and species as the other type and then ran a bunch of bipartite graph measures over that graph.  I then learned a model using some of those measures as the independent variables.  
+
+- This model **reduced the rmse by 2/3** for the 3 more exact reserve selectors compared to the values when using problem size.  
+  - Interestingly, Marxan's **summed solution behavior is much less predictable** with either set of input variables.
+
+- I've also fit a bunch of **other models using combinations of problem size and bipartite measures**, as well as things that you can't actually know, such as the **amount of input error**.  
+  - Nothing helps more than a hundredth or two in the rmse or the adjusted $R^2$.  The **bipartite measures capture almost all of the predictive power**.  
+  - Also note that the rmse and adjusted $R^2$ values are computed on a separate 2,000 problem test set, not the 2,000 problem training set (where the scores were  higher).  I still have another 8,000 problems set aside to use in the final paper that I haven't looked at other than the summary statistics and plotting shown in paper 2.  I haven't used them at all for training or testing or feature selection for any predictive models.
+
+- While even the bipartite model is far from perfect, it does show that there are different, structural ways of looking at characteristics of problems that help you **predict how much you should trust a given reserve selector's solution**.  This is something that I think managers would benefit from knowing and researchers are not addressing.  Problem difficulty doesn't seem to be on anyone's radar at all and the comparisons in paper 2 show that it may be quite important.
+
+#  Web interface to data
+
+All of the data in these papers comes from a single large set of experiments that took 5 or 6 months to run on 40 CPUs.  What's in the papers can only be the tip of the iceberg of possible analyses.  Rather than writing a bunch of different appendices exploring different analysis choices, I've built a web interface to the data in Paper 2.  It allows readers and reviewers to explore different choices using push button selections in the interface.  The link is below.  Since the data is big and the web server is free, it's a little slow to load, but I think it will help support the papers a lot. 
+
+[https://langfob.shinyapps.io/shinyServerUploadTest/](https://langfob.shinyapps.io/shinyServerUploadTest/)  
+
+
