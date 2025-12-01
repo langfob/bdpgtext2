@@ -1,0 +1,32 @@
+# Massive data directories
+Data/*
+
+# Latex files
+*.tex
+
+# Dead code directories (from your inventory)
+R/*
+
+# Standard R cruft
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# System files
+.DS_Store
+*.swp
+
+# Zotero bibliography-related files
+btl_zotero_lib.bib
+Zotero/*
+
+# Old versions of R functions
+R
+
+# Saved output figures
+Figs
+
+# Miscellaneous
+LICENSE
+rg.help.txt
