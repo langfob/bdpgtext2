@@ -1,0 +1,4 @@
+- Brief description of what the research achieved
+- List of delivered papers (final versions only)
+- List of the 5 R packages and their purposes
+- High-level dependency diagram (can be ASCII art or mermaid)
