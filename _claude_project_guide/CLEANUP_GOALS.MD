@@ -2,99 +2,66 @@
 
 ## Current State Problems
 
-1. **Code scattered across multiple locations**: R code exists in packages, loose R files, and embedded in Rmd files
-2. **Inconsistent documentation**: Mix of old manual docs, partial roxygen2, and undocumented functions
-3. **No systematic testing**: testthat files exist but are mostly empty
-4. **Dead code and experiments**: ~10 years of exploratory work mixed with production code
-5. **Multiple paper versions**: 9 different paper drafts with associated analysis scripts
-6. **Massive unmanaged data**: Thousands of simulation outputs with no clear organization
-7. **Package interdependencies unclear**: Not sure which packages depend on which
-8. **No version control**: Code exists only in local directories, not in git/GitHub
+A. Plotting
+1. **Some plots do not have SA above SA_SS in right hand column**: Prediction plots do correctly have SA over SA_SS
+2. **Need way to convey point density in heavily overplotted regions of 4 panel plots**: Might need histograms on axes or contours on plots or ???
+
+B. Predictive model fitting
+3. **No coherent strategy for test/train split in final paper**: Have some code for separating problems into independent groups but not for aggregating split tests
+4. **Overly complicated code for model fitting**: Functions so deeply nested that it's hard to understand and modify
+5. **Need a way to compute & show prediction intervals, not confidence intervals on predictions**: Conventional prediction intervals require assumptions that we violate, so maybe there is another way using bootstrapping, or???
+
+C. Benchmark problem repository management
+6. **Massive unmanaged data needs code for extracting data subsets & applying future actions to problems**: Thousands of simulation outputs with no functions to walk through data and apply actions
+
+D. Poor documentation and testing
+8. **Poor documentation of meaning of network variables used**: Many variables from bipartite package whose meaning is poorly understood and documented
+9. **Poor documentation of sequence of actions to build input data**: 
+2. **Poor documentation of functions**: Mix of some inline comments, partial roxygen2, and undocumented functions
+12. **Poor documentation of file input file and transformed file contents**: Project starts with over 200 columns and progressively strips away many of them
+3. **No systematic testing**: testthat files do not exist for functions in R files
+
+E. Streamlining
+4. **Dead code and unused data columns**: ~10 years of exploratory work shows in form of many unused columns & much old, unused code
 
 ## End State Vision
 
-### GitHub Repositories (New Structure)
+### Cleaned and streamlined R code
 
-**Repo 1: `conserv-plan-core`**
-- Core algorithms for conservation planning under uncertainty
-- Fully documented with roxygen2
-- Comprehensive testthat coverage (>80% of key functions)
-- Clean DESCRIPTION, NAMESPACE, proper R package structure
-- GitHub Actions CI for automated testing
-- Vignettes showing basic usage
+**R directory**
+- Removal of unused functions
+- Functions fully documented with roxygen2
 
-**Repo 2: `conserv-plan-uncertainty`**  
-- Uncertainty quantification tools
-- Depends on: conserv-plan-core
-- Same documentation/testing standards as core
-
-**Repo 3: `conserv-benchmark-problems`**
-- Benchmark problem dataset for evaluating planning software
-- Data package with documentation
-- Includes problem definitions, solutions, evaluation metrics
-- Separate from algorithms (for independent use by other researchers)
-
-**Repo 4: `conserv-analysis-paper`** (optional - may stay private)
-- Analysis scripts and Rmd files for published papers
-- Uses the above packages as dependencies
-- Reproducible workflow from raw data to figures
-- Clear separation: data inputs → analysis → outputs
+**Rmd file(s)`**  
+- Paper 9 manuscript
+- Paper 9 data building
 
 ### Code Quality Standards
 
 **Documentation:**
-- All exported functions have complete roxygen2 docs
+- All functions in R directory have complete roxygen2 docs
 - @param, @return, @examples for each function
-- Package-level documentation (?packagename)
-- README.md with installation and quick start
 
 **Testing:**
-- testthat tests for all exported functions
+- testthat tests for functions in R directory
 - Tests cover: normal cases, edge cases, error handling
-- At least 80% coverage of key algorithmic functions
-- Tests run automatically on GitHub Actions
 
 **Code Style:**
-- Consistent tidyverse-style formatting
 - Functions do one thing well (single responsibility)
 - Magic numbers replaced with named constants or parameters
 - Clear variable names (no single letters except loop indices)
 
-**Dependencies:**
-- Explicit DESCRIPTION imports (no hidden library() calls)
-- Minimize dependencies where possible
-- Document why each dependency is needed
-
-## What Gets Removed/Archived
-
-**Delete Entirely:**
-- Empty or stub directories from failed experiments
-- Old .Rhistory, .RData files
-- Duplicate copies of code ("_backup", "_old" directories)
-- Paper drafts v1-v8 (keep only v9 final)
-
-**Archive (Move to `_archive/` subdirectory):**
-- Early experiment code (for historical reference if needed)
-- Old paper versions (in case reviewer comments are useful)
-- Original manual documentation (before roxygen2)
-- Keep one exemplar of old analysis, delete rest
-
-**Migrate to New Structure:**
-- Extract reusable functions from Rmd → package functions
-- Consolidate scattered R files into appropriate packages
-- Move working analysis scripts to conserv-analysis-paper repo
-
 ## New Functionality to Add
 
 **Priority 1 (Essential for publication):**
-- Parallel processing wrapper for cluster runs (currently ad-hoc)
-- Standardized result validation function
-- Export functions for common output formats (CSV, GeoJSON)
+- Fix variable order in plots so that SA is always above SA_SS
+- Develop test/train method to have independent problems within sets
+- Develop method to aggregate results across these independent test/train sets
 
 **Priority 2 (Would be nice):**
-- Progress bars for long-running optimizations
-- Better error messages with suggested fixes
-- Plotting functions for common visualizations
+- Develop method for computing meaningful prediction intervals, possibly using bootstrap
+- Cleaner, more transparent calling of learning algorithms for prediction of error
+- Clean up and document building of input files from raw data
 
 **Priority 3 (Future work):**
 - Integration with other conservation planning tools
