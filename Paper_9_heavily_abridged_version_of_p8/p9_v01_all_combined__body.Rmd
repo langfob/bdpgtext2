@@ -582,30 +582,46 @@ cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
 
 
 
-source (file.path (proj_dir, "/R_new/p8.unifiedDataLoading.v01.R"), 
+# source (file.path (proj_dir, "/R_new/p8.unifiedDataLoading.v01.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/p8.unifiedDataLoading.v01.R"), 
          local = knitr::knit_global())
 
 #--------------------
 
-source (file.path (proj_dir, "/R_new/p8.preprocessingForLearning.v01.R"), 
+# source (file.path (proj_dir, "/R_new/p8.preprocessingForLearning.v01.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/p8.preprocessingForLearning.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
+# source (file.path (proj_dir, "/R_new/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_plotting_and_evaluation_functions.R"), 
+# source (file.path (proj_dir, "/R_new/v1_paper_3_plotting_and_evaluation_functions.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/v1_paper_3_plotting_and_evaluation_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_utility_functions.R"), 
+# source (file.path (proj_dir, "/R_new/v1_paper_3_utility_functions.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/v1_paper_3_utility_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_fitting_functions.R"), 
+# source (file.path (proj_dir, "/R_new/v1_paper_3_fitting_functions.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/v1_paper_3_fitting_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/p8.matildaFunctions.v01.R"), 
+# source (file.path (proj_dir, "/R_new/p8.matildaFunctions.v01.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/p8.matildaFunctions.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"), 
+# source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/v2_paper_2_func_defns_for_plotting.R"), 
          local = knitr::knit_global())
 
 # 2025 11 29 - BTL
@@ -614,7 +630,9 @@ source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"),
 
 # source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
 #          local = knitr::knit_global())
-source (file.path (proj_dir, "/R_new/v2_paper_3_cv_test_train_splitting_functions.R"), 
+# source (file.path (proj_dir, "/R_new/v2_paper_3_cv_test_train_splitting_functions.R"), 
+#          local = knitr::knit_global())
+source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
          local = knitr::knit_global())
 ```
 
