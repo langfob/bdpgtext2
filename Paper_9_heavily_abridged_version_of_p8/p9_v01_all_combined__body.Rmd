@@ -569,52 +569,33 @@ cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
 #  I just haven't had it affect something important enough to notice.
 #-------------------------------------------------------------------------------
 
-# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
-#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
-#         local = knitr::knit_global())  
-# 
-# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
-#         local = knitr::knit_global())
-
-## 2022 12 17  ##source (file.path (proj_dir, 
-## 2022 12 17  ##"R/v1_p6_load_libraries_and_R_source_code.R"), 
-## 2022 12 17  ##        local = knitr::knit_global())
-
-
-
-source (file.path (proj_dir, "/R_new/p8.unifiedDataLoading.v01.R"), 
+source (file.path (proj_dir, "/R/p8.unifiedDataLoading.v01.R"), 
          local = knitr::knit_global())
 
 #--------------------
 
-source (file.path (proj_dir, "/R_new/p8.preprocessingForLearning.v01.R"), 
+source (file.path (proj_dir, "/R/p8.preprocessingForLearning.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
+source (file.path (proj_dir, "/R/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_plotting_and_evaluation_functions.R"), 
+source (file.path (proj_dir, "/R/v1_paper_3_plotting_and_evaluation_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_utility_functions.R"), 
+source (file.path (proj_dir, "/R/v1_paper_3_utility_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v1_paper_3_fitting_functions.R"), 
+source (file.path (proj_dir, "/R/v1_paper_3_fitting_functions.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/p8.matildaFunctions.v01.R"), 
+source (file.path (proj_dir, "/R/p8.matildaFunctions.v01.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"), 
+source (file.path (proj_dir, "/R/v2_paper_2_func_defns_for_plotting.R"), 
          local = knitr::knit_global())
 
-# 2025 11 29 - BTL
-# Move source file from R to R_new since it is referenced in current code, 
-# which assumes R code is in R_new.
-
-# source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
-#          local = knitr::knit_global())
-source (file.path (proj_dir, "/R_new/v2_paper_3_cv_test_train_splitting_functions.R"), 
+source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
          local = knitr::knit_global())
 ```
 

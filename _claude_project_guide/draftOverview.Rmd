@@ -88,6 +88,67 @@ Particularly, bdpg_short_summary.possible_smith-miles_revision.docx.
 
 # Problems I want to fix
 
+## Shiny supplement has a bug that wasn't there before
+
+Not sure what this is about.  Here's the error message when I do the knit:
+
+```
+processing file: p9_v01_all_combined____Shiny_app__supplemental_information.Rmd
+  |.............................       |  82% [plotBoxplot1pctTotOutErrFull]   
+
+Error in `combine_vars()`:
+! Faceting variables must have at least one value.
+Backtrace:
+     x
+  1. \-rmarkdown::render(...)
+  2.   \-knitr::knit(knit_input, knit_output, envir = envir, quiet = quiet)
+  3.     \-knitr:::process_file(text, output)
+  4.       +-xfun:::handle_error(...)
+  5.       +-base::withCallingHandlers(...)
+  6.       \-knitr:::process_group(group)
+  7.         \-knitr:::call_block(x)
+  8.           \-knitr:::block_exec(params)
+  9.             \-knitr:::eng_r(options)
+ 10.               +-knitr:::in_input_dir(...)
+ 11.               | \-knitr:::in_dir(input_dir(), expr)
+ 12.               \-knitr (local) evaluate(...)
+ 13.                 \-evaluate::evaluate(...)
+ 14.                   +-base::withRestarts(...)
+ 15.                   | \-base (local) withRestartList(expr, restarts)
+ 16.                   |   +-base (local) withOneRestart(withRestartList(expr, restarts[-nr]), restarts[[nr]])
+ 17.                   |   | \-base (local) doWithOneRestart(return(expr), restart)
+ 18.                   |   \-base (local) withRestartList(expr, restarts[-nr])
+ 19.                   |     \-base (local) withOneRestart(expr, restarts[[1L]])
+ 20.                   |       \-base (local) doWithOneRestart(return(expr), restart)
+ 21.                   +-evaluate:::with_handlers(...)
+ 22.                   | +-base::eval(call)
+ 23.                   | | \-base::eval(call)
+ 24.                   | \-base::withCallingHandlers(...)
+ 25.                   \-watcher$print_value(ev$value, ev$visible, envir)
+ 26.                     +-base::withVisible(handle_value(handler, value, visible, envir))
+ 27.                     \-evaluate:::handle_value(handler, value, visible, envir)
+ 28.                       \-handler$value(value, visible)
+ 29.                         \-knitr (local) fun(x, options = options)
+ 30.                           +-base::withVisible(knit_print(x, ...))
+ 31.                           +-knitr::knit_print(x, ...)
+ 32.                           \-knitr:::knit_print.default(x, ...)
+ 33.                             \-knitr::normal_print(x)
+ 34.                               +-base::print(x)
+ 35.                               \-ggplot2:::print.ggplot(x)
+ 36.                                 +-ggplot2::ggplot_build(x)
+ 37.                                 \-ggplot2:::ggplot_build.ggplot(x)
+ 38.                                   \-layout$setup(data, plot$data, plot$plot_env)
+ 39.                                     \-ggplot2 (local) setup(..., self = self)
+ 40.                                       \-self$facet$compute_layout(data, self$facet_params)
+ 41.                                         \-ggplot2 (local) compute_layout(..., self = self)
+ 42.                                           \-ggplot2::combine_vars(data, params$plot_env, vars, drop = params$drop)
+ 43.                                             \-cli::cli_abort("Faceting variables must have at least one value.")
+ 44.                                               \-rlang::abort(...)
+
+Quitting from p9_v01_all_combined____Shiny_app__supplemental_information.Rmd:590-603 [plotBoxplot1pctTotOutErrFull]
+Execution halted
+```
+
 ## Need to streamline and document code in R_new and in code chunks
 
 ## Display of plots does not always have SA over SA_SS in rightmost column
@@ -97,6 +158,12 @@ I think that this has something to do with the creation of factors used in ggplo
 Figures 5-7 all have the wrong order of subplots in the layout (i.e., SA is over UR_Forward).  Figures 8-11 has the order that I want (i.e., SA is over SA_SS).  
 
 Oddly, the figures shown in the Summary files have SA and SA_SS in the correct place.  I think that they came from Paper 1 and Paper 2 originally.  
+
+There is a command in some of the plotting of predictions (in the file "v1a_paper_3_fitting_functions__returning_fitting_plots_instead_of_displaying_them.R") that says:
+"ggplot (aes (value, reorder (row, value), color = value > 0))".
+Maybe that has something to do with getting SA and SA_SS in the correct order since the help for the reorder function says:
+
+"reorder is a generic function. The "default" method treats its first argument as a categorical variable, and reorders its levels based on the values of a second variable, usually numeric."
 
 ## Eric's request for density information in plots
 
@@ -124,6 +191,9 @@ Currently have simple euclidean combination, but doesn't make sense because repr
 
 
 # Need to design robust method for train/test split in final tests
+
+See one strategy for splitting into independent groups in file:
+"/R/v2_paper_3_cv_test_train_splitting_functions.R"
 
 ### How to characterize & display results that have probably have 4 test sets in split
 

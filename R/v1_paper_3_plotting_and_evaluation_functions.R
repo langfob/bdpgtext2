@@ -22,15 +22,15 @@
 
 #===============================================================================
 
-    #  Wrapper function for ppe_for_train_and_test_given_preds() to simplify 
-    #  use for commonly used models like lm().  If the model you're using 
-    #  only requires the 2 common arguments for predict(), i.e., the model and 
-    #  the data set, then you can call this function, which will call predict() 
-    #  for you and hand the results to the main function that this wraps.
+    #  Wrapper function for ppe_for_train_and_test_given_preds_for_one_RS() to  
+    #  simplify use for commonly used models like lm().  If the model you're  
+    #  using only requires the 2 common arguments for predict(), i.e., the model  
+    #  and the data set, then you can call this function, which will call  
+    #  predict()for you and hand the results to the main function that this wraps.
     #
     #  Note that "ppe" is short for "plot, predict, and evaluate".
 
-ppe_for_train_and_test <- 
+ppe_for_train_and_test_for_one_RS <- 
     function (rs_name, 
               
               fitted_model, 
@@ -56,7 +56,8 @@ ppe_for_train_and_test <-
     lm_resid_plot = lm_resid_plot, 
     lm_qqplot = lm_qqplot, 
         
-        rf_from_party = TRUE 
+#        rf_from_party = TRUE 
+        rf_from_party = FALSE    #  2024 03 06 - BUG FIX 
               )
     {
         #  Get predicted values from the rf.
@@ -66,7 +67,7 @@ ppe_for_train_and_test <-
         #  Google led me to the following web page, where it said that you need 
         #  to add the argument "OOB=TRUE":
         #       https://groups.google.com/forum/#!topic/rattle-users/33AHXWrP5Vc
-      
+
     if (rf_from_party)
       {
       predicted_trains = predict (fitted_model, train_df, OOB=TRUE)
@@ -77,37 +78,43 @@ ppe_for_train_and_test <-
       predicted_tests  = predict (fitted_model, test_df)
       }
 
-    test_eval_list = 
-        ppe_for_train_and_test_given_preds (rs_name, 
-          #fitted_model, 
-                                            model_name_str,                 #  e.g., "LM" 
-                                            model_name_str_suffix,          #  e.g., "PCA" 
-                                          
-                                    train_true_values,  
-                                    test_true_values, 
-                                    
-                                            pred_value_name_display_str,    #  e.g., "RS out err"
-    num_predictors = ncol (train_df),                                 
-          #train_df, 
-          #test_df, 
-                                            vars_used_str, 
-                                    predicted_trains, 
-                                    predicted_tests, 
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+#    test_eval_list = 
+    train_and_test_eval_lists = 
+      
+        ppe_for_train_and_test_given_preds_for_one_RS (
+                          rs_name, 
+                              #fitted_model, 
+                          model_name_str,                 #  e.g., "LM" 
+                          model_name_str_suffix,          #  e.g., "PCA" 
+                          
+                          train_true_values,  
+                          test_true_values, 
+                          
+                          pred_value_name_display_str,    #  e.g., "RS out err"
+                          num_predictors = ncol (train_df),                                 
+                              #train_df, 
+                              #test_df, 
+                          vars_used_str, 
+                          predicted_trains, 
+                          predicted_tests, 
+                          
+                          train_aux_df, 
+                          test_aux_df, 
+                          
+                          params, 
+                          
+                          must_specify_predictions_vector, 
+                          
+                          lm_resid_plot = lm_resid_plot, 
+                          lm_qqplot = lm_qqplot 
+                          )
     
-                    train_aux_df, 
-                    test_aux_df, 
-    
-                    params, 
-    
-                                            must_specify_predictions_vector, 
-    
-    lm_resid_plot = lm_resid_plot, 
-    lm_qqplot = lm_qqplot 
-
-                                    
-                )
-    
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
@@ -120,12 +127,14 @@ compute_r.squared <- function (actual_vec, predicted_vec)
 
 #===============================================================================
 
+#  Code for adj.r.square in R's summary.lm() is:
+#  ans$adj.r.squared <- 1 - (1 - ans$r.squared) * ((n - df.int)/rdf)
+
 compute_adj.r.squared <- function (R2, 
                                    num_observations, 
                                    num_predictors, 
                                    df.int=1)
   {
-  
   #rdf = n - p - 1
   residual_deg_of_freedom = num_observations - num_predictors - 1
   
@@ -135,24 +144,61 @@ compute_adj.r.squared <- function (R2,
 
 #===============================================================================
 
+bdpg.regr.eval <- function (
+                    trues, 
+                    preds, 
+                    stats = 
+                        if (is.null(train.y)) 
+                                c("mae", "mse", "rmse", "mape") else 
+                                c("mae", "mse", "rmse", "mape", "nmse", "nmae"), 
+                    train.y = NULL) 
+    {
+        allSs <- c("mae", "mse", "rmse", "mape", "nmse", "nmae")
+        
+        if (any(c("nmse", "nmad") %in% stats) && is.null(train.y)) 
+            stop("regr.eval:: train.y parameter not specified.", 
+                call. = F)
+        
+        if (!all(stats %in% allSs)) 
+            stop("regr.eval:: don't know how to calculate -> ", call. = F, 
+                paste(stats[which(!(stats %in% allSs))], collapse = ","))
+        
+        N <- length(trues)
+        
+        sae <- sum (abs(trues - preds))
+        
+        sse <- sum ((trues - preds)^2)
+
+        r <- c(mae = sae/N, 
+               mse = sse/N, 
+               rmse = sqrt (sse/N), 
+               mape = sum (abs ((trues - preds) / trues)) / N
+               )
+        
+        if (!is.null(train.y)) 
+            r <- c(r, 
+                   c(nmse = sse / sum ((trues - mean (train.y)) ^ 2), 
+                     nmae = sae / sum (abs(trues - mean (train.y))))
+                   )
+        
+        return(r[stats])
+    }
+
+#===============================================================================
+
 eval_model_on_train_or_test_data <- function (test_or_train_string, #  "TEST" or "TRAIN"
                                               true_values_vec, 
                                               predicted_vec, 
                                               num_predictors, 
-                                              
-                                  dom_err_type, 
-
-#  TEMPORARY
+                                              dom_err_type, 
                                               must_specify_predictions_vector
                                              )
     {
-#  TEMPORARY - START
     predicted = predicted_vec
     
     if (must_specify_predictions_vector) 
         predicted_vec = predicted$predictions else 
         predicted_vec = as.vector (predicted)
-#  TEMPORARY - END
 
     true_vs_pred_df = 
         data.frame (ds_label = rep (test_or_train_string, 
@@ -164,10 +210,14 @@ eval_model_on_train_or_test_data <- function (test_or_train_string, #  "TEST" or
     
     #cat ("---------------\n")
     #cat ("Evaluate results of testing on ", test_or_train_string, " data:\n")
-    regrEvalResults = regr.eval (true_values_vec, 
+
+#    regrEvalResults = regr.eval (true_values_vec, 
+    regrEvalResults = bdpg.regr.eval (true_values_vec, 
                        predicted_vec, 
                        #stats = c ("mae", "mse"),    #, "rmse", "mape"))
+                       stats = c ("rmse"), 
                        train.y = true_values_vec)
+  
     rmse_value = regrEvalResults ["rmse"]    #####round (regrEvalResults ["rmse"], digits = 3)
 #x#print (regrEvalResults)
 
@@ -196,7 +246,7 @@ eval_model_on_train_or_test_data <- function (test_or_train_string, #  "TEST" or
 
 #===============================================================================
 
-ppe_for_train_and_test_given_preds <- 
+ppe_for_train_and_test_given_preds_for_one_RS <- 
     function (rs_name, 
               
               model_name_str,                 #  e.g., "LM" 
@@ -219,9 +269,9 @@ ppe_for_train_and_test_given_preds <-
         
               must_specify_predictions_vector , 
                       
-    lm_resid_plot, 
-    lm_qqplot
-            )
+              lm_resid_plot, 
+              lm_qqplot
+              )
     {
     train_dom_err_type = train_aux_df$dom_err_type
     test_dom_err_type  = test_aux_df$dom_err_type
@@ -250,56 +300,66 @@ ppe_for_train_and_test_given_preds <-
                                           
                                           must_specify_predictions_vector)
                                                
-    plot_train_and_test_stuff (rs_name, 
+    plot_train_and_test_stuff_for_one_RS (rs_name, 
                                
-                               train_eval_list$true_vs_pred_df, 
-                               test_eval_list$true_vs_pred_df, 
-                               
-                               train_aux_df, 
-                               test_aux_df, 
-                                
-                                pred_value_name_display_str, 
-                                model_name_str, 
-                                vars_used_str, 
-                                model_name_str_suffix, 
-                                
-                                train_eval_list$rmse_value, 
-                                test_eval_list$rmse_value, 
-                               
-                                train_eval_list$adj_R2, 
-                                test_eval_list$adj_R2, 
-                               
-                                params = params
-                                )
+                                          train_eval_list$true_vs_pred_df, 
+                                          test_eval_list$true_vs_pred_df, 
+                                         
+                                          train_aux_df, 
+                                          test_aux_df, 
+                                          
+                                           pred_value_name_display_str, 
+                                           model_name_str, 
+                                           vars_used_str, 
+                                           model_name_str_suffix, 
+                                          
+                                           train_eval_list$rmse_value, 
+                                           test_eval_list$rmse_value, 
+                                         
+                                           train_eval_list$adj_R2, 
+                                           test_eval_list$adj_R2, 
+                                         
+                                           params = params
+                                           )
 
-    test_eval_list$model_name_str = model_name_str
     
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    test_eval_list$model_name_str  = model_name_str
+    train_eval_list$model_name_str = model_name_str
+    train_and_test_eval_lists = list (train_eval_list = train_eval_list, 
+                                      test_eval_list = test_eval_list)
+#    return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
 
-plot_train_and_test_stuff <- function (rs_name, 
+    #  This only plots for one RS.  It's not the summary plot for comparing 
+    #  all reserve selectors at once.  
+    #  This is the only function where params$show_only_test_results is used.
+
+plot_train_and_test_stuff_for_one_RS <- function (rs_name, 
                                                    
-                                        train_pred_true_df, 
-                                        test_pred_true_df, 
-                                        
-                                        train_aux_df, 
-                                        test_aux_df, 
-                                        
-                                        pred_value_name_display_str, 
-                                        model_name_str, 
-                                        vars_used_str, 
-                                        model_name_str_suffix, 
-                                        
-                                        train_rmse, 
-                                        test_rmse, 
-                                        
-                                        train_adj_R2, 
-                                        test_adj_R2, 
-                                        
-                                        params
-                                        )
+                                                  train_pred_true_df, 
+                                                  test_pred_true_df, 
+                                                  
+                                                  train_aux_df, 
+                                                  test_aux_df, 
+                                                  
+                                                  pred_value_name_display_str, 
+                                                  model_name_str, 
+                                                  vars_used_str, 
+                                                  model_name_str_suffix, 
+                                                  
+                                                  train_rmse, 
+                                                  test_rmse, 
+                                                  
+                                                  train_adj_R2, 
+                                                  test_adj_R2, 
+                                                  
+                                                  params
+                                                  )
     {
             #----------------------------------------------
             #  Plot true vs predicted values in 2 panels, 
@@ -328,8 +388,8 @@ plot_train_and_test_stuff <- function (rs_name,
             #  Plot histogram of residuals.
     
         train_residuals = train_pred_true_df$pred_values - train_pred_true_df$true_values
-        show (histogram (train_residuals, nint=100))
-        show (densityplot (train_residuals))
+        if (params$VERBOSE_LM) show (histogram (train_residuals, nint=100))
+        if (params$VERBOSE_LM) show (densityplot (train_residuals))
         train_residuals = NULL
   
                 #  Plot predicted values vs true values
@@ -367,8 +427,8 @@ plot_train_and_test_stuff <- function (rs_name,
         
               #  Plot histogram of residuals.
       test_residuals = test_pred_true_df$pred_values - test_pred_true_df$true_values
-      show (histogram (test_residuals, nint=100))
-      show (densityplot (test_residuals))
+      if (params$VERBOSE_LM) show (histogram (test_residuals, nint=100))
+      if (params$VERBOSE_LM) show (densityplot (test_residuals))
       test_residuals = NULL
 
               #  Plot predicted values vs true values
@@ -437,7 +497,8 @@ guides (color =
                   geom_abline (intercept=0, slope=1)   #, linetype, color, size
 #            )
 
-      show (test_pred_true_plot)
+#cat ("\n\n\nJUST BEFORE show (test_pred_true_plot) in plot_train_and_test_stuff_for_one_RS()\n\n\n")
+if (params$VERBOSE_LM)      show (test_pred_true_plot)
   }
 
 #===============================================================================
@@ -581,13 +642,15 @@ facet_wrap (~ rs_method_name_fac, nrow = 2) +
 
 #===============================================================================
 
-save_this_ggplot <- function (a_ggplot, cur_plot_name, extension = "pdf")
+save_this_ggplot <- function (a_ggplot, cur_plot_name, params, 
+                              extension = "pdf")
     {
     proj_dir = here()
-#    cat ("\n\nproj_dir = here() = ", proj_dir, "\n", sep='')
     cur_plot_name_and_path = 
         file.path (proj_dir, 
-                   "Analysis_scripts/Paper_3_learning_to_predict_error/Saved_plots", 
+##                   "Analysis_scripts/Paper_3_learning_to_predict_error/Saved_plots", 
+#                   "Paper_8_all_combined_for_Ecological_Monographs/Saved_plots", 
+                  params$ggplot_save_path, 
                    cur_plot_name) 
     cur_plot_name_and_path = paste0 (cur_plot_name_and_path, ".", extension)
 #    cat ("\ncur_plot_name_and_path = '", cur_plot_name_and_path, "'\n")
@@ -596,4 +659,72 @@ save_this_ggplot <- function (a_ggplot, cur_plot_name, extension = "pdf")
     }
 
 #===============================================================================
+
+  #  This was chunk funcToPlot2BarCharts in p8 v9 and moved out of there and 
+  #  into this R file on 2024 01 28.  
+  #  It was not being called in the Rmd file, but it still looks like a useful 
+  #  function for doing the faceted bar plots so I'm just going to archive it 
+  #  here in case I need it later.
+
+   #  Got some of this ggplot stuff from https://appsilon.com/ggplot2-bar-charts/
+   #  
+   #  Got factor ordering from https://sebastiansauer.github.io/ordering-bars/
+   #  
+   #  Also, some good sites for getting names of colors:
+   #    - This one also has colorblind palettes:
+   #      http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+   #    - Lots of colors
+   #      https://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/
+
+plot_rmse_and_adj_R2_bar_plots_for_one_measure <- function (measure_to_plot_str, 
+                                                            measure_title_str, 
+                                                            all_fitting_scores_df, 
+                                                            rs_names_to_bar_plot, 
+                                                            rmse_ylim, 
+                                                            adj_R2_ylim)
+    {
+    for (cur_rs_method_name in rs_names_to_bar_plot)
+        {
+        #cat ("\nMethod = ", cur_rs_method_name, "\n\n")
+        all_fitting_scores_df %>% 
+            filter (
+                    rs_method_name == cur_rs_method_name, 
+                    measure_name_str == measure_to_plot_str,  # "abs_rep_shortfall_resid", 
+                    train_or_test == "TEST") %>% 
+            mutate (rmse = round (rmse, 2), 
+                    adj_R2 = round (adj_R2, 2)) -> 
+          sol_cost_test_df
+        
+        a_df = sol_cost_test_df
+      
+            #  Plot RMSE values.
+        show (
+        ggplot (a_df, aes (x=ordered_vars_used, y=rmse)) + 
+                geom_col (position = position_dodge(), fill = "deepskyblue2") +  #"#3db5ff") +
+                geom_text (aes(label = rmse), hjust = 1.4, size = 2.2) +
+                ylim (NA, rmse_ylim) + 
+                coord_flip() + 
+                labs (y = "RMSE", x = "Input Feature Set") + 
+                ggtitle (paste0 ("RMSE - ", measure_title_str, " - ", 
+                                 cur_rs_method_name)) + 
+                theme(plot.title = element_text(hjust = 0.5))
+                )
+        
+            #  Plot adj R2 values.
+        show (
+        ggplot (a_df, aes (x=ordered_vars_used, y=adj_R2)) + 
+                geom_col (position = position_dodge(), fill = "goldenrod1") +  #"#0099f9") +
+                geom_text (aes(label = adj_R2), hjust = 1.4, size = 2.2) +    # hjust = -0.2
+                ylim (NA, adj_R2_ylim) + 
+                coord_flip() + 
+                labs (y = "Adj R2", x = "Input Feature Set") + 
+                ggtitle (paste0 ("Adj R2 - ", measure_title_str, " - ", 
+                                 cur_rs_method_name)) + 
+                theme(plot.title = element_text(hjust = 0.5))
+                )
+        }
+    }
+
+#===============================================================================
+
 
