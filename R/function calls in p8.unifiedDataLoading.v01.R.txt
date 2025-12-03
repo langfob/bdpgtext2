@@ -1,0 +1,78 @@
+R_new/p8.unifiedDataLoading.v01.R:32:create_p2_app_wrap_data <- function (full_initial_exp_tib, params)
+
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:134:compute_app_wrap_prob_counts_for_rs_and_FP_FN <- function (p2_app_wrap_tib)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:215:create_p1_COR_data <- function (full_initial_exp_tib, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:336:load_full_data_from_individual_rs_files <- function (params, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:435:load_input_csv_into_tibble <- function (rs_name, base_path, suffix)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:517:rename_score_cols_with_rs_name <- function (cur_small_tib, names_to_replace, cur_rs_name)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:538:build_score_diffs_tib <- function (sorted_joined_scores_tib)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:780:write_a_tib_to_csv_file_using_params <- function (tib_to_write, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:837:write_a_tib_to_csv_file <- function (tib_to_write, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:919:load_and_build_FULL_data_for_all_reserve_selectors <- function (params, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:948:p4_load_full_unfiltered_data_with_joined_gurobi_perf_inf <- function (params, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1076:load_data_for_all_reserve_selectors <- function (rs_method_names_list, base_path, suffix)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1176:apply_corrections_to_FULL_data_if_requested <- function (exp_tib, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1231:add_corresponding_gurobi_run_inf_to_each_rs_run <- function (full_Gurobi_tib, 
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1260:add_new_derived_cols_to_FULL_data <- function (exp_tib, rs_method_names_list)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1308:select_paper_1_cols <- function (full_tib)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1375:create_app_wrap_tibs_from_full_exp_tib <- function (filtered_exp_tib, params)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1424:add_new_derived_cols_to_APP_WRAP_data <- function (app_wrap_tib)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1566:filter_out_unwanted_rows_of_APP_data <- function (app_wrap_tib, params)
+
+--------------------------------------------------------------------------------
+
+R_new/p8.unifiedDataLoading.v01.R:1672:# remove_irrelevant_cols <- function (full_tib)
