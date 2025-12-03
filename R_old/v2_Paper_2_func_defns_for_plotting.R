@@ -165,7 +165,7 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
           {
           if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
                                                 values = scale_color_values, 
-                                                name = "Dominant\nerror type") else if 
+                                                name = "dominant\nerror type") else if 
                       ((color_var != "gurobi_status") & (color_var != "id") & (color_var != "rsp_base_wrap_str"))
                                                   #scale_color_viridis(option = "D")
                                                   #scale_colour_gradient(low = "darkolivegreen1", high = "darkolivegreen"))
@@ -358,7 +358,7 @@ ggplot_boxplot_over_bins <- function (data,
                                       x_axis_label = NULL,    #"Input Error Group", 
                                       y_axis_label = NULL,    #"Output Error", 
                                       ncol_in_facet_wrap = 2, 
-                                      rs_method_names_to_show = c("SA", "SA_SS"), 
+                                      rs_method_names_to_show = c("Marxan_SA", "Marxan_SA_SS"), 
 
                                       show_y_as_percent = TRUE, 
 
@@ -421,7 +421,7 @@ ggplot_boxplot_over_bins <- function (data,
                                          label_text = c("1x", "5x", "10x"))
         }
     
-        #  Most of the time, I only want to show SA and SA_SS 
+        #  Most of the time, I only want to show Marxan_SA and Marxan_SA_SS 
         #  even though there are more selectors in the dataset.  
         #  The other selectors generally look very similar to one of these 
         #  two, so I can get better display resolution and a simpler visual 
@@ -667,20 +667,20 @@ enquo_tot_diff_var_to_plot = enquo (tot_diff_var_to_plot)
 enquo_rep_diff_var_to_plot = enquo (rep_diff_var_to_plot)
 
     tot_scatter = 
-#        scatterplot_diff_vars ("Marxan_SA", "ILP", 
+#        scatterplot_diff_vars ("Marxan_SA", "Gurobi", 
         scatterplot_diff_vars (compared_method_name, reference_method_name, 
-                               !!enquo_tot_diff_var_to_plot,    #diff__rsr_COR_euc_out_err_frac__Marxan_SA__ILP, 
+                               !!enquo_tot_diff_var_to_plot,    #diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi, 
                                tib_to_plot, 
-#                               plot_title = "Tot Out Err diff: Marxan_SA - ILP", 
+#                               plot_title = "Tot Out Err diff: Marxan_SA - Gurobi", 
                                plot_title = str_c ("Tot Out Err diff: ", compared_method_name, " - ", reference_method_name), 
                                y_axis_title = "tot out err diff") 
     
     rep_scatter = 
-#        scatterplot_diff_vars ("Marxan_SA", "ILP", 
+#        scatterplot_diff_vars ("Marxan_SA", "Gurobi", 
         scatterplot_diff_vars (compared_method_name, reference_method_name, 
-                               !!enquo_rep_diff_var_to_plot,    #diff__rsr_COR_spp_rep_shortfall__Marxan_SA__ILP, 
+                               !!enquo_rep_diff_var_to_plot,    #diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi, 
                                tib_to_plot, 
-#                               plot_title = "Rep Shortfall diff: Marxan_SA - ILP", 
+#                               plot_title = "Rep Shortfall diff: Marxan_SA - Gurobi", 
                                plot_title = str_c ("Rep Shortfall diff: ", compared_method_name, " - ", reference_method_name), 
                                y_axis_title = "rep shortfall diff") 
     
@@ -759,7 +759,7 @@ enquo_rep_diff_var_to_plot = enquo (rep_diff_var_to_plot)
 
 tot_hist = 
     ggplot_hist_or_density (filter (tib_to_plot, rs_method_name == rs_method_name_subtracted_FROM),    #"Marxan_SA"),
-                          x_var = !!enquo_tot_diff_var_to_plot,    #"diff__rsr_COR_euc_out_err_frac__Marxan_SA__ILP", 
+                          x_var = !!enquo_tot_diff_var_to_plot,    #"diff__rsr_COR_euc_out_err_frac__Marxan_SA__Gurobi", 
                           plot_type = show_hist_or_density,                   
                           plot_title_str = str_c (rs_method_name_subtracted_FROM, 
                                                   " - ", 
@@ -772,9 +772,9 @@ tot_hist =
 
 rep_hist = 
     ggplot_hist_or_density (filter (tib_to_plot, rs_method_name == rs_method_name_subtracted_FROM),    #"Marxan_SA"),
-                          x_var = !!enquo_rep_diff_var_to_plot,    #"diff__rsr_COR_spp_rep_shortfall__Marxan_SA__ILP", 
+                          x_var = !!enquo_rep_diff_var_to_plot,    #"diff__rsr_COR_spp_rep_shortfall__Marxan_SA__Gurobi", 
                           plot_type = show_hist_or_density,                   
-#                          plot_title_str = str_c ("Marxan_SA - ILP\nrep shortfall diffs\n", plot_title_str_finish), 
+#                          plot_title_str = str_c ("Marxan_SA - Gurobi\nrep shortfall diffs\n", plot_title_str_finish), 
                           plot_title_str = str_c (rs_method_name_subtracted_FROM, 
                                                   " - ", 
                                                   rs_method_name_BEING_subtracted, 

@@ -18,7 +18,7 @@
 
 #===============================================================================
 
-echo_rs_method_name_order_within_df <- function (a_df, label = "", num_of_rs = 5)
+echo_rs_method_name_order_within_df <- function (a_df, label = "", num_of_rs = 4)  #  2024 01 14: used to be = 5  
     {
     cat ("\n\n>>>>>>>>>>>>>>>>>>>>>>", label, "\n")
   
@@ -115,11 +115,17 @@ summarize_errors_on_COR_data = function (working_tib)
 
 convert_rs_method_name_to_ordered_factor <- function (rs_method_name)
     {
+    # rs_method_name_fac = factor (rs_method_name, 
+    #                              levels = c("ILP", "SA", 
+    #                                         "UR_Forward", "ZL_Backward", 
+    #                                         "SA_SS", "SR_Forward"), 
+    #                              ordered = TRUE)
     rs_method_name_fac = factor (rs_method_name, 
-                                 levels = c("Gurobi", "Marxan_SA", 
-                                            "UR_Forward", "ZL_Backward", 
-                                            "Marxan_SA_SS", "SR_Forward"), 
-                                 ordered = TRUE)
+                                 levels = c("ILP", "SA", 
+                                            "UR_Forward", 
+                                            "SA_SS"), 
+                                 ordered = TRUE
+                                 )
     
     return (rs_method_name_fac)
     }

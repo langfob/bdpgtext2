@@ -19,14 +19,23 @@
 #===============================================================================
 
 fit_one_rs <- function (rs_name, 
-                                          train_x_df, test_x_df, 
-                                          working_train_df, working_test_df, 
-                                          train_aux_df, test_aux_df, 
-                                          vars_used_str, params, 
-                          target_col_name = "rsr_COR_spp_rep_shortfall", 
-                          pred_value_name_display_str = "Rep Shortfall"
-                                          )
+                        
+                        train_x_df, test_x_df,                #  e.g., p3_test_x_df_probSize (3 cols: rs_method_name, rsp_num_occupied_PUs, rsp_num_spp)
+                        working_train_df, working_test_df,    #  e.g., p3_working_test_df    (all 90 cols, including lots of label data like rsr_UUID) 
+
+                        train_aux_df, test_aux_df,            #  e.g., p3_test_aux_df        (2 cols: rs_method_name, dom_err_type)
+                        vars_used_str,                        #  e.g., "probSize"
+                        params, 
+                        
+                            #  Shouldn't these default to NULL or 
+                            #  just not have a default at all?
+                        target_col_name = "rsr_COR_spp_rep_shortfall", 
+###2025 07 25 - BTL###                        pred_value_name_display_str = "Rep Shortfall"
+                        pred_value_name_display_str = "Representation Shortfall"
+                       )
     {
+        #  Reduce data down to just the current RS and remove the rs name 
+        #  from the reduced data set.
     train_x_df %>%
         ungroup () %>% 
         filter (rs_method_name == rs_name) %>% 
@@ -71,7 +80,11 @@ fit_one_rs <- function (rs_name,
 
         #  Fit models
 
-    test_eval_list = 
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+#    test_eval_list = 
+    train_and_test_eval_lists = 
+
         fit_and_plot (rs_name, 
              
                       pred_value_name_display_str  = pred_value_name_display_str,
@@ -86,11 +99,16 @@ fit_one_rs <- function (rs_name,
             
                       train_aux_df                 = train_aux_df,
                       test_aux_df                  = test_aux_df)
+
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
 
-##  Fit lm models with cross-validation
+    ##  Fit specified model(s)
 
 fit_and_plot <- function (rs_name, 
                        
@@ -111,7 +129,10 @@ fit_and_plot <- function (rs_name,
                
 
     {
-    test_eval_list = NULL
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #test_eval_list = NULL
+    train_and_test_eval_lists = NULL
     
                 #-------------------------------------
                 #  Fit simple linear model using LM.
@@ -119,7 +140,18 @@ fit_and_plot <- function (rs_name,
     
     if (params$do_lm)
         {
-        test_eval_list = 
+            #  2024 01 31 - BTL
+            #  If you change the code here for calling f_lm(), be sure to make 
+            #  the same change to the call to f_lm() in the glmnet section  
+            #  below.  That f_lm() section is only called when you need to avoid  
+            #  an error when there is just one column of predictor variables  
+            #  since the glmnet code crashes on purpose when there is only one 
+            #  predictor (though I'm not sure why they do that).
+            #  
+            #  2023 01 01 - BTL
+            #  New code to return both test and train instead of just test.
+#        test_eval_list = 
+        train_and_test_eval_lists = 
             f_lm (rs_name, 
                   pred_value_name_display_str  = pred_value_name_display_str, 
                   vars_used_str                = vars_used_str, 
@@ -182,7 +214,10 @@ fit_and_plot <- function (rs_name,
                 #  Fit random forest using party pkg.
                 #--------------------------------------
             
-            test_eval_list = 
+            #  2023 01 01 - BTL
+            #  New code to return both test and train instead of just test.
+#        test_eval_list = 
+            train_and_test_eval_lists = 
                 f_rf_party (rs_name, 
                             pred_value_name_display_str  = pred_value_name_display_str, 
                             vars_used_str                = vars_used_str, 
@@ -200,7 +235,10 @@ fit_and_plot <- function (rs_name,
                 #  Fit random forest using ranger pkg.
                 #---------------------------------------
                 
-            test_eval_list = 
+            #  2023 01 01 - BTL
+            #  New code to return both test and train instead of just test.
+#        test_eval_list = 
+            train_and_test_eval_lists = 
                 f_rf_ranger (rs_name, 
                              pred_value_name_display_str  = pred_value_name_display_str, 
                              vars_used_str                = vars_used_str, 
@@ -219,62 +257,93 @@ fit_and_plot <- function (rs_name,
     #  Fit GLMNET models.
     #----------------------
 
-            #------------------------------
-            #  Fit GLMNET using caret pkg.
-            #------------------------------
+        #  2024 01 31 - BTL
+        #  Adding a test for the case where there is just one column of 
+        #  predictor variables.  For some reason, the glmnet code 
+        #  crashes on purpose if there is only one column of predictors.  
+        #  Not sure why.  However, there are numerous stackoverflow and 
+        #  other web pages that mention this.  
+        #  So, here, if there is only one predictor column, I'll just use 
+        #  lm instead of glmnet.  
 
-    if (params$do_glmnet_caret)
+    if (dim (train_x_df) [2] < 2)
         {
-        set.seed (seed2)
+#        test_eval_list = 
+        train_and_test_eval_lists = 
+            f_lm (rs_name, 
+                  pred_value_name_display_str  = pred_value_name_display_str, 
+                  vars_used_str                = vars_used_str, 
+                  model_name_str_suffix        = "ALL",  
+                  train_y_vec                  = train_y_vec, 
+                  train_x_df                   = train_x_df, 
+                  test_y_vec                   = test_y_vec, 
+                  test_x_df                    = test_x_df, 
+                  train_aux_df                 = train_aux_df, 
+                  test_aux_df                  = test_aux_df, 
+                  params                       = params)
         
-        train_x_mat = as.matrix (train_x_df)
-        test_x_mat = as.matrix (test_x_df)
-        
-        train_control <- trainControl(method = "cv", number = 10)
-        
-        caret_mod <- train(x = train_x_mat,    #ames_train_x,
-                         y = train_y_vec,    #ames_train_y,
-                         method = "glmnet",
-                        #preProc = c("center", "scale", "zv", "nzv"),
-                         trControl = train_control,
-                         tuneLength = 10)
-        
-        cat ("\n\n>>>>> glment model:\n")
-        print (caret_mod)
-        
-          # Model coefficients
-        print (coef(caret_mod$finalModel, caret_mod$bestTune$lambda))
-        
-        predictions <- predict (caret_mod, newdata=test_x_mat)
-        
-        rmse = RMSE (predictions, test_y_vec)
-        cat ("\n\nglmnet rmse = ", rmse)
-        
-        rsquared = R2 (predictions, test_y_vec)
-        cat ("\nglmnet  R^2 = ", rsquared, "\n\n")
-        }
-
-            #----------------------------------------------
-            #  Fit GLMNET using UC web page instructions.
-            #----------------------------------------------
-
-    if (params$do_glmnet_UC)
+        } else    #  There is more than one input predictor variable.
         {
-        test_eval_list = 
-            f_glmnet_UC (rs_name, 
-                         pred_value_name_display_str  = pred_value_name_display_str, 
-                         vars_used_str                = vars_used_str, 
-                         model_name_str_suffix        = "ALL",  
-                         train_y_vec                  = train_y_vec, 
-                         train_x_df                   = train_x_df, 
-                         test_y_vec                   = test_y_vec, 
-                         test_x_df                    = test_x_df, 
-                         train_aux_df                 = train_aux_df, 
-                         test_aux_df                  = test_aux_df, 
-                         params                       = params, 
-                         VERBOSE_GLMNET_UC            = params$VERBOSE_GLMNET_UC)
-        }
-        
+                #------------------------------
+                #  Fit GLMNET using caret pkg.
+                #------------------------------
+    
+        if (params$do_glmnet_caret)
+            {
+            set.seed (seed2)
+            
+            train_x_mat = as.matrix (train_x_df)
+            test_x_mat = as.matrix (test_x_df)
+            
+            train_control <- trainControl(method = "cv", number = 10)
+            
+            caret_mod <- train(x = train_x_mat,    #ames_train_x,
+                             y = train_y_vec,    #ames_train_y,
+                             method = "glmnet",
+                            #preProc = c("center", "scale", "zv", "nzv"),
+                             trControl = train_control,
+                             tuneLength = 10)
+            
+            cat ("\n\n>>>>> glment model:\n")
+            print (caret_mod)
+            
+              # Model coefficients
+            print (coef(caret_mod$finalModel, caret_mod$bestTune$lambda))
+            
+            predictions <- predict (caret_mod, newdata=test_x_mat)
+            
+            rmse = RMSE (predictions, test_y_vec)
+            cat ("\n\nglmnet rmse = ", rmse)
+            
+            rsquared = R2 (predictions, test_y_vec)
+            cat ("\nglmnet  R^2 = ", rsquared, "\n\n")
+            }
+    
+                #----------------------------------------------
+                #  Fit GLMNET using UC web page instructions.
+                #----------------------------------------------
+    
+        if (params$do_glmnet_UC)
+            {
+                     #  2023 01 01 - BTL
+                    #  New code to return both test and train instead of just test.
+        #        test_eval_list = 
+                train_and_test_eval_lists = 
+                    f_glmnet_UC (rs_name, 
+                                 pred_value_name_display_str  = pred_value_name_display_str, 
+                                 vars_used_str                = vars_used_str, 
+                                 model_name_str_suffix        = "ALL",  
+                                 train_y_vec                  = train_y_vec, 
+                                 train_x_df                   = train_x_df, 
+                                 test_y_vec                   = test_y_vec, 
+                                 test_x_df                    = test_x_df, 
+                                 train_aux_df                 = train_aux_df, 
+                                 test_aux_df                  = test_aux_df, 
+                                 params                       = params, 
+                                 VERBOSE_GLMNET_UC            = params$VERBOSE_GLMNET_UC)
+            }
+        }  #  end else - do some kind of glmnet
+    
         #  NOTE that this will return the last version of test_eval_list 
         #  that is defined in this function if more than one fitting method 
         #  was called.  
@@ -285,27 +354,124 @@ fit_and_plot <- function (rs_name,
         #  I've only been running them one at a time and some of them not 
         #  at all (like the glm caret).
         
-    return (test_eval_list)
+            #  2023 01 01 - BTL
+            #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
+    }
+
+#===============================================================================
+
+gen_full_fits <- function (dummy_full_true_vs_pred_df, 
+                           dummy_full_measured_values_df, 
+                           rs_names_vec, 
+                           rs_names_vec_fac, 
+                           model_name_str, 
+                           len, 
+                           R2_x_loc, R2_y_loc, 
+                           rmse_x_loc, rmse_y_loc, 
+                           num_facet_wrap_rows, 
+                           pred_value_name_display_str, 
+                           params, 
+                           
+                           som_model, 
+                           num_som_cells, 
+                           test_or_train_str, 
+                           
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA
+                           )
+    {
+    dummy_R2_strings = round (dummy_full_measured_values_df$adj_R2, digits = 2)
+
+    dummy_locs_R2 <- tibble (x = rep (R2_x_loc, len), 
+                            y = rep (R2_y_loc, len), 
+                            rs_method_name_fac = rs_names_vec_fac,    #  Must have this element and its name must match the facetting variable for the facetted plot
+                            R2_label = paste ("adj~R^2 ==", dummy_R2_strings))
+     
+    dummy_rmse_strings = round (dummy_full_measured_values_df$rmse, digits = 2)
+    dummy_locs_rmse <- data.frame (x = rep (rmse_x_loc, len), 
+                                  y = rep (rmse_y_loc, len), 
+                                  rs_method_name_fac = rs_names_vec_fac,    #  Must have this element and its name must match the facetting variable for the facetted plot
+                                  rmse_label = paste ("rmse ==", dummy_rmse_strings))
+    
+        #----------
+
+    dummy_full_true_vs_pred_df %>% 
+            group_by (rs_method_name) %>% 
+            summarize (min = min (resid_pred_minus_true), 
+                       max = max (resid_pred_minus_true)) %>% 
+            ungroup ()  -> dummy_resid_summary_for_SOM
+    
+#x#    cat ("\n\n>>>>>  dummy_resid_summary_for_SOM  <<<<<\n")
+#x#    show (dummy_resid_summary_for_SOM)
+#x#    cat ("\n------------------------------------\n")
+
+        #----------
+    
+        #  Generate self-organizing maps if desired.
+    # if (! is.null (dummy_som_model))  run_SOM_resids (dummy_som_model, 
+    #                                                  dummy_full_true_vs_pred_df, 
+    #                                                  rs_names_vec, 
+    #                                                  dummy_num_som_cells)
+    if (! is.null (som_model))  run_SOM_resids (som_model, 
+                                                     dummy_full_true_vs_pred_df, 
+                                                     rs_names_vec, 
+                                                     num_som_cells)
+
+        #----------
+    
+        #  Add method name as factor so that ggplot facet order can be controlled.
+    dummy_full_true_vs_pred_df %>% 
+            mutate (rs_method_name_fac = 
+                    convert_rs_method_name_to_ordered_factor (rs_method_name)) -> 
+        dummy_full_true_vs_pred_df
+  
+        #----------
+
+    dummy_full_fits_plot = plot_full_fits (rs_names_vec, 
+                                          params, 
+                                          dummy_full_true_vs_pred_df, 
+                                          num_facet_wrap_rows, 
+                                          pred_value_name_display_str, 
+                                          model_name_str, 
+                                          dummy_locs_R2, 
+                                          dummy_locs_rmse, 
+                                          test_or_train_str, 
+                                          
+                                          x_min_on_plot,      
+                                          x_max_on_plot, y_min_on_plot, y_max_on_plot)
+        
+    dummy_full_fits_plot_and_data = list (full_fits_plot = dummy_full_fits_plot, 
+                                          full_true_vs_pred_df = dummy_full_true_vs_pred_df, 
+                          full_measured_values_df = dummy_full_measured_values_df)
+    
+    return (dummy_full_fits_plot_and_data)
     }
 
 #===============================================================================
 
 fit_to_target_var <- function (rs_names_vec, 
-                               train_x_df, test_x_df, 
-                               working_train_df, working_test_df, 
-                               train_aux_df, test_aux_df, 
-                               vars_used_str, params, 
-                               
-                              pred_value_name_display_str,
+                               train_x_df, test_x_df,                #  e.g., p3_test_x_df_probSize (3 cols: rs_method_name, rsp_num_occupied_PUs, rsp_num_spp)
+                               working_train_df, working_test_df,    #  e.g., p3_working_test_df    (all 90 cols, including lots of label data like rsr_UUID) 
 
-                              R2_x_loc, 
-                              R2_y_loc, 
+                               train_aux_df, test_aux_df,            #  e.g., p3_test_aux_df        (2 cols: rs_method_name, dom_err_type)
+                               vars_used_str,                        #  e.g., "probSize"
+                               params,
+                               
+                               pred_value_name_display_str,
+
+                               R2_x_loc, 
+                               R2_y_loc, 
                               
-                              rmse_x_loc, 
-                              rmse_y_loc, 
+                               rmse_x_loc, 
+                               rmse_y_loc, 
                               
-                              target_col_name 
-                  ,            
+                               target_col_name,  
+                               
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA,      
+                                   
                   som_model = NULL, 
                   num_som_cells = NULL, 
                   SOM_cost_err_frac = FALSE
@@ -315,7 +481,7 @@ fit_to_target_var <- function (rs_names_vec,
     if (params$exclude_greedy_rs_in_fit_plots)
         {
         num_facet_wrap_rows = 1
-        rs_names_vec = c("Gurobi", "Marxan_SA", "Marxan_SA_SS")
+        rs_names_vec = c("ILP", "SA", "SA_SS")
         
         } else
         {
@@ -325,324 +491,387 @@ fit_to_target_var <- function (rs_names_vec,
         #----------
 
     test_eval_lists = vector (mode = "list", length = length (rs_names_vec))
+    train_eval_lists = vector (mode = "list", length = length (rs_names_vec))
     
     for (cur_rs_name in rs_names_vec)
         {
-        cur_test_eval_list = 
+            #  2023 01 01 - BTL
+            #  New code to return both test and train instead of just test.
+        #cur_test_eval_list = 
+        cur_train_and_test_eval_lists = 
             fit_one_rs (cur_rs_name, 
-#            func_to_fit_one_rs (cur_rs_name, 
-                                          train_x_df, test_x_df, 
-                                          working_train_df, working_test_df, 
-                                          train_aux_df, test_aux_df, 
-                                          vars_used_str, params, 
-                          target_col_name, 
-                          pred_value_name_display_str
-                                          )
+                        train_x_df, test_x_df, 
+                        working_train_df, working_test_df, 
+                        train_aux_df, test_aux_df, 
+                        vars_used_str, params, 
+                        target_col_name, 
+                        pred_value_name_display_str
+                                  )
+        cur_train_eval_list = cur_train_and_test_eval_lists$train_eval_list
+        cur_test_eval_list = cur_train_and_test_eval_lists$test_eval_list
+        
+        #-----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
 
+            #  DO test...
+            #  
             #  Label the the current reserve selector's true vs pred values 
             #  and append that set to the full set for all reserve selectors.
             
         cur_test_eval_list$true_vs_pred_df %>% 
-#            mutate (rs_method_name = cur_rs_name) -> cur_true_vs_pred_df
             mutate (rs_method_name = cur_rs_name, 
-                    resid_pred_minus_true = pred_values - true_values) -> cur_true_vs_pred_df
+                    resid_pred_minus_true = pred_values - true_values) -> 
+            test_cur_true_vs_pred_df
         
-        if (exists ("full_true_vs_pred_df"))
+        if (exists ("test_full_true_vs_pred_df"))
             {
-            full_true_vs_pred_df = rbind (full_true_vs_pred_df, 
-                                          cur_true_vs_pred_df)
+            test_full_true_vs_pred_df = rbind (test_full_true_vs_pred_df, 
+                                               test_cur_true_vs_pred_df)
             } else
             {
-            full_true_vs_pred_df = cur_true_vs_pred_df
+            test_full_true_vs_pred_df = test_cur_true_vs_pred_df
             }
         
             #  Collect the the current reserve selector's measured values 
             #  and append that set to the full set for all reserve selectors.
-        if (exists ("full_measured_values_df"))
+        if (exists ("test_full_measured_values_df"))
             {
-            cur_measured_values = 
+            test_cur_measured_values = 
                 list (rs_method_name = cur_rs_name, 
 #                      model_name_str = cur_test_eval_list$model_name_str, 
                       rmse           = cur_test_eval_list$rmse_value, 
                       R2             = cur_test_eval_list$R2, 
                       adj_R2         = cur_test_eval_list$adj_R2)
                             
-            full_measured_values_df = rbind (full_measured_values_df, 
-                                             cur_measured_values)
+            test_full_measured_values_df = rbind (test_full_measured_values_df, 
+                                                  test_cur_measured_values)
             } else
             {
-            full_measured_values_df = 
+            test_full_measured_values_df = 
                 data.frame (rs_method_name = cur_rs_name, 
 #                            model_name_str = cur_test_eval_list$model_name_str, 
                             rmse           = cur_test_eval_list$rmse_value, 
                             R2             = cur_test_eval_list$R2, 
                             adj_R2         = cur_test_eval_list$adj_R2)
             }
-
         cur_test_eval_list$rs_method_name = cur_rs_name
         test_eval_lists [[cur_rs_name]] = cur_test_eval_list
+        
+        #-----------------------------------------------------------------------
+
+            #  DO train....
+            #  
+            #  Label the the current reserve selector's true vs pred values 
+            #  and append that set to the full set for all reserve selectors.
+            
+        cur_train_eval_list$true_vs_pred_df %>% 
+            mutate (rs_method_name = cur_rs_name, 
+                    resid_pred_minus_true = pred_values - true_values) -> 
+            train_cur_true_vs_pred_df
+        
+        if (exists ("train_full_true_vs_pred_df"))
+            {
+            train_full_true_vs_pred_df = rbind (train_full_true_vs_pred_df, 
+                                               train_cur_true_vs_pred_df)
+            } else
+            {
+            train_full_true_vs_pred_df = train_cur_true_vs_pred_df
+            }
+        
+            #  Collect the the current reserve selector's measured values 
+            #  and append that set to the full set for all reserve selectors.
+        if (exists ("train_full_measured_values_df"))
+            {
+            train_cur_measured_values = 
+                list (rs_method_name = cur_rs_name, 
+#                      model_name_str = cur_train_eval_list$model_name_str, 
+                      rmse           = cur_train_eval_list$rmse_value, 
+                      R2             = cur_train_eval_list$R2, 
+                      adj_R2         = cur_train_eval_list$adj_R2)
+                            
+            train_full_measured_values_df = rbind (train_full_measured_values_df, 
+                                                  train_cur_measured_values)
+            } else
+            {
+            train_full_measured_values_df = 
+                data.frame (rs_method_name = cur_rs_name, 
+#                            model_name_str = cur_train_eval_list$model_name_str, 
+                            rmse           = cur_train_eval_list$rmse_value, 
+                            R2             = cur_train_eval_list$R2, 
+                            adj_R2         = cur_train_eval_list$adj_R2)
+            }
+        
+        cur_train_eval_list$rs_method_name = cur_rs_name
+        train_eval_lists [[cur_rs_name]] = cur_train_eval_list
+        
+        #-----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         }
 
         #----------
-    
+
     model_name_str = cur_test_eval_list$model_name_str
     rs_names_vec_fac = convert_rs_method_name_to_ordered_factor (rs_names_vec)
-
     len <- length (rs_names_vec)
-    R2_strings = round (full_measured_values_df$adj_R2, digits = 2)
-
-    locs_R2 <- tibble (x = rep (R2_x_loc, len), 
-                       y = rep (R2_y_loc, len), 
-                       rs_method_name_fac = rs_names_vec_fac,    #  Must have this element and its name must match the facetting variable for the facetted plot
-                       R2_label = paste ("adj~R^2 ==", R2_strings))
-     
-    rmse_strings = round (full_measured_values_df$rmse, digits = 2)
-    locs_rmse <- data.frame (x = rep (rmse_x_loc, len), 
-                             y = rep (rmse_y_loc, len), 
-                             rs_method_name_fac = rs_names_vec_fac,    #  Must have this element and its name must match the facetting variable for the facetted plot
-                             rmse_label = paste ("rmse ==", rmse_strings))
     
-        #----------
-
-    full_true_vs_pred_df %>% 
-        filter (ds_label == "TEST") -> full_true_vs_pred_df
-
-    full_true_vs_pred_df %>% 
-            group_by (rs_method_name) %>% 
-            summarize (min = min (resid_pred_minus_true), 
-                       max = max (resid_pred_minus_true)) %>% 
-            ungroup ()  -> resid_summary_for_SOM
+    train_full_fits_plot_and_data = gen_full_fits (train_full_true_vs_pred_df, 
+                                                  train_full_measured_values_df, 
+                                                  rs_names_vec, 
+                                                  rs_names_vec_fac, 
+                                                  model_name_str, 
+                                                  len, 
+                                                  R2_x_loc, R2_y_loc, 
+                                                  rmse_x_loc, rmse_y_loc, 
+                                                  num_facet_wrap_rows, 
+                                                  pred_value_name_display_str, 
+                                                  params, 
+                                                  som_model, 
+                                                  num_som_cells, 
+                                                  "TRAIN", 
+                                                  
+                                                  x_min_on_plot, 
+                                                  x_max_on_plot, y_min_on_plot, y_max_on_plot)
     
-#x#    cat ("\n\n>>>>>  resid_summary_for_SOM  <<<<<\n")
-#x#    show (resid_summary_for_SOM)
-#x#    cat ("\n------------------------------------\n")
+    test_full_fits_plot_and_data = gen_full_fits (test_full_true_vs_pred_df, 
+                                                  test_full_measured_values_df, 
+                                                  rs_names_vec, 
+                                                  rs_names_vec_fac, 
+                                                  model_name_str, 
+                                                  len, 
+                                                  R2_x_loc, R2_y_loc, 
+                                                  rmse_x_loc, rmse_y_loc, 
+                                                  num_facet_wrap_rows, 
+                                                  pred_value_name_display_str, 
+                                                  params, 
+                                                  som_model, 
+                                                  num_som_cells, 
+                                                  "TEST", 
+                                                  
+                                                  x_min_on_plot, 
+                                                  x_max_on_plot, y_min_on_plot, y_max_on_plot)
+    
+    train_and_test_full_fits_plot_and_data = 
+        list (train_full_fits_plot_and_data = train_full_fits_plot_and_data, 
+              test_full_fits_plot_and_data  = test_full_fits_plot_and_data)
 
-        #----------
+    return (train_and_test_full_fits_plot_and_data)
+#    return (full_fits_plot_and_data)
+    }
     
-        #  Generate self-organizing maps if desired.
-    if (! is.null (som_model))  run_SOM_resids (som_model, full_true_vs_pred_df, 
-                                                rs_names_vec, num_som_cells)
+#===============================================================================
 
-        #----------
+plot_full_fits <- function (rs_names_vec, 
+                            params, 
+                            full_true_vs_pred_df, 
+                            num_facet_wrap_rows, 
+                            pred_value_name_display_str, 
+                            model_name_str, 
+                            locs_R2, 
+                            locs_rmse, 
+                            test_or_train_str, 
+                              
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA      
+                                   
+                            )
+    {
+    #num_facets = length (unique (sorted_msa_tib [[facet_var]]))
+    num_facets = length (rs_names_vec)    #####4    #####5
+    alpha_level = 0.5 
+    #force_colors = TRUE
+    force_colors = params$force_colors
     
-        #  Add method name as factor so that ggplot facet order can be controlled.
-    full_true_vs_pred_df %>% 
-        mutate (rs_method_name_fac = 
-                convert_rs_method_name_to_ordered_factor (rs_method_name)) -> full_true_vs_pred_df
-  
-        #----------
-    
-#num_facets = length (unique (sorted_msa_tib [[facet_var]]))
-num_facets = length (rs_names_vec)    #####4    #####5
-alpha_level = 0.5 
-#force_colors = TRUE
-force_colors = params$force_colors
-
-        #----------
-    
-    if (params$use_FN_dominant)
+            #----------
+        
+    if (params$use_FN_dominant & params$VERBOSE_LM)
         {
-FN_only_true_vs_pred_df = filter (full_true_vs_pred_df, dom_err_type == "FN")
-color_breaks_and_values = force_dom_err_type_colors (FN_only_true_vs_pred_df$dom_err_type)
-scale_color_breaks = color_breaks_and_values$breaks
-scale_color_values = color_breaks_and_values$values
-
-FN_only_true_vs_pred_df %>% 
-        # full_true_vs_pred_df %>% 
-        #     filter (dom_err_type == "FN") %>% 
+        FN_only_true_vs_pred_df = filter (full_true_vs_pred_df, dom_err_type == "FN")
+        color_breaks_and_values = force_dom_err_type_colors (FN_only_true_vs_pred_df$dom_err_type)
+        scale_color_breaks = color_breaks_and_values$breaks
+        scale_color_values = color_breaks_and_values$values
+        
+        FN_only_true_vs_pred_df %>% 
             ggplot () +
-                    geom_point (aes (
-                                     # x     = pred_values, 
-                                     # y     = true_values, 
-                                     x     = true_values, 
-                                     y     = pred_values, 
-color = dom_err_type), 
-
-shape = 15,    #".", 
-size=0.5, 
-alpha = alpha_level    #1
-# shape="."
+                geom_point (aes (x     = pred_values,    #true_values, 
+                                 y     = true_values,    #pred_values, 
+                                 color = dom_err_type), 
+                            
+                            shape = 15,    #".", 
+                            size=0.5, 
+                            alpha = alpha_level    #1
+                            # shape="."
                             ) +  
-                    facet_wrap (~ rs_method_name_fac, nrow = num_facet_wrap_rows) + 
-                    geom_abline (intercept=0, slope=1) +     #, linetype, color, size
-                    ggtitle (paste0 ("FN only TEST pred vs. true ", pred_value_name_display_str, 
-                                     " for ", model_name_str, " using ", vars_used_str)) + 
-                    theme (plot.title = element_text (hjust = 0.5)) +
-        
-            #  If forcing colors, then manually scale the colors.  
-            #  Otherwise, use the default behavior.
-            #  To use an "if" statement inside these sets of statements 
-            #  separated by "+" signs, you have to put curly brackets around 
-            #  your test and result.
-{ if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
-                                        values = scale_color_values) } +
-
-{ if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
-                              legend.direction = "vertical") } + 
-        
-    #  Symbols on the plot itself are small and semi-transparent, 
-    #  but in the legend that makes them nearly invisible.
-    #  Override the symbol size and alpha values in the legend to 
-    #  make the symbols much larger and not transparent at all.  
-    #  Note that the fill=NA is trying to get rid of the grey background 
-    #  around the symbols in the legend, but doesn't seem to be working.
-    #  Leaving it in for now to remind me to try to find some other 
-    #  way to get this to work.
-    
-guides (color = 
-      guide_legend (override.aes = list (size = 4, 
-                                         alpha = 1 
-                                         , fill = NA
-                                         ))) -> 
-        FN_fits_plot
+                facet_wrap (~ rs_method_name_fac, nrow = num_facet_wrap_rows) + 
+                geom_abline (intercept=0, slope=1) +     #, linetype, color, size
+                ggtitle (paste0 ("FN only TEST pred vs. true ", pred_value_name_display_str, 
+                                 " for ", model_name_str, " using ", vars_used_str)) + 
+                theme (plot.title = element_text (hjust = 0.5)) +
+            
+                    #  If forcing colors, then manually scale the colors.  
+                    #  Otherwise, use the default behavior.
+                    #  To use an "if" statement inside these sets of statements 
+                    #  separated by "+" signs, you have to put curly brackets around 
+                    #  your test and result.
+                { if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
+                                                        values = scale_color_values) } +
+                
+                { if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
+                                              legend.direction = "vertical") } + 
+                
+{ if (!is.na (x_min_on_plot) | !is.na(x_max_on_plot)) xlim (x_min_on_plot, x_max_on_plot) } + 
+{ if (!is.na (y_min_on_plot) | !is.na(y_max_on_plot)) ylim (y_min_on_plot, y_max_on_plot) } + 
+            
+                    #  Symbols on the plot itself are small and semi-transparent, 
+                    #  but in the legend that makes them nearly invisible.
+                    #  Override the symbol size and alpha values in the legend to 
+                    #  make the symbols much larger and not transparent at all.  
+                    #  Note that the fill=NA is trying to get rid of the grey background 
+                    #  around the symbols in the legend, but doesn't seem to be working.
+                    #  Leaving it in for now to remind me to try to find some other 
+                    #  way to get this to work.
                     
-        show (FN_fits_plot)
-        }
-         
-        #----------
-
-    if (params$use_FP_dominant)
+                guides (color = 
+                    guide_legend (override.aes = list (size = 4, 
+                                                       alpha = 1 
+                                                       , fill = NA
+                                                       ))) -> 
+                        FN_fits_plot
+                            
+                show (FN_fits_plot)
+                        
+        }  #  end if - params$use_FN_dominant & params$VERBOSE_LM
+             
+            #----------
+    
+    if (params$use_FP_dominant & params$VERBOSE_LM)
         {
-FP_only_true_vs_pred_df = filter (full_true_vs_pred_df, dom_err_type == "FP")
-color_breaks_and_values = force_dom_err_type_colors (FP_only_true_vs_pred_df$dom_err_type)
-scale_color_breaks = color_breaks_and_values$breaks
-scale_color_values = color_breaks_and_values$values
-
-FP_only_true_vs_pred_df %>% 
-        # full_true_vs_pred_df %>% 
-        #     filter (dom_err_type == "FP") %>% 
+        FP_only_true_vs_pred_df = filter (full_true_vs_pred_df, dom_err_type == "FP")
+        color_breaks_and_values = force_dom_err_type_colors (FP_only_true_vs_pred_df$dom_err_type)
+        scale_color_breaks = color_breaks_and_values$breaks
+        scale_color_values = color_breaks_and_values$values
+        
+        FP_only_true_vs_pred_df %>% 
             ggplot () + 
-                    geom_point (aes (
-                                     # x     = pred_values, 
-                                     # y     = true_values, 
-                                     x     = true_values, 
-                                     y     = pred_values, 
-color = dom_err_type), 
-
-shape = 15,    #".", 
-size=0.5, 
-alpha = alpha_level    #1
-# shape="."
+                geom_point (aes (x     = pred_values,    #true_values, 
+                                 y     = true_values,    #pred_values, 
+                                 color = dom_err_type), 
+    
+                            shape = 15,    #".", 
+                            size=0.5, 
+                            alpha = alpha_level    #1
+                            # shape="."
                             ) +  
                     facet_wrap (~ rs_method_name_fac, nrow = num_facet_wrap_rows) + 
                     geom_abline (intercept=0, slope=1) +     #, linetype, color, size
                     ggtitle (paste0 ("FP only TEST pred vs. true ", pred_value_name_display_str, 
                                      " for ", model_name_str, " using ", vars_used_str)) + 
                     theme (plot.title = element_text (hjust = 0.5)) +
+            
+                    #  If forcing colors, then manually scale the colors.  
+                    #  Otherwise, use the default behavior.
+                    #  To use an "if" statement inside these sets of statements 
+                    #  separated by "+" signs, you have to put curly brackets around 
+                    #  your test and result.
+                { if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
+                                                        values = scale_color_values) } +
+                
+                { if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
+                                              legend.direction = "vertical") } + 
+            
+{ if (!is.na (x_min_on_plot) | !is.na(x_max_on_plot)) xlim (x_min_on_plot, x_max_on_plot) } + 
+{ if (!is.na (y_min_on_plot) | !is.na(y_max_on_plot)) ylim (y_min_on_plot, y_max_on_plot) } + 
+           
+        #  Symbols on the plot itself are small and semi-transparent, 
+        #  but in the legend that makes them nearly invisible.
+        #  Override the symbol size and alpha values in the legend to 
+        #  make the symbols much larger and not transparent at all.  
+        #  Note that the fill=NA is trying to get rid of the grey background 
+        #  around the symbols in the legend, but doesn't seem to be working.
+        #  Leaving it in for now to remind me to try to find some other 
+        #  way to get this to work.
         
-            #  If forcing colors, then manually scale the colors.  
-            #  Otherwise, use the default behavior.
-            #  To use an "if" statement inside these sets of statements 
-            #  separated by "+" signs, you have to put curly brackets around 
-            #  your test and result.
-{ if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
-                                        values = scale_color_values) } +
-
-{ if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
-                              legend.direction = "vertical") } + 
+                guides (color = 
+                    guide_legend (override.aes = list (size = 4, 
+                                                       alpha = 1 
+                                                       , fill = NA
+                                                       ))) -> 
+                        FP_fits_plot
         
-    #  Symbols on the plot itself are small and semi-transparent, 
-    #  but in the legend that makes them nearly invisible.
-    #  Override the symbol size and alpha values in the legend to 
-    #  make the symbols much larger and not transparent at all.  
-    #  Note that the fill=NA is trying to get rid of the grey background 
-    #  around the symbols in the legend, but doesn't seem to be working.
-    #  Leaving it in for now to remind me to try to find some other 
-    #  way to get this to work.
+                    show (FP_fits_plot)
+                        
+                } #  end if - params$use_FP_dominant & params$VERBOSE_LM    
     
-guides (color = 
-      guide_legend (override.aes = list (size = 4, 
-                                         alpha = 1 
-                                         , fill = NA
-                                         ))) -> 
-        FP_fits_plot
-        show (FP_fits_plot)
-        }         
         #----------
 
+        #  If coloring points by dominant error type, make sure that the 
+        #  same color is always used for each type across all graphs.  
+        #  If you don't do this and only one error type is appearing in the 
+        #  current graph, it will take on whatever color is first in the 
+        #  default list of colors.  This makes it harder to see at a glance 
+        #  what kinds of points are being plotted in a set of graphs.  
+        #  In particular, FNs show up as 2 different colors while FPs 
+        #  are always the same color if you don't do this fix.
+    
+    color_breaks_and_values = force_dom_err_type_colors (full_true_vs_pred_df$dom_err_type)
+    
+    scale_color_breaks = color_breaks_and_values$breaks
+    scale_color_values = color_breaks_and_values$values
 
-
-
-
-
-
-    #  If coloring points by dominant error type, make sure that the 
-    #  same color is always used for each type across all graphs.  
-    #  If you don't do this and only one error type is appearing in the 
-    #  current graph, it will take on whatever color is first in the 
-    #  default list of colors.  This makes it harder to see at a glance 
-    #  what kinds of points are being plotted in a set of graphs.  
-    #  In particular, FNs show up as 2 different colors while FPs 
-    #  are always the same color if you don't do this fix.
-
-color_breaks_and_values = force_dom_err_type_colors (full_true_vs_pred_df$dom_err_type)
-
-scale_color_breaks = color_breaks_and_values$breaks
-scale_color_values = color_breaks_and_values$values
-
-
-
-
-
-
-        
     full_fits_plot = 
         ggplot (data = full_true_vs_pred_df) +  
-                geom_point (aes (
-                                 # x     = pred_values, 
-                                 # y     = true_values, 
-                                 x     = true_values, 
-                                 y     = pred_values, 
+                geom_point (aes (x     = pred_values,    #true_values, 
+                                 y     = true_values,    #pred_values, 
                                  
                                  color = dom_err_type), 
-shape = 15,    #".", 
-size=0.5, 
-alpha = alpha_level    #1
-# shape="."
+                            shape = 15,    #".", 
+                            size=0.5, 
+                            alpha = alpha_level    #1
+                            # shape="."
                             ) +  
+      labs(x = "Predicted value", y = "Correct value") +
                 facet_wrap (~ rs_method_name_fac, nrow = num_facet_wrap_rows) + 
                 geom_abline (intercept=0, slope=1) +     #, linetype, color, size
-                ggtitle (paste0 ("TEST pred vs. true ", pred_value_name_display_str, 
-                                 " for ", model_name_str, " using ", vars_used_str)) + 
+ggtitle (paste0 (
+                 pred_value_name_display_str, 
+                 " predictions ", "\n", "using ", vars_used_str, " features")) + 
+# ggtitle (paste0 (test_or_train_str, 
+#                  " pred vs. true ", pred_value_name_display_str, 
+#                  " for ", model_name_str, " using ", vars_used_str)) + 
                 theme (plot.title = element_text (hjust = 0.5)) + 
-
-      
-      
-      
-      
-            #  If forcing colors, then manually scale the colors.  
-            #  Otherwise, use the default behavior.
-            #  To use an "if" statement inside these sets of statements 
-            #  separated by "+" signs, you have to put curly brackets around 
-            #  your test and result.
-        { if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
-                                                values = scale_color_values) } +
-
-{ if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
-                              legend.direction = "vertical") } + 
-        
-{ if (num_facets == 4) theme (legend.position = "right",
-                              legend.direction = "vertical") } + 
-        
-    #  Symbols on the plot itself are small and semi-transparent, 
-    #  but in the legend that makes them nearly invisible.
-    #  Override the symbol size and alpha values in the legend to 
-    #  make the symbols much larger and not transparent at all.  
-    #  Note that the fill=NA is trying to get rid of the grey background 
-    #  around the symbols in the legend, but doesn't seem to be working.
-    #  Leaving it in for now to remind me to try to find some other 
-    #  way to get this to work.
     
-guides (color = 
-      guide_legend (override.aes = list (size = 4, 
-                                         alpha = 1 
-                                         , fill = NA
-                                         ))) +
-
-
+                    #  If forcing colors, then manually scale the colors.  
+                    #  Otherwise, use the default behavior.
+                    #  To use an "if" statement inside these sets of statements 
+                    #  separated by "+" signs, you have to put curly brackets around 
+                    #  your test and result.
+                { if (force_colors) scale_color_manual (breaks = scale_color_breaks, 
+                                                        values = scale_color_values, 
+                                                        name = "Dominant\nerror type") } +
+    
+                { if (num_facets == 5) theme (legend.position = c(0.85, 0.25),
+                                              legend.direction = "vertical") } + 
+                        
+                { if (num_facets == 4) theme (legend.position = "right",
+                                              legend.direction = "vertical") } + 
       
-      
-                            
+{ if (!is.na (x_min_on_plot) | !is.na(x_max_on_plot)) xlim (x_min_on_plot, x_max_on_plot) } + 
+{ if (!is.na (y_min_on_plot) | !is.na(y_max_on_plot)) ylim (y_min_on_plot, y_max_on_plot) } + 
+
+                    #  Symbols on the plot itself are small and semi-transparent, 
+                    #  but in the legend that makes them nearly invisible.
+                    #  Override the symbol size and alpha values in the legend to 
+                    #  make the symbols much larger and not transparent at all.  
+                    #  Note that the fill=NA is trying to get rid of the grey background 
+                    #  around the symbols in the legend, but doesn't seem to be working.
+                    #  Leaving it in for now to remind me to try to find some other 
+                    #  way to get this to work.
+        
+                guides (color = 
+                      guide_legend (override.aes = list (size = 4, 
+                                                         alpha = 1 
+                                                         , fill = NA
+                                                         ))) +
+
                 geom_text (aes (x, y, label = R2_label), 
                            data=locs_R2, 
                            family="Times", fontface="italic", #lineheight=.03, 
@@ -655,27 +884,31 @@ guides (color =
                            size=3, hjust = 0, 
                            parse = T) + 
       
-      { if (pred_value_name_display_str == "Cost Error") ylim (NA, 1.5) }
-      
-
-    cur_plot_name = paste0 ("full_fits.TEST.predVsTrue.using.", 
+###2025 07 25 - BTL###                { if (pred_value_name_display_str == "Cost Error") ylim (NA, 1.5) }
+                { if (pred_value_name_display_str == "Solution Cost Error") ylim (NA, 1.5) }
+          
+  
+    cur_plot_name = paste0 ("full_fits.", test_or_train_str, ".predVsTrue.using.", 
                             pred_value_name_display_str, 
                             ".for.", model_name_str, 
                             ".Using.", vars_used_str)
     
-    save_this_ggplot (full_fits_plot, cur_plot_name)
-
+    save_this_ggplot (full_fits_plot, cur_plot_name, params)
+    
     return (full_fits_plot)
     }
-    
+
 #===============================================================================
 
 fit_cost_err_frac <- function (rs_names_vec, 
-                               train_x_df, test_x_df, 
-                               working_train_df, working_test_df, 
+                               train_x_df, test_x_df,                #  e.g., p3_test_x_df_probSize 
+                               working_train_df, working_test_df,    #  e.g., p3_working_test_df 
                                train_aux_df, test_aux_df, 
-                               vars_used_str, params
-                  ,            
+                               vars_used_str, params, 
+                              
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA,      
+                                   
                   som_model = NULL, 
                   num_som_cells = NULL
                                )
@@ -683,7 +916,8 @@ fit_cost_err_frac <- function (rs_names_vec,
         #  Values specific to cost error plotting
         
     target_col_name = "rs_solution_cost_err_frac"
-    pred_value_name_display_str = "Cost Error"
+###2025 07 25 - BTL###    pred_value_name_display_str = "Cost Error"
+    pred_value_name_display_str = "Solution Cost Error"
 
         #----------
 
@@ -708,6 +942,7 @@ fit_cost_err_frac <- function (rs_names_vec,
         
         #----------
     
+train_and_test_full_fits_plot_and_data = 
     fit_to_target_var (rs_names_vec, 
                                train_x_df, test_x_df, 
                                working_train_df, working_test_df, 
@@ -722,12 +957,88 @@ fit_cost_err_frac <- function (rs_names_vec,
                               rmse_x_loc, 
                               rmse_y_loc, 
                               
-                              target_col_name = target_col_name
-                  ,            
+                              target_col_name = target_col_name,  
+                               
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot, 
+                                   
                   som_model = som_model, 
                   num_som_cells = num_som_cells, 
-                  SOM_cost_err_frac = TRUE
+                  SOM_cost_err_frac = FALSE
                                )
+    
+return (train_and_test_full_fits_plot_and_data)
+    }
+
+#===============================================================================
+
+fit_cost_err_mag <- function (rs_names_vec, 
+                               train_x_df, test_x_df,                #  e.g., p3_test_x_df_probSize 
+                               working_train_df, working_test_df,    #  e.g., p3_working_test_df 
+                               train_aux_df, test_aux_df, 
+                               vars_used_str, params, 
+                              
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA,      
+                                   
+                  som_model = NULL, 
+                  num_som_cells = NULL
+                               )
+    {
+        #  Values specific to cost error plotting
+        
+    target_col_name = "signed_cost_err_mag"
+    pred_value_name_display_str = "Signed Cost Error Mag"
+
+        #----------
+
+        #  Values specific to either plotting all RS or just the non-greedy ones.
+        
+    if (params$exclude_greedy_rs_in_fit_plots)
+        {
+        R2_x_loc = 0    #-0.8 
+        R2_y_loc = 2400    #-100    #2
+        
+        rmse_x_loc = 0    #-0.8 
+        rmse_y_loc = 2100    #-350    #1.8
+        
+        } else
+        {
+        R2_x_loc = 0    #-0.8 
+        R2_y_loc = 2400    #-100    #1.4    #####2    #####4.5    #10
+        
+        rmse_x_loc = 0    #-0.8 
+        rmse_y_loc = 2100    #-350    #1.2    #####1.8    #####4    #9
+        }
+        
+        #----------
+    
+train_and_test_full_fits_plot_and_data = 
+    fit_to_target_var (rs_names_vec, 
+                               train_x_df, test_x_df, 
+                               working_train_df, working_test_df, 
+                               train_aux_df, test_aux_df, 
+                               vars_used_str, params, 
+                               
+                              pred_value_name_display_str = pred_value_name_display_str,
+
+                              R2_x_loc, 
+                              R2_y_loc, 
+                              
+                              rmse_x_loc, 
+                              rmse_y_loc, 
+                              
+                              target_col_name = target_col_name,  
+                               
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot, 
+                                   
+                  som_model = som_model, 
+                  num_som_cells = num_som_cells, 
+                  SOM_cost_err_frac = FALSE
+                               )
+    
+return (train_and_test_full_fits_plot_and_data)
     }
 
 #===============================================================================
@@ -736,8 +1047,11 @@ fit_rep_shortfall <- function (rs_names_vec,
                                train_x_df, test_x_df, 
                                working_train_df, working_test_df, 
                                train_aux_df, test_aux_df, 
-                               vars_used_str, params
-                  ,            
+                               vars_used_str, params,  
+                               
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA,      
+                                   
                   som_model = NULL, 
                   num_som_cells = NULL
                                )
@@ -745,17 +1059,18 @@ fit_rep_shortfall <- function (rs_names_vec,
         #  Values specific to rep shortfall plotting
         
     target_col_name = "rsr_COR_spp_rep_shortfall"
-    pred_value_name_display_str = "Rep Shortfall"
-    func_to_fit_one_rs = fit_one_rs
+###2025 07 25 - BTL###    pred_value_name_display_str = "Rep Shortfall"
+    pred_value_name_display_str = "Representation Shortfall"
 
     R2_x_loc = -0.1 
-    R2_y_loc = 0.87
+    R2_y_loc = 1.1
     
     rmse_x_loc = -0.1 
-    rmse_y_loc = 0.82    #  0.78
+    rmse_y_loc = 0.95    #  0.78
 
         #----------
         
+train_and_test_full_fits_plot_and_data = 
     fit_to_target_var (rs_names_vec, 
                                train_x_df, test_x_df, 
                                working_train_df, working_test_df, 
@@ -770,12 +1085,73 @@ fit_rep_shortfall <- function (rs_names_vec,
                               rmse_x_loc, 
                               rmse_y_loc, 
                               
-                              target_col_name = target_col_name
-                  ,            
+                              target_col_name = target_col_name,  
+                               
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot, 
+                                   
                   som_model = som_model, 
                   num_som_cells = num_som_cells, 
                   SOM_cost_err_frac = FALSE
                                )
+    
+return (train_and_test_full_fits_plot_and_data)
+    }
+
+#===============================================================================
+
+fit_rep_shortfall_mag <- function (rs_names_vec, 
+                               train_x_df, test_x_df, 
+                               working_train_df, working_test_df, 
+                               train_aux_df, test_aux_df, 
+                               vars_used_str, params,  
+                               
+                  x_min_on_plot = NA,      
+                  x_max_on_plot = NA, y_min_on_plot = NA, y_max_on_plot = NA,      
+                                   
+                  som_model = NULL, 
+                  num_som_cells = NULL
+                               )
+    {
+        #  Values specific to rep shortfall plotting
+        
+    target_col_name = "rep_shortfall_mag"
+    pred_value_name_display_str = "Rep Shortfall Mag"
+
+    R2_x_loc = 0    #-0.1 
+    R2_y_loc = 18    #0.87
+    
+    rmse_x_loc = 0    # -0.1 
+    rmse_y_loc = 16    #0.82    #  0.78
+
+        #----------
+      
+train_and_test_full_fits_plot_and_data = 
+    fit_to_target_var (rs_names_vec, 
+                               train_x_df, test_x_df, 
+                               working_train_df, working_test_df, 
+                               train_aux_df, test_aux_df, 
+                               vars_used_str, params, 
+                               
+                              pred_value_name_display_str = pred_value_name_display_str,
+
+                              R2_x_loc, 
+                              R2_y_loc, 
+                              
+                              rmse_x_loc, 
+                              rmse_y_loc, 
+                              
+                              target_col_name = target_col_name,  
+                               
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot, 
+                                   
+                  som_model = som_model, 
+                  num_som_cells = num_som_cells, 
+                  SOM_cost_err_frac = FALSE
+                               )
+    
+return (train_and_test_full_fits_plot_and_data)
     }
 
 #===============================================================================
@@ -792,11 +1168,18 @@ f_lm <- function (rs_name,
     train_lm_model = lm (train_y_vec ~ ., 
                        data = train_x_df)
     
-#x#    print (coef (train_lm_model))
-#x#    print (summary (train_lm_model))
-
+    if (params$show_lm_model_fit_coefficients_and_summary)
+        {
+        cat ("\n\n============start lm results for", rs_name, "===================\n\n")
+        cat ("\nlm coef() for ", rs_name, "\n")
+        print (coef (train_lm_model))    #x#    
+        cat ("\n\nlm summary() for ", rs_name, "\n")
+        print (summary (train_lm_model))    #x#    
+        cat ("\n\n============end lm results for", rs_name, "===================\n\n")
+        }
+    
 #    plot (train_lm_model, which=1:2)
-    plot (train_lm_model, which=1)
+if (params$VERBOSE_LM)    plot (train_lm_model, which=1)
 ### record the previous plot
 #lm_resid_plot <- recordPlot()  
 
@@ -821,8 +1204,12 @@ f_lm <- function (rs_name,
 # show (gg_resfitted (train_lm_model, scale.factor = lindia_scale.factor))
 # show (gg_qqplot (train_lm_model, scale.factor = lindia_scale.factor))
 
-    test_eval_list = 
-        ppe_for_train_and_test (rs_name, 
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+#    test_eval_list = 
+    train_and_test_eval_lists =
+
+        ppe_for_train_and_test_for_one_RS (rs_name, 
                                 
                                 fitted_model                    = train_lm_model, 
                                 model_name_str                  = "LM", 
@@ -841,7 +1228,10 @@ f_lm <- function (rs_name,
                                 vars_used_str                   = vars_used_str, 
                                 must_specify_predictions_vector = FALSE)
     
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+#    return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
@@ -922,8 +1312,11 @@ f_rf_party <- function (rs_name,
     summary (train_rf_model)
 #plot (train_rf_model)
     
-    test_eval_list = 
-        ppe_for_train_and_test (rs_name, 
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #test_eval_list = 
+    train_and_test_eval_lists = 
+        ppe_for_train_and_test_for_one_RS (rs_name, 
                                 
                                 fitted_model                    = train_rf_model, 
                                 model_name_str                  = "RF party", 
@@ -944,7 +1337,10 @@ f_rf_party <- function (rs_name,
                       
                       rf_from_party = TRUE)
         
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
@@ -960,7 +1356,6 @@ f_rf_ranger <- function (rs_name,
                          train_aux_df, test_aux_df, 
                          params)
     {
-
     train_rf_model = ranger (train_y_vec ~ ., 
                            data = train_x_df, 
                     importance = "impurity", 
@@ -971,8 +1366,11 @@ f_rf_ranger <- function (rs_name,
     
 #importance (train_rf_model)
 
-    test_eval_list = 
-        ppe_for_train_and_test (rs_name, 
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #test_eval_list = 
+    train_and_test_eval_lists = 
+        ppe_for_train_and_test_for_one_RS (rs_name, 
                                 
                                 fitted_model                    = train_rf_model, 
                                 model_name_str                  = "RF ranger",  
@@ -993,7 +1391,10 @@ f_rf_ranger <- function (rs_name,
                       
                       rf_from_party = FALSE)
     
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
     }
 
 #===============================================================================
@@ -1368,8 +1769,11 @@ show (
 )
 
 
-    test_eval_list = 
-        ppe_for_train_and_test_given_preds (
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #test_eval_list = 
+    train_and_test_eval_lists = 
+        ppe_for_train_and_test_given_preds_for_one_RS (
                     rs_name,
                                                 
                     model_name_str = "Glmnet",                 #  e.g., "LM" 
@@ -1393,7 +1797,335 @@ show (
                     must_specify_predictions_vector = FALSE
                   )
     
-    return (test_eval_list)
+        #  2023 01 01 - BTL
+        #  New code to return both test and train instead of just test.
+    #return (test_eval_list)
+    return (train_and_test_eval_lists)
+    }
+
+#===============================================================================
+
+build_feature_set_specific_test_and_train <- function (working_train_df, 
+                                                              working_test_df, 
+                                                              inVars, 
+                                                              params, 
+                                                              include_median_redundancies=FALSE)
+    {
+    ## Define data sets according to the given input feature set
+    
+    reduced_test_and_train_dfs_list =
+        build_specific_test_and_train_via_col_name_strings (working_train_df,
+                                                            working_test_df,
+                                                            inVars, 
+                                                            include_median_redundancies = FALSE)
+    
+    #----------
+    
+    p3_train_x_df = reduced_test_and_train_dfs_list$train_x_df
+    p3_test_x_df  = reduced_test_and_train_dfs_list$test_x_df
+    
+    if (params$write_tibs_to_csv) 
+        {
+        write_a_tib_to_csv_file_using_params (p3_train_x_df, 
+                                              "p3_train_x_df", 
+                                              params, params$file_type_to_write)
+        
+        write_a_tib_to_csv_file_using_params (p3_test_x_df, 
+                                              "p3_test_x_df", 
+                                              params, params$file_type_to_write)
+      }
+    
+    if (params$VERBOSE_LM_CATS) cat ("\n\np3_test_x_df column names:\n")
+    if (params$VERBOSE_LM_CATS)     names (p3_test_x_df)
+    #cat ("\n\nworking_test_df column names:\n")
+    #names (working_test_df)
+
+    return (list (p3_train_x_df = p3_train_x_df, 
+                  p3_test_x_df = p3_test_x_df))
+    }
+
+#===============================================================================
+
+## Function to build test and train data frames via col name strings
+## 
+## Same as build_specific_test_and_train() except that it passes in a vector 
+## of column name strings instead of the name of a function to call.
+## Added 2022 12 29 - BTL.
+
+#  Use this function for building any of the test and train data frame pairs, 
+#  since the logic is the same for all of them.  The only difference between 
+#  them is what columns are selected for inclusion. 
+#  
+#  The include_median_redundancies argument is required to call the 
+#  add_median_redundancies() function if the resulting data sets need to 
+#  contain those two columns as well.  It defaults to not calling that 
+#  function.
+#  This is necessary to handle issues with zero variance in the redundancies 
+#  when looking only at FN data.  This is explained where the 
+#  include_median_redundancies flag is defined earlier in the code.
+
+build_specific_test_and_train_via_col_name_strings <- 
+            function (working_train_df, 
+                      working_test_df, 
+                  col_name_strings,    #func_for_col_selection, 
+                      include_median_redundancies = FALSE)
+    {
+        #  Call the function passed in here to select only the columns 
+        #  specific to the data set you want for the specific fitting test, 
+        #  e.g., only columns related to problem size or only related to 
+        #  graph variables.
+  
+    # train_x_df  = func_for_col_selection (working_train_df, 
+    #                                      include_median_redundancies)
+    train_x_df = select_cols_for_learning (working_train_df, 
+                                           col_name_strings, 
+                                           include_median_redundancies)
+    
+    # test_x_df  = func_for_col_selection (working_test_df, 
+    #                                      include_median_redundancies)
+    test_x_df  = select_cols_for_learning (working_test_df, 
+                                           col_name_strings, 
+                                           include_median_redundancies)
+    
+    # cat ("\n\nis_grouped_df (train_x_df) = ", 
+    #      is_grouped_df (train_x_df), sep='')
+    # 
+    # cat ("\n\nis_grouped_df (test_x_df) = ", 
+    #      is_grouped_df (test_x_df), sep='')
+
+    return (list (train_x_df = train_x_df, 
+                  test_x_df  = test_x_df))
+    }
+
+#===============================================================================
+
+select_cols_for_learning <- function (working_df, 
+                                      col_name_strings, 
+                                      include_median_redundancies=NULL)
+    {
+    reduced_df <- select (working_df, 
+                          rs_method_name,    #  All learners need to know RS
+                    #rsr_UUID,    #  2023 01 02 - BTL testing
+                          all_of (col_name_strings))
+    
+    if (include_median_redundancies)
+        reduced_df = add_median_redundancies (working_df, reduced_df)
+
+    return (reduced_df)
+    }
+
+#===============================================================================
+#
+#  2022 12 31 - BTL
+#  I think that this function is no longer used.  I think that it has been 
+#  replaced by:  build_specific_test_and_train_via_col_name_strings().  
+#  I think that this function was a first cut before I abstracted out the 
+#  calling of specific functions that selected particular sets of features.  
+#  Now I just hand in a vector of column name strings instead of handing in 
+#  the name of the custom function that selected the particular set of features.
+#  
+#-------------------------------------------------------------------------------
+
+## Function to build test and train data frames
+
+#  Use this function for building any of the test and train data frame pairs, 
+#  since the logic is the same for all of them.  The only difference between 
+#  them is what columns are selected for inclusion. 
+#
+#  To use this function, you just hand it a function that selects the 
+#  specific columns of interest for the desired data set.  These functions 
+#  have been named with a consistent form of:  select_*_df_cols(), where 
+#  the "*" refers to the data items of interest, e.g., prob_size or graph.
+#  That selection routine needs to do two things:  
+#      1)  select the appropriate columns
+#      2)  call the add_median_redundancies() function if the resulting 
+#          data sets need to contain those two columns as well
+#          (This is necessary to handle issues with zero variance in the 
+#           redundancies when looking only at FN data.  This is explained 
+#           where the include_median_redundancies flag is defined 
+#           earlier in the code.)
+
+build_specific_test_and_train <- function (working_train_df, 
+                                           working_test_df, 
+                                      func_for_col_selection, 
+                                           include_median_redundancies = FALSE)
+    {
+        #  Call the function passed in here to select only the columns 
+        #  specific to the data set you want for the specific fitting test, 
+        #  e.g., only columns related to problem size or only related to 
+        #  graph variables.
+  
+    train_x_df = func_for_col_selection (working_train_df, 
+                                         include_median_redundancies)
+    test_x_df  = func_for_col_selection (working_test_df, 
+                                         include_median_redundancies)
+    
+    # cat ("\n\nis_grouped_df (train_x_df) = ", 
+    #      is_grouped_df (train_x_df), sep='')
+    # 
+    # cat ("\n\nis_grouped_df (test_x_df) = ", 
+    #      is_grouped_df (test_x_df), sep='')
+
+    return (list (train_x_df = train_x_df, 
+                  test_x_df  = test_x_df))
+    }
+
+#===============================================================================
+
+add_to_full_fitting_scores <- function (all_fitting_scores_df, 
+                                        full_measured_values_df, 
+                                        train_or_test, 
+                                        vars_used_str, 
+                                        fitting_model_str, 
+                                        measure_name_str) 
+    {
+#                 list (rs_method_name = cur_rs_name, 
+# #                      model_name_str = cur_test_eval_list$model_name_str, 
+#                       rmse           = cur_test_eval_list$rmse_value, 
+#                       R2             = cur_test_eval_list$R2, 
+#                       adj_R2         = cur_test_eval_list$adj_R2)
+
+    cur_scores_df = 
+        data.frame (train_or_test     = train_or_test, 
+                    fitting_model_str = fitting_model_str, 
+                    vars_used_str     = vars_used_str, 
+                    measure_name_str  = measure_name_str, 
+                    rs_method_name    = full_measured_values_df$rs_method_name, 
+                    rmse              = full_measured_values_df$rmse, 
+                    R2                = full_measured_values_df$R2, 
+                    adj_R2            = full_measured_values_df$adj_R2)
+    
+    
+    all_fitting_scores_df = rbind (all_fitting_scores_df, cur_scores_df)
+
+    return (all_fitting_scores_df)
+    }    
+  
+#===============================================================================
+
+fit_and_predict_output_error_using_feature_set <- 
+    function (rs_method_names_list, 
+              train_x_df,    # p3_train_x_df_probSize,
+              test_x_df,    # p3_test_x_df_probSize, 
+              working_train_df,    # p3_working_train_df, 
+              working_test_df,    # p3_working_test_df, 
+              train_aux_df,    # p3_train_aux_df, 
+              test_aux_df,    # p3_test_aux_df, 
+              train_df__before_any_preprocessing,    # working_train_df__before_any_preprocessing
+              test_df__before_any_preprocessing,    # working_test_df__before_any_preprocessing
+              params, 
+              
+              all_fitting_scores_df, 
+                               
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot,      
+                                   
+                  fitting_func,    # fit_rep_shortfall
+              perf_metric_name_for_file_name_str,    # "abs_rep_shortfall_resid"
+             
+              vars_used_str,    #  "probSize" 
+              inVars,    # probSize_inVars = c("rsp_num_occupied_PUs", "rsp_num_spp")
+              source_string,     # "probSize_lm", 
+              display_train_as_final_pred_using_plot_as_final_pred_using_plot
+              )
+    {
+        #--------------------------------------------------------------
+        #  Fit training data and evaluate fit on both train and test.  
+        #--------------------------------------------------------------
+
+    train_and_test_full_fits_plot_and_data = 
+#        fit_rep_shortfall (rs_method_names_list, 
+        fitting_func (rs_method_names_list, 
+                      train_x_df, test_x_df, 
+                      working_train_df, working_test_df, 
+                      train_aux_df, test_aux_df, 
+                              #test_df__before_any_preprocessing, 
+                      vars_used_str, 
+                      params,  
+                      
+                  x_min_on_plot,      
+                  x_max_on_plot, y_min_on_plot, y_max_on_plot
+ 
+                              # ,            
+                              # som_model = som_model, 
+                              # num_som_cells = num_som_cells
+                     )
+
+    train_full_fits_plot_and_data = 
+        train_and_test_full_fits_plot_and_data$train_full_fits_plot_and_data
+    
+    test_full_fits_plot_and_data = 
+        train_and_test_full_fits_plot_and_data$test_full_fits_plot_and_data
+    
+        #-----------------------------------------------------------
+        #  Add fitting scores for both train and test to full set.
+        #-----------------------------------------------------------
+
+    all_fitting_scores_df = 
+        add_to_full_fitting_scores (all_fitting_scores_df, 
+                                    train_full_fits_plot_and_data$full_measured_values_df, 
+                                    "TRAIN", 
+                                    vars_used_str, 
+                                    params$fitting_model_str, 
+                                    perf_metric_name_for_file_name_str)
+
+    all_fitting_scores_df = 
+        add_to_full_fitting_scores (all_fitting_scores_df, 
+                                    test_full_fits_plot_and_data$full_measured_values_df, 
+                                    "TEST", 
+                                    vars_used_str, 
+                                    params$fitting_model_str, 
+                                    perf_metric_name_for_file_name_str)
+
+        #------------------------------------------------
+        #  Write MATILDA files for both train and test.
+        #------------------------------------------------
+
+            #  2023 12 31 - BTL
+            #  Adding flag to ignore writing matilda files because when I 
+            #  added code to include pca variables in the data the matilda 
+            #  code crashed.  Not sure why at the moment.  Since I'm not 
+            #  using the matilda output lately, I'm just going to set this 
+            #  to FALSE to get things working again.  Since the pca variables 
+            #  don't help much, that code will probably disappear at some 
+            #  point and this can be set back to TRUE to get the matilda 
+            #  code executing again.  
+
+    write_matilda_files = FALSE
+    if (write_matilda_files)
+        {
+        write_matilda_file_for_abs_residuals (train_df__before_any_preprocessing,
+                                              inVars,
+                                              train_full_fits_plot_and_data,
+                                              params,
+                                              source_string,
+                                              perf_metric_name_for_file_name_str,
+                                              test_train_string = "TRAIN"
+                                             )
+    
+        write_matilda_file_for_abs_residuals (test_df__before_any_preprocessing,
+                                              inVars,
+                                              test_full_fits_plot_and_data,
+                                              params,
+                                              source_string,
+                                              perf_metric_name_for_file_name_str,
+                                              test_train_string = "TEST"
+                                             )
+        }
+    
+        #--------------------------------------------------------------------
+        #  Display specified results for all reserve selectors in one plot.
+        #--------------------------------------------------------------------
+
+    if (display_train_as_final_pred_using_plot)
+        {
+        show (train_full_fits_plot_and_data$full_fits_plot)
+        } else
+        {
+        show (test_full_fits_plot_and_data$full_fits_plot)
+        }
+    
+    return (all_fitting_scores_df)
     }
 
 #===============================================================================
