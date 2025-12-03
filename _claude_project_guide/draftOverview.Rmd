@@ -98,6 +98,12 @@ Figures 5-7 all have the wrong order of subplots in the layout (i.e., SA is over
 
 Oddly, the figures shown in the Summary files have SA and SA_SS in the correct place.  I think that they came from Paper 1 and Paper 2 originally.  
 
+There is a command in some of the plotting of predictions (in the file "v1a_paper_3_fitting_functions__returning_fitting_plots_instead_of_displaying_them.R") that says:
+"ggplot (aes (value, reorder (row, value), color = value > 0))".
+Maybe that has something to do with getting SA and SA_SS in the correct order since the help for the reorder function says:
+
+"reorder is a generic function. The "default" method treats its first argument as a categorical variable, and reorders its levels based on the values of a second variable, usually numeric."
+
 ## Eric's request for density information in plots
 
 Need to look up exactly what he said.
@@ -124,6 +130,9 @@ Currently have simple euclidean combination, but doesn't make sense because repr
 
 
 # Need to design robust method for train/test split in final tests
+
+See one strategy for splitting into independent groups in file:
+"/R/v2_paper_3_cv_test_train_splitting_functions.R"
 
 ### How to characterize & display results that have probably have 4 test sets in split
 
