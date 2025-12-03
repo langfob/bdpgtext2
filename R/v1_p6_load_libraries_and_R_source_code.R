@@ -72,22 +72,8 @@ library (glue)  #  For function glue().
 
 proj_dir = here()
 
-# source (file.path (proj_dir,"/Paper_2_comparison_of_reserve_selectors/v1_Paper_2_func_defns_to_load_data.R"))
-# source (file.path (proj_dir,"/Paper_2_comparison_of_reserve_selectors/v1_Paper_2_func_defns_for_plotting.R"))
-# source (file.path (proj_dir,"/Paper_2_comparison_of_reserve_selectors/v1_Paper_2_func_defns_printing_text_and_tables.R"))
-
-#source (file.path (proj_dir,"R/v2_Paper_2_func_defns_to_load_data.R"))
-
-#source (file.path (proj_dir,"R/v2_Paper_2_func_defns_for_plotting.R"))
-# source (file.path (proj_dir,"R_new/v2_Paper_2_func_defns_for_plotting.R"))
 source (file.path (proj_dir,"R/v2_Paper_2_func_defns_for_plotting.R"))
-
-#source (file.path (proj_dir,"R/v1_Paper_2_func_defns_printing_text_and_tables.R"))
-# source (file.path (proj_dir,"R_new/v1_Paper_2_func_defns_printing_text_and_tables.R"))
 source (file.path (proj_dir,"R/v1_Paper_2_func_defns_printing_text_and_tables.R"))
-
-#source (file.path (proj_dir, "R/v2_p6_unifiedDataLoading.R"))    # "R/v06_Paper_6.R"))
-# source (file.path (proj_dir, "R_new/v2_p6_unifiedDataLoading.R"))    # "R/v06_Paper_6.R"))
 source (file.path (proj_dir, "R/v2_p6_unifiedDataLoading.R"))    # "R/v06_Paper_6.R"))
 
 #===============================================================================

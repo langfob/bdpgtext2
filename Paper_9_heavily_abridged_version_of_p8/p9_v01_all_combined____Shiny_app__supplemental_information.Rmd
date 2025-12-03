@@ -338,20 +338,7 @@ proj_dir = here()
 #  I just haven't had it affect something important enough to notice.
 
 
-# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
-#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
-#         local = knitr::knit_global()) 
-# 
-# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
-#         local = knitr::knit_global())
-
-# 2025 11 29 - BTL
-# Move source file from R to R_new since it is referenced in current code, 
-# which assumes R code is in R_new.
-
-# source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
-#         local = knitr::knit_global())
-source (file.path (proj_dir, "R_new/v1_p6_load_libraries_and_R_source_code.R"), 
+source (file.path (proj_dir, "R/v1_p6_load_libraries_and_R_source_code.R"), 
         local = knitr::knit_global())
 ```
 
