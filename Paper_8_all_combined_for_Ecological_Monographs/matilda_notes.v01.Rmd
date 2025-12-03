@@ -1,0 +1,476 @@
+---
+params:
+  initialDate: "2022-12-29"
+title: "Matilda Notes"
+author: |  
+    | Bill Langford
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/methods-in-ecology-and-evolution.csl
+---
+
+```{r version_history, eval=FALSE, echo=FALSE, cache=TRUE}
+
+#  Version history
+
+##  matilda v01 December 20, 2022  
+
+Cut out of bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/v01_Paper_8_all_combined__body.Rmd
+```
+
+#  The most important questions/issues below discussed in this document  
+
+These are the most important things for me.  They're also highlighted in red in the document.  
+
+- table headings are illegible in browser
+- would like to turn off svm learning of good/bad or better yet, replace it with svm regression
+- could really use a user's manual or at least a FAQ (maybe this document could help with figuring out what to put in a FAQ)
+- co-display of features and performance measures
+
+#  Good points  
+
+- The startup tutorials and short explanations of data files make it easy to get started.
+- The input file format is simple
+- The interface has a nice clean appearance other than the brown and blue table problem.
+- The more I play around with the interface, the more useful things that I discover.
+- I feel pretty safe in playing around with things without knowing exactly what they'll do, because they don't have irreparable data-damaging consequences and results are saved in the dashboard.
+- The dashboard is useful and makes it easy to navigate past results.
+- It's great that you take care of the storing and managing of past runs so that I don't have to.
+- I'm able to use matilda in spite of all the questions that I have in this document.
+- It's useful that I can Export some things for use elsewhere
+- It's nice that it takes care of the Box-Cox and feature selection on the inputs.
+
+#  Things I don't understand about instance space analysis  
+
+##  Conceptual difficulties  
+
+###  **How to compare coverage/utility of two different feature sets since projections differ?**
+
+When I use different input features to describe the same benchmark problem set, it's difficult to compare their coverage of instance space because they each produce a different coordinate set for the projection space.  Maybe one input feature set shows the set of problems to be covering lots of the projected instance space and the other feature set shows poor coverage of the instance space built from the other input features.  The benchmark problems are still the same in both cases and they're still being measured with the same error measures, but each new projection of instance space gives a different answer for how well they're covering the "true" space of problem difficulty that a benchmark set needs to cover.  
+
+##  Technical difficulties  
+
+###  Problem with metric where "optimum" is 0 of *absolute value* but performance measure values are signed and the positive/negative distinction is important
+
+I'm losing an important kind of information in the projected values, i.e., is an algorithm underestimating or overestimating a value.  Would like to be able to display along an axis of the raw values even though the optimization is happening on the absolute values.  I'd like to be able to see whether easy/hard problems had anything to do with underestimation vs. overestimation at the same magnitude.  This distinction matters in my problem where I'm measuring under/over estimation of cost and more importantly, whether it's under/over estimating predictions of output error.  There, if it's underestimating output error then it's perpetuating the problem that I'm trying to solve, but the minimization of the absolute value hides the direction of this error.  
+
+Sometimes, this could be viewed as a cost-sensitive learning kind of question where I'm saying that one kind of error matters more than the other.  However, in much of the reserve selection work I'm doing, it's more common that you have a tradeoff between two things and the stakeholders will disagree on the weighting, so assigning a cost or weight doesn't capture the necessary information. For example, a conservation ecologist will probably think it's more important to not underestimate the output error while a politician will probably think it's more important not to overestimate the error (and thereby incur more sampling cost to fix the problem).  
+
+Not sure if having signed values would also do something weird to the projection algorithm though since it's trying to produce gradation along the performance measure.  
+
+#  Functionality that would make Matilda easier and/or more useful for my research    
+
+##  **\textcolor{red}{Learning SVM models}**   
+
+###  Any way to avoid having to set a "best" threshold?  
+
+Would prefer avoiding that completely in my regression problems.  I just want to see the gradation of output values, e.g., by color.  
+
+In general, I'd rather that the SVM was learning to predict the values of my measures (in the same way that I'm trying to learn to predict output error.  Good and bad have little stable meaning in my problems.  
+
+###  Any way to have it NOT learn an SVM model?
+
+I'm more interested in the projections of the various distributions over instance space than the SVM predictions.  I'm not trying to choose a best algorithm; I'm trying to characterize how any particular method performs and how much of the instance space we're covering with the test set so that we know whether the data is a good basis for generalization of performance.
+
+Not having to learn them would save a ton of run time (in the current case, 3 or 4 hours).  At the moment, there are a number of larger variations on input data and output data that I would like to ask but am not asking because I know it will take many hours because of the SVM learning.  This is in spite of the fact that comparatively, it would take very little time to do everything except the SVM.  
+
+I've just looked at the Advanced Settings and I can't see any advanced setting that allows me to not run the SVM.  
+
+###  Any way to learn an SVM regression instead of an SVM classification?
+
+There's almost nothing I do where you can threshold/label something as good/bad.  I could however imagine value in being able to interactively move the threshold as you watch the consequences of doing that or else have a contour map with contours of different thresholds shown.  
+
+However, my analyzing my linear model of error prediction is similar to what you're doing.  If I were to learn my error prediction using an SVM regression instead of a linear regression, then we would be showing the same thing.  However, I'd still want to be doing an instance space analysis of that learned model to see where it's reliable (without learning an SVM classifier of the behavior of the SVM regressor).  
+
+One other important thing is that when I learn a linear regression model in my own code using the variables that matilda has chosen for its fit, the fit is much worse than using my own selected variables.  (See daily log notes for 2022-12-30 Friday.)  I think this may have to do with matilda learning to fit a classification instead of learning to fit the regression that is of most interest.  
+
+##  Would like to be able to turn off matilda's feature selection & force it to use my choices
+
+Can I already do this?  I want to be able to do it because I'm specifically investigating which sets of features are most useful in learning to predict problem difficulty in my application.  
+
+##  Matilda run time clues  
+
+When I start a run I have no idea whether this might take 5 minutes or 5 days.  As I use it more, I'm getting better at guessing, but most of the time, I still have to wait for it to finish the first round of learning the SVM model before I can multiply it out for a guess at how long until it will finish.  
+
+###  Total time estimate  
+
+Is there any way that you're able to provide at least a very rough estimate of the minimum based on the dimensions of the problem so that I can either know to go away for that long or else know that I've done something too big and should just kill the job? 
+
+###  Any way to get Matilda to signal me when finished (e.g., text or email)?
+
+If nothing else, it would be useful if I could set it up to send me a text or an email when it finishes.  I know this isn't terribly hard to do in R and I suspect, python, but I don't know about matlab.
+
+###  Any way to get something like a crude progress measure or progress bar
+
+There's already the little moving worm during the wait period, but it doesn't tell you anything useful.
+
+##  If I use your BoxCox, can I access the values learned on training data so that I can apply them on test set?
+
+Is this what the "project more values" button does inside the interface?
+
+##  Minor issues/questions
+
+###  Would be nice to have a tidier tabular entry format w/ online selection.
+
+Right now, my data is in more of an R "tidy data" format (i.e., each reserve selection run has one line rather than the mixed format of the input) that I have to decode and rearrange to rebuild the csv table every time I want to do an experiment.  It would reduce the barrier to entry if I could just load the table and then tick which columns I want as features, algorithms, etc.  I probably just need to build this myself, maybe as a Shiny interface.
+
+###  Would be useful to be able to generate a pdf report with plot permutations
+
+I have to keep reselecting and jumping back and forth with only one plot displayed and it would be easier to look through a report where either all plot permutations were selected or else I had the option to choose which plots to dump all at once.  
+
+Another option would be facetted panels like the ggplots I do with the 4 reserve selectors.  
+
+###  Is there an API so that I can retrieve things back into R without csv files?
+
+#  Interface changes that would make Matilda easier and/or more useful for my research    
+
+##  **\textcolor{red}{Viewing plots of features vs. performance measures}**   
+
+###  Would really like to have 2 plots up side by side: a feature and a performance measure
+
+I find that I can't remember all the vagaries of one when I jump back to see its affect on the other, e.g., as sppPuProd increases, what happens to output error?  I can only see either the distribution of the counts or the distribution of the errors at one time.
+
+Another way of looking at it:  When you hover over a dot in the performance display, it gives the 2D coordinates (z1, z2) and the scores for each of the algorithms, but I don't really care about the 2D coordinates.  What I'd like to know is the original coordinates in either raw or preprocessed form (more likely the raw form, but would be nice to be able to choose, even if it was a global setting rather than a menu option).
+
+For example, I'd like to compare the RS only and LM plots using the same input features.  
+
+###  Switching between performance distribution and feature distribution changes frame
+
+It's hard to compare the feature distributions and the performance distributions because the features are shown on the full zoomed out instance space and the performance metric is shown on the zoomed in space.  
+
+Both views have their uses, but it would be nice to be able to specify which one you want so that it's easier to make direct comparisons.  
+
+The results for absSolCostErr-RSonly show this problem particularly well because one plot looks like a croissant and the other looks like a worm.
+
+##  Any way to change dot transparency or cycle through bringing to top?
+
+Hovering over the name in the legend works well for the cycling idea, but doesn't work on every graph (Performance Distribution:Easy/Hard doesn't allow me to hover over easy or hard axis labels to highlight one or the other but it works for Good/Bad binary).  However, it doesn't help with a printed version of the plot like you need in a paper.  Transparency could help there, but facetting might be best, though it might get unwieldy if lots of variables.
+
+##  Would be nice to have problem name in or near plot title
+
+I'm looking at multiple problems in different windows, but the name of the problem is only shown by scrolling way back up the screen and that rolls the plot way off the bottom.
+
+#  Interface bugs/issues  
+
+##  **\textcolor{red}{The colors in the displayed tables make the headings invisible}**  
+
+I'm using matilda on a mac and in every browser on my machine (firefox, chrome, safari), table headings show as blue writing on a brown background and it's completely illegible.  
+
+[INCLUDE A SCREEN GRAB.]
+
+##  Performance distribution/Number of good algorithms has no numeric values on the x legend
+
+(Currently looking at problem Glmnet7plussize-euctot-nolearner example.)
+
+##  Menus not updating correctly (Feature Distribution / Preprocessed Features / sppPuProd)
+
+There seems to be a problem with updating the current state of the plots to match the state in the menus.  
+
+For example, if I go through the following sequence of menu option choices to 
+
+- display the raw values of a feature, 
+- followed by the preprocessed values of that feature, 
+- then switch to displaying a performance measure, and 
+- finally come back and select the feature distribution again, 
+
+it still shows *preprocessed* in the menu but the plot is showing *raw* values.  If I then click *raw* it continues to show raw values but when I click back to *preprocessed*, it now correctly shows preprocessed values.  
+
+#  **\textcolor{red}{Is there any kind of a user's manual or even a FAQ?}**  
+
+The tutorials, startup guide, and pop-up help in the Info points are all very useful but don't cover everything.  The video tutorials are helpful but you can't figure out where to jump to if you want one specific little question answered (though you might be able to put pointers to timestamps related to specific points the way that some youtube videos do).  It would be helpful even to have a pointer to the relevant paper if some of the interface structures are discussed in one of your papers.
+
+Here are some of the things that would be helped by having a manual:
+
+- all the questions I'm asking here, particularly integrative questions that aren't localized to a single button
+- definitions of different blocks of the tables
+- buttons without help such as the one that asks if you want to project more values
+- At first, I didn't realize that I could enter my raw values for BoxCoxing and then view their projection.  I thought I could only see the BoxCox values.
+
+I discover more things as I use the interface, but it costs a fair amount of fooling around to find them and it's often accidental that I figure them out, i.e., when I'm doing something unrelated.  
+
+The output summary has many column headings that are meaningless to me and/or are abbreviated with ellipses.  If there was some explanation of what each thing in the output is/means, then I would be much more likely to use Matilda and its output.  If I have to read your matlab code to try to guess what they mean, then I'm likely to just ignore them.  This is even more true because I don't speak matlab.  
+
+All of these things come down to how much do you want new users.  There will be some users who need this enough to really work at figuring out how to extract the information, but I think that there are other users who might have a go at using it but bail out because they don't immediately see the value of puzzling through the code or a bunch of papers to guess what things mean.  I think that you're half way to conquering the latter group given your video tutorials, information pop-ups, and starting guides.  Those are all good, but when it comes down to using it on my own project, the details start to become much more important and there isn't much information on those details.  
+
+I think this is one of those onion interface things where you've provided good outer layers of the onion that let me work my way in, but as I get closer to the core, the help/documentation is either missing or requires a lot of hunting for the information.  It's reasonable of you to expect me to do some of the work of learning to use your tool, however, the more you require me to read your code to figure out how to use the tool, the less likely I am to use the tool in cases where it's not absolutely crucial to my project.  
+
+#  Things that would be good to have in written documentation  
+
+##  General questions  
+
+###  Are there limits to the kind and/or size of problems Matilda can reasonably handle?
+
+##  Interface questions  
+
+###  What does the "add more values to project" button do?
+
+I'm not sure whether that's meant to upload another file (e.g., a test set after having loaded a train set) or use values you haven't subsampled already or what).  Also, if it's meant to show a test set, does it just add the points to the existing data being displayed or does it create a new plot that only shows the new data but still uses the same BoxCox transforms and the same projection matrix?
+
+###  Not clear on what's the difference between boundary and "likely boundary" (solid and dashed) in plots?  
+
+allKnowable-repShortfall-lm has a dashed line and a solid line, but the instances spread outside the dashed line.  What does that mean?  
+
+##  Table entries questions  
+
+###  What are the table entries (I can't read them in the current colors)?  
+
+###  What does each of them mean?  
+
+## Matilda log file questions
+
+###  What do these log file entries mean?
+
+- Many of the headings are truncated.  
+- The end of each section contains a bunch of "[]" entries.  Do those mean anything?
+  - Some of those are also followed by other non-empty entries.  What do those mean?
+
+```
+-> PYTHIA is preparing the summary table.
+-> PYTHIA has completed! Performance of the models:
+
+Columns 1 through 3
+
+'Algorithms ' 'Avg_Perf_all_ins...' 'Std_Perf_all_ins...'
+'Gurobi' [ 0.2110] [ 0.1570]
+'Marxan_SA' [ 0.1980] [ 0.1520]
+'UR_Forward' [ 0.2100] [ 0.1580]
+'Marxan_SA_SS' [ 0.2490] [ 0.1880]
+'Oracle' [ 0.1110] [ 0.1140]
+'Selector' [ 0.1980] [ 0.1500]
+
+Columns 4 through 6
+
+'Probability_of_good' 'Avg_Perf_selecte...' 'Std_Perf_selecte...'
+[ 0.1440] [ 0.2150] [ 0.1480]
+[ 0.1750] [ 0.1630] [ 0.1240]
+[ 0.1630] [ 0.1950] [ 0.1370]
+[ 0.1210] [ 0.2490] [ 0.1880]
+[ 1] [] []
+[ 0.1730] [ 0.1930] [ 0.1350]
+
+Columns 7 through 9
+
+'CV_model_accuracy' 'CV_model_precision' 'CV_model_recall'
+[ 62.7000] [ 14.7000] [ 33.1000]
+[ 71.6000] [ 18.1000] [ 17.5000]
+[ 74.5000] [ 14.6000] [ 11.7000]
+[ 87.9000] [] [ 0]
+[] [] []
+[] [ 14.2000] [ 7.9000]
+
+Columns 10 through 11
+
+'BoxConstraint' 'KernelScale'
+[ 0.1350] [ 13.4430]
+[ 1.0000e-03] [ 0.8470]
+[ 0.1350] [ 13.4430]
+[ 0.0020] [ 0.0210]
+[] []
+[] []
+```
+
+###  What do these log entries mean and what are the units of measure?
+
+```
+=========================================================================
+-> Calling TRACE to perform the footprint analysis.
+=========================================================================
+-> TRACE will use experimental data to calculate the footprints.
+-> TRACE is calculating the space area and density.
+-> Space area: 9.5346 | Space density: 202.5254
+```
+
+###  What do these log entries mean, especially since all are "good" and "best"?
+
+```
+-------------------------------------------------------------------------
+-> TRACE is calculating the algorithm footprints.
+-> Good performance footprint for 'Gurobi'
+-> Best performance footprint for 'Gurobi'
+-> Algorithm 'Gurobi' completed. Elapsed time: 0.43s
+-> Good performance footprint for 'Marxan_SA'
+-> Best performance footprint for 'Marxan_SA'
+-> Algorithm 'Marxan_SA' completed. Elapsed time: 0.43s
+-> Good performance footprint for 'Marxan_SA_SS'
+-> Best performance footprint for 'Marxan_SA_SS'
+-> Algorithm 'Marxan_SA_SS' completed. Elapsed time: 0.17s
+-> Good performance footprint for 'UR_Forward'
+-> Best performance footprint for 'UR_Forward'
+-> Algorithm 'UR_Forward' completed. Elapsed time: 0.19s
+-------------------------------------------------------------------------
+```
+
+###  What are contradictory footprint sections?  Is 1.5% good or bad or ???
+
+```
+-------------------------------------------------------------------------
+-> TRACE is detecting and removing contradictory sections of the footprints.
+-> Base algorithm 'Gurobi'
+-> TRACE is comparing 'Gurobi' with 'Marxan_SA'
+-> Test algorithm 'Marxan_SA' completed. Elapsed time: 0.05s
+-> TRACE is comparing 'Gurobi' with 'UR_Forward'
+-> Test algorithm 'UR_Forward' completed. Elapsed time: 0.02s
+-> TRACE is comparing 'Gurobi' with 'Marxan_SA_SS'
+-> Purity of the contradicting areas is equal for both footprints.
+-> Ignoring the contradicting area.
+-> Test algorithm 'Marxan_SA_SS' completed. Elapsed time: 0.02s
+-> Base algorithm 'Gurobi' completed. Elapsed time: 0.09s
+-> Base algorithm 'Marxan_SA'
+-> TRACE is comparing 'Marxan_SA' with 'UR_Forward'
+-> 1.5% of the test footprint is contradictory.
+-> 1.5% of the test footprint is contradictory.
+-> 1.5% of the test footprint is contradictory.
+-> Test algorithm 'UR_Forward' completed. Elapsed time: 0.10s
+-> TRACE is comparing 'Marxan_SA' with 'Marxan_SA_SS'
+-> Test algorithm 'Marxan_SA_SS' completed. Elapsed time: 0.01s
+-> Base algorithm 'Marxan_SA' completed. Elapsed time: 0.11s
+-> Base algorithm 'UR_Forward'
+-> TRACE is comparing 'UR_Forward' with 'Marxan_SA_SS'
+-> Test algorithm 'Marxan_SA_SS' completed. Elapsed time: 0.00s
+-> Base algorithm 'UR_Forward' completed. Elapsed time: 0.00s
+-> Base algorithm 'Marxan_SA_SS'
+-> Base algorithm 'Marxan_SA_SS' completed. Elapsed time: 0.00s
+-------------------------------------------------------------------------
+```
+
+###  What is the beta-footprint?  What do all of the column headings and values mean?
+
+```
+-------------------------------------------------------------------------
+-> TRACE is calculating the beta-footprint.
+-------------------------------------------------------------------------
+-> TRACE is preparing the summary table.
+-> TRACE has completed. Footprint analysis results:
+
+Columns 1 through 4
+
+[] 'Area_Good' 'Area_Good_Normal...' 'Density_Good'
+'Gurobi' [ 0.1310] [ 0.0140] [ 53.4190]
+'Marxan_SA' [ 0.1190] [ 0.0120] [ 151.5600]
+'UR_Forward' [ 0.0660] [ 0.0070] [ 106.3970]
+'Marxan_SA_SS' [ 0.0160] [ 0.0020] [ 252.7230]
+
+Columns 5 through 7
+
+'Density_Good_Nor...' 'Purity_Good' 'Area_Best'
+[ 0.2640] [ 0.8570] [ 0.0810]
+[ 0.7480] [ 0.8330] [ 0.1650]
+[ 0.5250] [ 0.8570] [ 0.0270]
+[ 1.2480] [ 0.7500] [ 0.0710]
+
+Columns 8 through 10
+
+'Area_Best_Normal...' 'Density_Best' 'Density_Best_Nor...'
+[ 0.0080] [ 111.1950] [ 0.5490]
+[ 0.0170] [ 54.5570] [ 0.2690]
+[ 0.0030] [ 148.4430] [ 0.7330]
+[ 0.0070] [ 56.1300] [ 0.2770]
+
+Column 11
+
+'Purity_Best'
+[ 0.7780]
+[ 0.8890]
+[ 0.7500]
+[ 0.7500]
+
+-------------------------------------------------------------------------
+```
+
+###  What do each of these options mean?  Which can I change?  Which matter?
+
+```
+-------------------------------------------------------------------------
+-> Listing options to be used:
+outputs
+web: 1
+csv: 1
+png: 1
+
+auto
+preproc: 1
+
+webParams
+problemName: 'bdpg_lm_error_prediction_using_prob_size_vars'
+performanceMetricLabel: 'absolute value of residual error'
+
+pilot
+ntries: 30
+analytic: 0
+
+bound
+flag: 0
+
+selvars
+smallscaleflag: 0
+fileidxflag: 0
+
+pythia
+ispolykrnl: 1
+useweights: 0
+uselibsvm: 1
+cvfolds: 10
+
+cloister
+pval: 0.0500
+cthres: 0.7000
+
+norm
+flag: 1
+
+trace
+PI: 0.7500
+usesim: 0
+
+webproc
+flag: 1
+
+parallel
+flag: 1
+ncores: 2
+
+sifted
+Replicates: 100
+flag: 1
+NTREES: 50
+rho: 0.3000
+K: 10
+MaxIter: 1000
+
+perf
+epsilon: 0.0500
+AbsPerf: 1
+MaxPerf: 0
+betaThreshold: 0.5500
+
+-------------------------------------------------------------------------
+```
+

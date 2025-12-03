@@ -1,0 +1,2899 @@
+---
+params:
+#--------------------  START of setting params variables  --------------------# 
+  initialDate: "2022-12-20"
+#-----  Rmd file and chunk control variables  -----# 
+  chunk_echo: FALSE    #  Variable to allow turning echo of chunk code on/off for multiple, specified chunks.
+  chunk_include: FALSE    #  Variable to allow turning echo of chunk output on/off for multiple, specified chunks.
+  build_appendices: TRUE
+#-----  train/test splitting variables  -----# 
+  training_set_proportion: 0.5   #0.0425
+  data_splitting_type: 1    #CONST_split_data_using_batch_id = 1
+  #data_splitting_type: 2    #CONST_split_data_using_test_train_proportions = 2
+  #data_splitting_type: 3    #CONST_split_data_using_4_independent_test_subsets = 3
+  #data_splitting_type: 4    #CONST_split_data_using_train_proportion_and_4_independent_test_subsets    
+  #data_splitting_type: 5    #CONST_split_data_using_4_independent_test_subsets_of_B3_and_same_for_B5
+#-----  predicted dominance variables  -----# 
+  use_predicted_dominance_values: FALSE    ##  2024 01 21 ##FALSE
+  use_predicted_FP_dominant: FALSE    ##  2024 01 21 ##FALSE
+  use_predicted_FN_dominant: FALSE
+  evaluate_dominance_prediction_model: FALSE    ##  2024 01 21 ##FALSE
+#-----  input inclusion/exclusion and modification variables  -----# 
+  exclude_ZL: TRUE
+  bdpg_p_needs_fixing: TRUE
+  exclude_imperfect_wraps: FALSE    #  2020 06 09 unfinished fails w/ both T & F
+  gurobi_problem_filter: "all"    # "all" OR "completed" OR "unfinished"
+  exclude_APP_0_inErr: TRUE    #  Necessary to avoid Inf and NaN magnifications
+  remove_zero_output_errors: FALSE
+  use_gurobi_optimal_runs_only: FALSE    #  Is this different from option "gurobi_problem_filter"?  2022 12 25 - BTL
+  use_perfect_wraps_only: FALSE    #  Different from option "exclude_imperfect_wraps"?  2022 12 25 - BTL
+  use_FN_dominant: TRUE
+  use_FP_dominant: TRUE
+  remove_probs_with_gt_10_pct_input_err: TRUE
+  separate_by_redundancy: FALSE
+#-----  file writing variables  -----# 
+  write_tibs_to_csv: FALSE
+  write_most_important_tibs_to_csv: TRUE
+  file_type_to_write: "csv"    #"rds"
+  add_gen_time_to_csv_name: FALSE
+#-----  path variables  -----# 
+  relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
+  relative_path_to_data_out_loc: "Data/TempOutput"
+  ggplot_save_path: "Paper_8_all_combined_for_Ecological_Monographs/Saved_plots"
+#-----  plotting variables  -----# 
+  exclude_greedy_rs_in_fit_plots: FALSE
+  show_only_test_results: TRUE
+  force_colors: TRUE
+  display_train_as_final_pred_using_plot: FALSE    #  Whether prediction plots in pdf should show train or test data
+#-----  prep for fitting variables  -----# 
+  do_BoxCox: TRUE
+#-----  fitting function variables  -----# 
+  do_lm: TRUE
+  fitting_model_str: "lm"
+  show_lm_model_fit_coefficients_and_summary: TRUE    ######  2024 01 26  ######
+  do_rf: FALSE
+  #fitting_model_str: "rf"
+  do_lm_cv: FALSE
+  use_party_pkg_for_rf: FALSE
+  do_glmnet_caret: FALSE
+  do_glmnet_UC: FALSE
+  #fitting_model_str: "glmnet_UC"
+  SHOW_ALL_GLMNET_UC_PLOTS: FALSE
+  VERBOSE_GLMNET_UC: FALSE
+  VERBOSE_LM: FALSE
+  VERBOSE_LM_CATS: FALSE
+#-----  misc variables  -----# 
+  mag_base_col_name_str: "max_TOT_FN_FP_rate"    #"max_TOT_FN_FP_rate"    #  "rsp_euc_realized_Ftot_and_cost_in_err_frac"
+#-----  vestigial variables  -----# 
+#  near_1_tol: 0.05
+#  do_all_batches: TRUE  #FIRST ADDED FROM P6    #  Still used somewhere?  2024 01 23
+#  create_p1_COR_data: TRUE
+#  training_split_denom: 2
+#--------------------  END of setting params variables  --------------------# 
+#title: |  
+#    | Learning to predict reserve selection optimization errors 
+#    | under uncertainty - p8 v6
+title: |  
+    | Learning to predict reserve selection error under uncertainty 
+    | (data preparation only)
+    | p8 v18
+author: |  
+    | William T. Langford^1,3^, Ascelin Gordon^2^
+    | 
+    | 1 Romsey VIC 3434, Australia
+    | 2 School of Global, Urban and Social Studies, RMIT University, Melbourne, VIC 3000, Australia
+    | 3 Corresponding author email: btlangford.work\@gmail.com
+    | `r paste0 ('#-------------------------  RMD FILE AND CHUNK CONTROL VARIABLES   -------------------------#')`
+    | `r paste0 ('[chunk_echo: ', params$chunk_echo, ']')`
+    | `r paste0 ('[chunk_include: ', params$chunk_include, ']')`
+    | `r paste0 ('[build_appendices: ', params$build_appendices, ']')`
+    | `r paste0 ('#------------------------------  TRAIN/TEST SPLITTING VARIABLES   ------------------------------#')`
+    | `r paste0 ('[training_set_proportion: ', params$training_set_proportion, ']')`
+    | `r paste0 ('[data_splitting_type: ', params$data_splitting_type, ']')`
+    | `r paste0 ('#------------------------------  PREDICTED DOMINANCE VARIABLES   ------------------------------#')`
+    | `r paste0 ('[use_predicted_dominance_values: ', params$use_predicted_dominance_values, ']')`
+    | `r paste0 ('[use_predicted_FP_dominant: ', params$use_predicted_FP_dominant, ']')`
+    | `r paste0 ('[use_predicted_FN_dominant: ', params$use_predicted_FN_dominant, ']')`
+    | `r paste0 ('[evaluate_dominance_prediction_model: ', params$evaluate_dominance_prediction_model, ']')`
+    | `r paste0 ('#--------------------  INPUT INCLUSION/EXCLUSION AND MODIFICATION VARIABLES   --------------------#')`
+    | `r paste0 ('[exc ZL: ', params$exclude_ZL, ']')`
+    | `r paste0 ('[bdpg_p_needs_fixing: ', params$bdpg_p_needs_fixing, ']')`
+    | `r paste0 ('[exc imperfect: ', params$exclude_imperfect_wraps, ']')`
+    | `r paste0 ('[gur probs: ', params$gurobi_problem_filter, ']')` 
+    | `r paste0 ('[exc APP 0 inErr: ', params$exclude_APP_0_inErr, ']')` 
+    | `r paste0 ('[remove_zero_output_errors: ', params$remove_zero_output_errors, ']')`
+    | `r paste0 ('[use_gurobi_optimal_runs_only: ', params$use_gurobi_optimal_runs_only, ']')`
+    | `r paste0 ('[use_perfect_wraps_only: ', params$use_perfect_wraps_only, ']')`
+    | `r paste0 ('[use_FN_dominant: ', params$use_FN_dominant, ']')`
+    | `r paste0 ('[use_FP_dominant: ', params$use_FP_dominant, ']')`
+    | `r paste0 ('[remove_probs_with_gt_10_pct_input_err: ', params$remove_probs_with_gt_10_pct_input_err, ']')`
+    | `r paste0 ('[separate_by_redundancy: ', params$separate_by_redundancy, ']')`
+    | `r paste0 ('#-----------------------------------  FILE WRITING VARIABLES   -----------------------------------#')`
+    | `r paste0 ('[write_tibs_to_csv: ', params$write_tibs_to_csv, ']')`
+    | `r paste0 ('[write_most_important_tibs_to_csv: ', params$write_most_important_tibs_to_csv, ']')`
+    | `r paste0 ('[file_type_to_write: ', params$file_type_to_write, ']')`
+    | `r paste0 ('[add_gen_time_to_csv_name: ', params$add_gen_time_to_csv_name, ']')`
+    | `r paste0 ('#----------------------------------------  PATH VARIABLES   ----------------------------------------#')`
+    | `r paste0 ('[relative_path_to_input_data: ', params$relative_path_to_input_data, ']')`
+    | `r paste0 ('[relative_path_to_data_out_loc: ', params$relative_path_to_data_out_loc, ']')`
+    | `r paste0 ('[ggplot_save_path: ', params$ggplot_save_path, ']')`
+    | `r paste0 ('#----------------------------------------  PLOTTING VARIABLES   ----------------------------------------#')`
+    | `r paste0 ('[exclude_greedy_rs_in_fit_plots: ', params$exclude_greedy_rs_in_fit_plots, ']')`
+    | `r paste0 ('[show_only_test_results: ', params$show_only_test_results, ']')`
+    | `r paste0 ('[force_colors: ', params$force_colors, ']')`
+    | `r paste0 ('[display_train_as_final_pred_using_plot: ', params$display_train_as_final_pred_using_plot, ']')`
+    | `r paste0 ('#-----------------------------------  PREP FOR FITTING VARIABLES   -----------------------------------#')`
+    | `r paste0 ('[do_BoxCox: ', params$do_BoxCox, ']')`
+    | `r paste0 ('#-----------------------------------  FITTING FUNCTION VARIABLES   -----------------------------------#')`
+    | `r paste0 ('[do_lm: ', params$do_lm, ']')`
+    | `r paste0 ('[fitting_model_str: ', params$fitting_model_str, ']')`
+    | `r paste0 ('[show_lm_model_fit_coefficients_and_summary: ', params$show_lm_model_fit_coefficients_and_summary, ']')`
+    | `r paste0 ('[do_rf: ', params$do_rf, ']')`
+    | `r paste0 ('[do_lm_cv: ', params$do_lm_cv, ']')`
+    | `r paste0 ('[use_party_pkg_for_rf: ', params$use_party_pkg_for_rf, ']')`
+    | `r paste0 ('[do_glmnet_caret: ', params$do_glmnet_caret, ']')`
+    | `r paste0 ('[do_glmnet_UC: ', params$do_glmnet_UC, ']')`
+    | `r paste0 ('[SHOW_ALL_GLMNET_UC_PLOTS: ', params$SHOW_ALL_GLMNET_UC_PLOTS, ']')`
+    | `r paste0 ('[VERBOSE_GLMNET_UC: ', params$VERBOSE_GLMNET_UC, ']')`
+    | `r paste0 ('[VERBOSE_LM: ', params$VERBOSE_LM, ']')`
+    | `r paste0 ('[VERBOSE_LM_CATS: ', params$VERBOSE_LM_CATS, ']')` 
+    | `r paste0 ('#----------------------------------------  MISC VARIABLES   ----------------------------------------#')`
+    | `r paste0 ('[mag_base_col_name_str: ', params$mag_base_col_name_str, ']')`
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/ecological-monographs.csl
+---
+
+----------
+
+\newpage
+
+```{r version_history, eval=FALSE, echo=FALSE, cache=TRUE}
+
+#  Version history
+
+##  p8 v18 June 17, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v17_prep_data_for_p8_to_load_from_files.Rmd.  
+
+Changed all method name references in previous version.  Now need to make some changes to wording, etc that result from improvements made to wording in p9 v01 for the corresponding text in p8 v18.  
+
+##  p8 v17 June 12, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v16_prep_data_for_p8_to_load_from_files.Rmd.  
+
+Need to change all references to Gurobi, Marxan_SA, and Marxan_SA_SS to ILP, SA, and SA_SS.  I've done a couple of these in the version 16, but I want to separate this action out as much as possible in case it causes any problems.  So, I'm going to do only this in version 17.  This could also be done using a fork for this name changing and another for many other changes, but merging the name change fork with all kinds of other changes made on another fork will be just as messy, if not more so.  I'm putting it in a separate version number as a compromise to make it easier to revert back to the end of v16 if there are unanticipated issues down the road after changing the names.
+
+##  p8 v16 April 16, 2025  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v15_prep_data_for_p8_to_load_from_files.Rmd.  
+
+Made a fairly complete, somewhat reduced version of the fully body of the paper in v15, however, there are a fair number of small details that need to be repaired.  Creating v16 to make those repairs, such as entering the correct definitions of variables in the tables of variables.  
+
+I'm also going to remove all uses of and references to the Latapy variables in both the text and the data loading, since they were of almost no use and greatly complicate the writing up.
+
+##  p8 v15 August 4, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v14_prep_data_for_p8_to_load_from_files.Rmd
+
+Edited v14 with respect to Ascelin comments up through most of Discussion but stopped at beginning of Predictions section of Discussion.  I've decided to try to shrink the paper and as much as possible and get rid of as much controversial stuff as possible.  If I change my mind later about doing that, I should go back to the latest version of v14 and continue with the editing I had been doing there.  At the moment, continuing with those edits seems like a waste of time if I'm going to slash things, so I'm creating a new version 15 for slashing.  
+
+##  p8 v14 June 6, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v13_prep_data_for_p8_to_load_from_files.Rmd
+
+Updating this version to keep in step with change to v14 in main body of p8.  
+
+##  p8 v13 April 22, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v12_prep_data_for_p8_to_load_from_files.Rmd.  
+
+Updating this version to keep in step with change to v13 in main body of p8.  
+
+##  p8 v12 February 9, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v11_prep_data_for_p8_to_load_from_files.Rmd.  
+
+In v11, I made many changes to the Results section of the main body, however I don't think that I made any changes at all to this v11 data prep file.  I'm only creating a new version of it to keep the version numbers matching and avoid the confusion that was caused in some other files when doing p1 through p7 cuts at papers when various version numbers didn't match.  
+
+##  p8 v11 February 1, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v10_prep_data_for_p8_to_load_from_files.Rmd.  
+
+In v10, I reinstated learning separately for sets based on predicted FP/FN-dominance.  In the end, it showed very little difference from all other forms of learning (e.g., using rf or glm or lm with non-pred dominance).  So, in v11 I'm going to strip out nearly everything to get down to something useful for a simplified final paper form, i.e., just a simple set of roughly 4 input feature sets and no learning of dominance, etc.
+
+##  p8 v10 January 29, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v09_prep_data_for_p8_to_load_from_files.Rmd.  
+
+In v9, I deleted many input feature sets that were fed to the prediction methods.  I also deleted the section about using logistic regression to learn to predict whether a problem was FP or FN-dominated.  I've decided to reinstate that section and do all the downstream learning of error prediction using data that is split based on the learned prediction of whether a problem is FP or FN-dominated.  In case this goes awry somehow, I'm starting a new v10 so that I can just fall back to the last v9 version if necessary.
+
+##  p8 v09 January 27, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v08_prep_data_for_p8_to_load_from_files.Rmd.  
+
+In v8, I split the data preparation out from the main body of the paper and added code to the main body to read the files containing the prepared data.  That was a fairly major change, so I've decided to make a new version number.  
+
+##  p8 v08 data loading - January 27, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v08_all_combined__body.Rmd.  
+
+Decided to split the data loading and preparation out into a separate Rmd file so that I can leave all kinds of headings and notes in the text without making a mess out of the body of the paper.  The intention is for this new file to be run first and generate one or more files that the main body can read in as the fully prepared data.  I will then remove all this prep code from the main p8 v8 body Rmd file and replace it with one or more file read statements.
+
+#  Version history of p8 file before this split into two files on 2024 01 27
+
+##  p8 v08 January 27, 2024  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v07_all_combined__body.Rmd.  
+
+In v7, I cleaned up much of the code for learning to predict and the selection of bipartite measures for prediction.  The last version of the p8 v7 Rmd files and resulting pdf represent a verbose version of what will be in v8, i.e., I've left many notes in the file and I've run the lm code with reporting of fitting coefficients turned on (params$show_lm_model_fit_coefficients_and_summary set to TRUE).  In v8, I will remove or silence many of the prediction input feature sets that were tested in v7 to make the text less complicated and because there was very little performance difference among many of the feature sets.  The pdf for the end of p8 v7 should serve as a good reference though, if you need to look at more details of fitting and correlations, etc.  I'm hoping that v8 will be a fairly strict subset of v7 in terms of computation.  The text of Methods, Results, Discussion, and Conclusions will not be such a strict subset though.
+
+##  p8 v07 December 13, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v06_all_combined__body.Rmd.  
+
+In v6, I condensed and rewrote many sections of the Discussion, but I'm still missing much of anything to say about the predictions and the bipartite graph measures.  So, in v7, I'm going to work on cleaning up the code for learning to predict and the selection of bipartite measures for prediction.  To make things more structured and defensible, I'm going to use the exploration and regression procedures from a couple of Zuur and Ieno papers.  
+
+##  p8 v06 November 26, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v05_all_combined__body.Rmd.  
+
+After adding Study Characteristics section in v5 Discussion to organize the many different topics, I'm now going to move many Discussion sections under those new organizing headings in the Discussion.  I'm making a new version number because this is likely to totally mess with the flow of various existing Discussion sections and I want to be able to fall back to v5 and recover that flow if this restructuring of the Discussion just makes a big mess of it.  
+
+##  p8 v05 October 13, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v04_all_combined__body.Rmd.  
+
+Preparing to add substantial changes to Intro and Discussion.  
+
+##  p8 v04 January 7, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v03_all_combined__body.Rmd.  
+
+v3 deleted all mag prediction plotting and hid all but 4 of the feature sets for predicting output errors.  It also added 2 facetted bar plots to summarize all the rmse and adj R2 results from the 4 feature sets.  It also pulled most of the TODO and notes out into a separate file so that body Rmd file for p8 is now ready to edit as a paper.  However, I think that I want to delete all of the feature set prediction chunks that are currently hidden so that the pdf will build faster.  I'm going to leave those hidden chunks as the last version of v3 so that if I need any of them, I can easily go back and get them after I delete them in v4.  
+
+##  p8 v02 January 6, 2023  
+##  p8 v03 January 6, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v02_all_combined__body.Rmd.  
+
+Finished getting v02 working with all of the p1-p3/6 data loading and prediction code mixed with pasting in nearly all of the body text from p6.  In v03, I'm going to strip out many of the prediction plots and that sort of thing so that it gets down to a manageable size.  However, I wanted to freeze the v02 version at the point of working with every single plot plus all the p6 text.  That way, after I cut a bunch of things out in v03, I can still go back to v02 to grab anything that I shouldn't have cut out in v03.
+
+##  p8 v02 January 6, 2023  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/p8_v01_all_combined.Rmd.  Also renaming to include "__body" in the file name since that had somehow been dropped in v01.  
+
+Everything was working in v01 with unified data loading from p1-p3, 13 different input feature sets predicting rep shortfall and solution cost errors and error magnifications, and bar plotting the adjusted R2 and rmse for all 13 datasets and each predicted error variable.  So, I'm freezing that version and moving on to a new version to incorporate all the text from paper 6 (though probably using the model generator text from paper 1 instead of the reduced paper 6 version of that text).  I'll probably also get rid of all the predicting of magnifications because they're pretty similar to the raw error predictions (though a little worse) and don't really advance the story we're trying to tell.  They're more useful in the paper 2/6 story that's characterizing the errors made in optimization.  
+
+##  p8 v01 December 20, 2022  
+
+Cloned from bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/v01_Paper_8_all_combined__body.Rmd
+
+Even after stripping out most of the p6 stuff to make the first cut at v01_Paper_8_all_combined__body.Rmd, there was still too much noise in the file for the early going where I'm trying to get code working instead of writing text.  So, I'm cutting out all the text, appendices, etc, so that I can visually focus on getting the basic code right before I mess with the text again.  This will mostly be about getting the code from paper 3 set up correctly and stripped down.
+
+Last but not least, in all the bdpgtext directories, the file names have started with the version number and used the full word "Paper" in them.  The full word is unnecessary and having the version before the paper number in the file name is often confusing.  So, I'm switching the name to lead with "p8_v01" instead.  I've taken the file that this file is based on (the one beginning "v01_Paper_8" and put it in bdpgtext/Paper_8_all_combined_for_Ecological_Monographs/older_Rmd_versions.
+
+##  v01 (of paper 8) December 17, 2022  
+
+Cloned from bdpgtext/Paper_6_p1p2_combined/v13_Paper_6_p1p2_combined__body.Rmd
+
+Combining papers 1, 2, and 3 by cannibalizing:
+- paper 6, which combined papers 1 and 2, and 
+-  paper 5, which was the first try at the long form of combining all 3 papers but has been had the first 2 parts of it superseded by paper 6. 
+
+I've copied in the entire p6 v13 Rmd file, but I'm going to strip out nearly everything to make sure that I'm starting with a clean slate and getting rid of any cruft that has built up in p6. 
+
+```
+
+#  TODO  
+
+- Split test and train vars into 4 groups to insure independence of examples
+  - what was the function that I found yesterday that already does this?
+    - bdpgtext/R/v1_paper_3_cv_test_train_splitting_functions.R
+- Add a diagram showing the data flow/transformation in creation of synthetic problems, etc.
+
+##  old TODOs that I've decided not to do and why not  
+
+- Add something to pass the lm() results object back out to where you can interrogate it for the relative weights, p-values, etc.
+  - This is currently being printed out if the params flag is set, but the lm object is not being passed back up the calling tree.  might be able to do this by adding it to the list that's already being returned from the f_lm() call.
+  - WHY NOT:  I suspect that I'm going to have to redo the lm() call and interrogation at the top level in the Rmd file for the final paper for a very small number of models (or maybe even just one model).  I suspect that the current code will just be used for an auxiliary Rmd file showing all the different variable combinations that I've tried in coming down to the one or small number used in the final paper.  
+- Predict magnifications in addition to the unmagnified errors
+  - WHY NOT:  I've decided not to do this for several reasons.
+    - Existing code for it works, but scales are all wrong.  Need to cut off the True magnification values much, much lower than the many thousands level they currently show.
+    - The range of values is huge and really needs to be fitted as logs instead of the raw values, however, there are many 0's in the data (e.g., no rep shortfall in FN problems).  That means you have to make some kind of adjustment to the logs to avoid -Inf values due to log(0).  This involves a bunch more decisions and adjustments and justifications that I don't want to mess with right now.  Maybe in the future if there is a big reward for doing it, but for now, there isn't enough reward for doing it.  
+- PLS?
+  - WHY NOT:  Will probably just ignore pls since i don't think it did much before and it's a bunch of extra work for little, if any, gain.
+- PCA predicting crashed when I used the FN-dominant predicted data set (i.e., params$use_predicted_dominance_values == TRUE) for testing out the Constant 0 prediction of FN-dominant data.  
+  - WHY NOT:  Not sure why it crashed, but it's not worth the debugging effort right now (2024 01 01) since both PCA and Constant 0 are not likely to end up in the final paper).  
+- Had to comment out the writing of matilda files in the fit_and_predict...() calls to get the function to run. 
+  - WHY NOT:  Not sure what the problem is with those calls using the pca data instead of the usual data, but I’m not using matilda outputs right now so it’s not a problem and not worth a lot of time to debug.
+
+----------
+
+\newpage  
+
+#  Notes for Eric and Diego (copied from v6 of p3) - might be useful in Methods too
+
+The main point of this paper is to see how well we're able to predict the amount of error there is in reserve selection under uncertainty.  The answer may be "poorly" or it may be "moderately", but it doesn't matter which it is because right now, nobody predicts at all and the other paper shows that there is huge variation in performance across problems of varying structure and resulting difficulty.  
+
+The basic idea behind the paper is just to see if there are subsets of the data that can be used to predict for every specific problem, what is the likely error of any of the reserve selectors on that specific problem.  Currently, people mostly talk about difficulty (if at all) in terms of how big is the problem (number of species and number of planning units) but say don't characterize anything about the structural attributes of problems.  The  hypothesis here is that size is a not a very good predictor but graph measures may capture the structural attributes that drive the difficulty of individual problems better than size does.  
+
+We also have the advantage here of having two kinds of data about problems.  First, we have data on things that *can* be known about a problem without knowing the correct answer (e.g., size, graph measures, etc.).  Second, we have data on things that *can't* be known about a real problem but are known here because we controlled them (e.g., amount and type of input uncertainty, correct optimal solution, etc.).  This allows us to compare the use of both knowable and unknowable inputs to learning so that we can see the relative power of different kinds of information in predicting output error for specific problems.  
+
+Having the unknowable inputs could also allow exploring whether learning approximations to the unknowable values of a real problem could still be useful in predicting the likely error in reserve selection.  For example, the performance of reserve selectors on problems dominated by False Negatives is very different from performance on problems dominated by False Positives.  We can't *know* which is dominant in a real problem, but we can guess at it to some degree and graph measures may also help us estimate the probability of it so that we can then use it as an input to predicting the likely reserve selection error.  I'm not sure whether we want to go that far in this paper, but it's an option.  
+
+##  General flow of preparing data  
+
+Note that in this general flow of data, I can provide an input file corresponding to the end of any step so that you can just read it in and then do whatever you want to it from that point on rather than continuing to follow the flow of what I've done here.  I suspect that the most useful thing would be for you to read in just the training data set either before or after its been preprocessed so that you can explore the data to see whether my choice to do Box Cox and standardize is the right choice and so that you can have a look at the characteristics of the graph measures.  You may want to fool around with the data and then try your own combinations of subsets of the input columns as input to fitting models of your choice.
+
+- Load the full raw data  
+  - This includes both Correct and Apparent problems as well as Base and Wrap problems.
+- Strip down to just Apparent Wrap problems  
+  - Base problems of any kind and Correct problems in general are not of interest in this paper. 
+    - Base problems only have the completely flat rank abundance distribution of species with every species on exactly 2 planning units.  
+    - Correct problems of any kind are not of interest because we're exploring the consequences of uncertainty and have shown behavior of reserve selectors on Correct problems in the earlier paper.  More importantly, no real problem will *ever* be without uncertainty.
+- Split into test/train columns
+  - Training data results are too optimistic, so we need a separate test set.  
+- Explore the training data (correlations).
+  -  There's a lot of correlation among the different graph measures.
+  -  There's also some correlation with problem size with a few of the measures.
+- Preprocess
+  - Split into test and train.
+    - Not bothering with cv at this point.  Have a safe sandbox of 2 batches of 500 problems each with 4 more batches set aside and untouched until ready to do final tests.  
+  - Split test and train into columns to preprocess (numeric data) and columns to leave out (e.g., identifiers).
+  - Currently just Box Cox and standardization.
+    - Could do other things as well or instead.
+    - Didn't' get anything useful from some things like PCA in earlier tests, but might be worth trying again in case there were some problems with what I did before.  
+  - Derive preprocessing parameters from training set only.
+    - Apply preprocessing to training set.
+  - Apply preprocessing to test set using parameters derived from training set.
+- Recombine columns that were and weren't preprocessed in both test and train sets.  
+  
+##  General flow of analyzing the data  
+
+- Select subset of data columns to test predictive power of one type of data (e.g., problem size data or graph measures data, etc.)  
+- Select a model type to fit the data (e.g., linear regression or random forest, etc.)  
+- Learn models to predict two (or three) variables using the chosen subset of data columns.  
+  - The two main variables to predict are representation shortfall and solution cost error.
+  - We may also want to learn to predict whether a problem is FN-dominated or FP-dominated because their behavior is very different.  If we could predict FN or FP fairly well (or give reasonably well-calibrated probabilities for them), then that prediction/probability might make a very powerful input parameter in predicting the other two variables.  
+- Evaluate the learned model on the test set
+  - Currently measuring adjusted $R^2$ and rmse
+    - The adjusted $R^2$ is a bit suspect given lack of independence of problems from derived from same Base problem.  Also, looking at the plots and their $R^2$ values, sometimes the value is clearly nonsense because half of the problems are FN-dominant with almost no variation from 0.
+    - Should probably just go with rmse or something else if there's something better.
+  - Should probably be separately evaluating FN-dominant problems and FP-dominant problems because they have completely different modes of behavior and that badly affects the evaluation of the predictions.
+  - Need to add prediction intervals (and maybe tolerance intervals) to the evaluation.  
+    - Not sure if the results meet the assumptions of these intervals, so it would be good to include them but also do some kind of alternate characterization of the uncertainty/quality of the predictions, e.g., some kind of bootstrapped interval.  That would also allow the evaluation of the prediction intervals to see whether they're reliable or not.  
+
+#  Notes about target journals  
+
+In addition to Ecological Monographs, might want to consider Biodiversity Informatics.  Jane published "Presence-Only And Presence-Absence Data For Comparing Species Distribution Modeling Methods" there in 2020.  It's open access and doesn't charge any fees to authors or readers.  At the moment, I also can't find anything about a word limit.  
+
+- https://journals.ku.edu/jbi
+
+```{r include=FALSE}
+#  Header code chunks (option setting, history, etc.)
+
+##  Set latex and knitr options
+```
+
+```{cat, engine.opts = list(file = "header.tex")}
+%  This chunk and the pdf_document header lines: 
+%
+%    keep_tex: true
+%    includes:
+%      in_header: header.tex
+%
+%  are hacks to keep knitting to a pdf from blowing up with the 
+%  following message due to a known bug in pandoc:
+%
+%  This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded %  format=pdflatex)
+%   restricted \write18 enabled.
+%  entering extended mode
+%  ! Missing number, treated as zero.
+%  <to be read again> 
+%                     \protect 
+%  l.514 ...nter}\rule{0.5\linewidth}{\linethickness}
+%                                                    \end{center} 
+%
+%  I found this solution at:
+%      Horizontal rule in R Markdown / Bookdown causing errors
+%          https://stackoverflow.com/questions/58587918/horizontal-rule-in-r-markdown-bookdown-causing-errors 
+%
+%  On 2020 01 05, I tried replacing the current pandoc that knitr uses (version 2.3.1) 
+%  with the latest version of pandoc (version 2.9.1).  While that does 
+%  fix this problem, it blows up in a completely different way that I have 
+%  not been able to find a way to fix, so I'm going with this hack.  
+%  I will have to use this hack in EVERY file I want to knit that uses  
+%  markdown's "---" to specify a horizontal line.
+%
+%  Note that the comment lines in this chunk must be marked with "%" instead 
+%  of "#" because they're going to be included in the latex header.tex file 
+%  and "%" is the latex comment marker.
+%  Some documentation for the "cat engine" that drives this chunk 
+%  can be found at:
+%      https://bookdown.org/yihui/rmarkdown-cookbook/eng-cat.html
+
+\renewcommand{\linethickness}{0.05em}
+```
+
+```{r global_options, include=FALSE}
+
+    #  Global options are set here based on some examples in:
+    #      https://kbroman.org/knitr_knutshell/pages/Rmarkdown.html
+    #      https://kbroman.org/knitr_knutshell/pages/figs_tables.html
+
+knitr::opts_chunk$set(#fig.width=12, 
+                      #fig.height=8, 
+                      fig.path='Figs/',  #  Save figures to indiv files in Figs/
+                      echo=FALSE,        #  Don't echo code to output
+                      
+                      warning=FALSE,  
+                      message=FALSE, 
+
+                      fig.pos = "H", out.extra = ""    #  Keep latex from floating figures
+                     )
+```
+
+```{r loadLibraries, echo=FALSE}
+
+##  Load R libraries  
+
+     #===========================================================================
+    #  2022 12 20 - BTL
+    #  THIS LONG COMMENT ABOUT THE message=FALSE CHUNK OPTION COMES FROM THE 
+    #  LIBRARY LOADING SECTION OF P3 V6, HOWEVER THAT CHUNK IN THAT FILE 
+    #  NO LONGER INCLUDES THAT CHUNK OPTION. IT JUST SAYS include=FALSE NOW.  
+    #  SO, MAYBE THE message OPTION DOESN'T HAVE TO BE EXPLICITLY SET NOW 
+    #  BECAUSE IT'S SET IN THE GLOBAL CHUNK OPTIONS IN THE BROMAN CHUNK ABOVE.
+    #  -------------------------------------------------------------------------
+    #  Note that "message=FALSE" is necessary for this chunk if you want to 
+    #  generate pdfs.  When the tidyverse package is loaded, it writes puts 
+    #  out a message that includes some unicode that the normal latex engine 
+    #  (used to produce the pdf) can't handle and it crashes with the following 
+    #  message:
+    #       ! Package inputenc Error: Unicode character [sqrt symbol goes here] (U+221A)
+    #       (inputenc)                not set up for use with LaTeX.
+    #  Note that I've also had to remove the sqrt symbol from the error message 
+    #  when embedding it in the comment here, because even inside the comment, 
+    #  latex tried to render that and crashed.
+    #  More information about this can be found at:
+    #   - https://community.rstudio.com/t/tidyverse-1-2-1-knitting-to-pdf-issue/2880/4
+    #   - https://community.rstudio.com/t/cant-render-tidyverse-1-2-startup-message-in-latex/2811/5
+    #   - https://chrisbeeley.net/?p=1037
+    #===========================================================================
+
+   #===========================================================================
+    #  Suppress startup message for tidyverse package because when it's loaded, 
+    #  it puts out a message that includes some unicode that the normal latex  
+    #  engine (used to produce the pdf) can't handle and it crashes with the  
+    #  following message:
+    #       ! Package inputenc Error: Unicode character [sqrt symbol goes here] (U+221A)
+    #       (inputenc)                not set up for use with LaTeX.
+    #  Note that I've also had to remove the sqrt symbol from the error message 
+    #  when embedding it in the comment here, because even inside the comment, 
+    #  latex tried to render that and crashed.
+    #  More information about this can be found at:
+    #   - https://community.rstudio.com/t/tidyverse-1-2-1-knitting-to-pdf-issue/2880/4
+    #   - https://community.rstudio.com/t/cant-render-tidyverse-1-2-startup-message-in-latex/2811/5
+    #   - https://chrisbeeley.net/?p=1037
+    #===========================================================================
+
+suppressPackageStartupMessages (library (tidyverse))
+library("tidylog", warn.conflicts = FALSE)    #  Load AFTER tidyverse packages
+
+library (here)
+library (glue)
+
+library (knitr)    #  For include_graphics(), kable()
+
+library (ggplot2)
+library (scales)    #  For percent in "scale_y_continuous (labels = percent, ..."
+library(ggthemes)
+
+library (patchwork)    #  To make combinations of ggplots.
+library (cowplot)    #  For background_grid() function (at least).
+
+#library(viridis)    #  For color scale.  Not sure if necessary in the end.
+
+#library(GGally)  #  For ggpairs() function.  Probably won't need this in the end.  
+
+#library (readr)
+
+###  Libraries from p3 v6
+
+#library (tidymodels)
+
+library (corrplot)  #  For correlation plots
+library (corrr)    #  For correlate() function
+
+library (ranger)    #  For random forests
+
+library (caret)  #  For data preprocessing functions, e.g., scaling and BoxCox
+
+#library (DMwR)    #  For regr.eval()  #  2024 03 06 - No longer necessary.
+                   #  Have copied and slightly modified regr.eval() source 
+                   #  code into the plotting and evaluation code R file for 
+                   #  this project since it was the only thing used from DMwR 
+                   #  and the DMwR library has been updated to DMwR2, so it 
+                   #  might be a problem for other people to get at some point.
+##library (DMwR2)  #  DON'T LOAD THIS - SOME EXAMPLES FROM BOOK FAIL SINCE THEIR 
+                  #  TYPES HAVE CHANGED.  FOR EXAMPLE, algae IS A TIBBLE IN THE 
+                  #  REVISED LIBRARY AND A DATA FRAME IN THE ORIGINAL.
+                  #  THIS CAUSED SOME OF MY CODE TO CHOKE.
+
+#library (stringr)    #  For str_replace()
+
+#library (e1071)
+library (factoextra)    #  Related to principal components
+
+library (glmnet)   #  implementing regularized regression approaches
+
+#library (lindia)   #  diagnostic ggplots for linear regression
+
+#library (cowplot)    #  To plot multiple plots together
+
+
+#library (usethis)    #  For echo functions like ui_done().
+
+library (bdpg)    #  For safe_sample().
+
+library (broom)    #  For tidy() to apply to glm prediction results.
+
+```
+
+```{r setFilePaths, include=params$chunk_include}
+
+##  Set file paths
+ 
+proj_dir = here()
+cat ("\n\nproj_dir = here() = ", proj_dir, "\n", sep='')
+```
+
+```{r setSeeds, include=params$chunk_include}
+
+###  Set random number seeds for reproducibility
+
+seed1 = 12345
+seed2 = 8910
+seed3 = 1230
+
+# seed1 = 54321
+# seed2 = 198
+# seed3 = 321
+
+# seed1 = 101
+# seed2 = 17
+# seed3 = 83
+
+seed = set.seed (seed1)
+```
+
+```{r setBdpgOptionsThatAreHardToSetInParams, include=FALSE}
+
+##  Set bdpg options  
+
+    #  Two options are either used globally or are hard to set in 
+    #  the header params list, so set them here.
+
+    #  This is both hard to set in params header and used globally.
+# if (as.logical (params$exclude_ZL))
+#     {
+#     rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+#                              "Marxan_SA_SS")
+#     } else
+#     {
+#     rs_method_names_list = c("Gurobi", "Marxan_SA", "UR_Forward", 
+#                              "ZL_Backward", "Marxan_SA_SS")
+#     }
+
+if (as.logical (params$exclude_ZL))
+    {
+    rs_method_names_list = c("ILP", "SA", "UR_Forward", 
+                             "SA_SS")
+    } else
+    {
+    rs_method_names_list = c("ILP", "SA", "UR_Forward", 
+                             "ZL_Backward", "SA_SS")
+    }
+
+```
+
+```{r checkParamsAndSetDefaults, include=FALSE}
+
+    #  Check the params list for errors and missing default values.
+    #  Either set values appropriately or crash if that's more appropriate.
+
+cat ("VALIDATION CODE FOR PARAMS IS STILL MISSING HERE !!")
+
+```
+
+#  Option settings  
+
+```{r echoOptions, include=TRUE}
+
+#  Params should all be properly set at this point.  
+
+#-------------------------------------------------------------------------------
+
+    #  Echo the values of the main options.
+
+cat ("\nMain options are:\n")
+
+for (idx in 1:length(params))   
+  cat ("\n", names(params)[idx], ": ", params[[idx]], sep="")
+
+cat ("\nrs_method_names_list = ", rs_method_names_list, "\n")
+```
+
+```{r loadP1andP2FunctionDefns, include=FALSE}
+
+#  Load R functions
+
+#-------------------------------------------------------------------------------
+#  2020 08 20 - BTL
+#  "Rmarkdown Cookbook" section	"16.1 Source external R scripts" says to 
+#  include the "local" argument.
+#       https://bookdown.org/yihui/rmarkdown-cookbook/source-script.html
+#       "We recommend that you use the argument local in source() or envir in 
+#        sys.source() explicitly to make sure the code is evaluated in the 
+#        correct environment, i.e., knitr::knit_global(). The default values 
+#        for them may not be the appropriate environment: you may end up 
+#        creating variables in the wrong environment, and being surprised 
+#        that certain objects are not found in later code chunks."
+#  I haven't noticed a problem with this, but maybe it's been there and 
+#  I just haven't had it affect something important enough to notice.
+#-------------------------------------------------------------------------------
+
+# source (file.path (proj_dir,         #  For ggplot w/ magrays, etc
+#                    "R/v3_Paper_2_bdpg_analysis_scripts_function_defns.paper_2.R"), 
+#         local = knitr::knit_global())  
+# 
+# source (file.path (proj_dir, "R/v1_p5_unifiedDataLoading.R"), 
+#         local = knitr::knit_global())
+
+## 2022 12 17  ##source (file.path (proj_dir, 
+## 2022 12 17  ##"R/v1_p6_load_libraries_and_R_source_code.R"), 
+## 2022 12 17  ##        local = knitr::knit_global())
+
+
+
+source (file.path (proj_dir, "/R_new/p8.unifiedDataLoading.v01.R"), 
+         local = knitr::knit_global())
+
+#--------------------
+
+source (file.path (proj_dir, "/R_new/p8.preprocessingForLearning.v01.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/p8.BoxCoxAndNormalizingFunctions.v01.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/v1_paper_3_plotting_and_evaluation_functions.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/v1_paper_3_utility_functions.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/v1_paper_3_fitting_functions.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/p8.matildaFunctions.v01.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R_new/v2_paper_2_func_defns_for_plotting.R"), 
+         local = knitr::knit_global())
+
+source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
+         local = knitr::knit_global())
+```
+
+#  Load data  
+
+```{r loadFullBdpgDataSet, include=params$chunk_include}
+
+#  Load data
+
+##  Load full bdpg data set
+
+#  Load the full data set for all the reserve selectors 
+#  that are chosen for inclusion in this run (indicated by the 
+#  rs_method_names_list).  This includes both COR and APP data.
+
+#  This call also joins gurobi performance information to each reserve 
+#  selector's output based on the corresponding gurobi problem output line.
+#  This makes it easier to tell whether a given problem was difficult 
+#  for gurobi even when you're looking at the output for a different 
+#  reserve selector.
+
+###  **\textcolor{red}{Still need to filter out more graph measure columns}**
+
+#  **\textcolor{red}{Paper 3 has a bunch of graph measure variables like 
+#  bidens that it shows to be duplicate or nearly duplicate columns that 
+#  need to be removed here from all of the data.}**
+
+#-------------------------------------------------------------------------------
+
+full_initial_exp_tib = 
+  load_and_build_FULL_data_for_all_reserve_selectors (
+                          params, 
+                          proj_dir, 
+                          rs_method_names_list, 
+                          params$relative_path_to_input_data, 
+                          bdpg_p_needs_fixing = params$bdpg_p_needs_fixing)
+
+
+
+
+
+full_initial_exp_tib <- full_initial_exp_tib %>%
+  mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
+  mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
+  mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+
+
+
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (full_initial_exp_tib, 
+                                          "full_initial_exp_tib", 
+                                          params, params$file_type_to_write)
+
+#usethis::ui_done ("load_and_build_FULL_data_for_all_reserve_selectors")
+cat ("Finished load_and_build_FULL_data_for_all_reserve_selectors()")
+
+```
+
+```{r whatColsAreInFullInitialExpTib, include=params$chunk_include}
+
+###  What columns are in the full_initial_exp_tib ?
+
+#-------------------------------------------------------------------------------
+
+all_col_names_in_full_initial_exp_tib = names (full_initial_exp_tib)
+cat ("number of cols in full_initial_exp_tib = ", length (full_initial_exp_tib))
+
+cat ("\n\nall_col_names_in_full_initial_exp_tib = \n\n")
+print (all_col_names_in_full_initial_exp_tib)
+
+```
+
+```{r removeParamExcludedRowsFromFullData, include=params$chunk_include}
+
+##  Filter out rows specified for exclusion in params list 
+
+#-------------------------------------------------------------------------------
+
+filtered_full_initial_exp_tib = 
+    remove_param_excluded_rows_from_full_data (full_initial_exp_tib, params)
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (filtered_full_initial_exp_tib, 
+                                        "filtered_full_initial_exp_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("remove_param_excluded_rows_from_full_data")
+cat ("Finished remove_param_excluded_rows_from_full_data()")
+
+```
+
+```
+2024 01 27 - DOING THIS NEAR WHERE IT'S USED IN THE PAPER NOW.
+{r createP1CORdata, include=params$chunk_include}
+
+##  Extract data specific to p1 from full data  
+
+#-------------------------------------------------------------------------------
+
+cor_data_retvals = create_p1_COR_data (filtered_full_initial_exp_tib, params)
+
+    #  The COR data set
+cor_tib = cor_data_retvals$cor_tib
+
+    #  Dimensions of spp and PUs to embed in text describing the bounds of 
+    #  spp and PUs created in COR problems.
+min_base_spp = cor_data_retvals$min_base_spp
+max_base_spp = cor_data_retvals$max_base_spp
+
+min_wrap_spp = cor_data_retvals$min_wrap_spp
+max_wrap_spp = cor_data_retvals$max_wrap_spp
+
+min_base_PUs = cor_data_retvals$min_base_PUs
+max_base_PUs = cor_data_retvals$max_base_PUs
+
+min_wrap_PUs = cor_data_retvals$min_wrap_PUs
+max_wrap_PUs = cor_data_retvals$max_wrap_PUs
+
+#--------------------
+
+    #  Write the assembled COR data to a file if requested.
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (cor_tib, 
+                                        "cor_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("create_p1_COR_data")
+cat ("Finished create_p1_COR_data()")
+
+```
+
+```{r createFullAppWrapdata, include=params$chunk_include}
+
+##  Extract and filter app wrap data from full data 
+
+#  This includes loading what was in the raw files plus adding some 
+#  columns computed from that data.
+
+###  Extract APP Wrap data from filtered full data
+
+#-------------------------------------------------------------------------------
+
+full_app_wrap_tib = 
+    create_app_wrap_tib_from_full_exp_tib (filtered_full_initial_exp_tib, 
+                                           params)
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (full_app_wrap_tib, 
+                                        "full_app_wrap_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("create_app_wrap_tib_from_full_exp_tib")
+cat ("Finished create_app_wrap_tib_from_full_exp_tib()")
+
+```
+
+```{r echoFullAppWrapTib, include=params$chunk_include}
+### **\textcolor{red}{See what rows/cols are in filtered\_full\_app\_wrap\_tib}**
+
+#-------------------------------------------------------------------------------
+
+names (full_app_wrap_tib)
+```
+
+```{r removeParamExcludedRowsFromAppWrapData, include=params$chunk_include}
+
+###  Filter out APP Wrap rows specified for exclusion in params list 
+
+# May want to remove things like imperfect wraps and those kinds of 
+# exclusions are specified in the params list.  Look for any of those 
+# options and implement them here.
+
+#-------------------------------------------------------------------------------
+
+filtered_full_app_wrap_tib = 
+    filter_out_unwanted_rows_of_APP_data (full_app_wrap_tib, params)
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (filtered_full_app_wrap_tib, 
+                                        "filtered_full_app_wrap_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("filter_out_unwanted_rows_of_APP_data")
+cat ("Finished filter_out_unwanted_rows_of_APP_data()")
+
+```
+
+```{r include=FALSE}
+### **\textcolor{red}{See what rows/cols have not been filtered out}**
+
+#-------------------------------------------------------------------------------
+
+names (filtered_full_app_wrap_tib)
+```
+
+```{r checkURForwardDiffs, include=params$chunk_include}
+
+##  **\textcolor{blue}{Calculations of relative UR\_Forward performance for MATILDA}**
+
+#  Some of the MATILDA plots consistently choose UR_Forward as the best 
+#  algorithm in their SVM predictions, but that seems strange since I've 
+#  always looked at the bdpg plots as showing that it was the worst method.  
+
+#  Here, I've rerun this chunk a number of times (swapping the variable in 
+#  the dplyr::count() call by hand) and counted up the different cases where 
+#  UR_Forward is better, worse, and the same as Gurobi.  "Better" is just 
+#  having the diff < 0 since that means that the UR_Forward error is less 
+#  than the Gurobi error.  "Same" and "Worse" are calculated similarly.  
+
+#  These results show that Gurobi is much better on solution cost error 
+#  (and consequently euc tot error) and slightly better on rep shortfall, 
+#  though both algorithms got the same score 60% of the time while only 
+#  tying on the cost measures 10 or 15% of the time.
+
+#-------------------------------------------------------------------------------
+
+#hist (filtered_full_app_wrap_tib$diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi)
+#if(FALSE){
+filtered_full_app_wrap_tib %>% 
+    select (rs_method_name, 
+            # diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi, 
+            # diff__abs_rs_solution_cost_err_frac__UR_Forward__Gurobi,
+            # diff__rsr_COR_spp_rep_shortfall__UR_Forward__Gurobi) %>% 
+            diff__rsr_COR_euc_out_err_frac__UR_Forward__ILP, 
+            diff__abs_rs_solution_cost_err_frac__UR_Forward__ILP,
+            diff__rsr_COR_spp_rep_shortfall__UR_Forward__ILP) %>% 
+#    filter (rs_method_name == "Gurobi") %>% 
+    filter (rs_method_name == "ILP") %>% 
+#    dplyr::count(diff__rsr_COR_euc_out_err_frac__UR_Forward__Gurobi == 0)
+    dplyr::count(diff__rsr_COR_euc_out_err_frac__UR_Forward__ILP == 0)
+#} 
+cat ("\n\nRep shortfall:")
+cat ("\nUR_better    = ", round (1647/(9980+1647), 2))    #  0.14
+cat ("\ngur_better   = ", round (3035/(3035+8592), 2))    #  0.26
+cat ("\nUR_gur_same  = ", round (6945/(6945+4682), 2))    #  0.60
+
+cat ("\n\nSolution cost error:")
+cat ("\nUR_better    = ", round (2750/(2750+8877), 2))    #  0.24
+cat ("\ngur_better   = ", round (7092/(7092+4535), 2))    #  0.61
+cat ("\nUR_gur_same  = ", round (1785/(1785+9842), 2))    #  0.15
+
+cat ("\n\neuc tot err")
+cat ("\nUR_better    = ", round (1903/(1903+9724), 2))    #  0.16
+cat ("\ngur_better   = ", round (8735/(8735+2892), 2))    #  0.75
+cat ("\nUR_gur_same  = ", round (989/(989+10638), 2))     #  0.09
+
+cat ("\n")
+
+# UR_better    =  0.14
+# gur_better   =  0.26
+# UR_gur_same  =  0.6
+
+# Solution cost error:
+# UR_better    =  0.24
+# gur_better   =  0.61
+# UR_gur_same  =  0.15
+
+# euc tot err
+# UR_better    =  0.16
+# gur_better   =  0.75
+# UR_gur_same  =  0.09
+```
+
+
+```{r createP2AppWrapdata, include=params$chunk_include}
+
+##  Create APP Wrap data specific to p2 
+
+#  p2 uses far fewer columns than p3 even though they both use the same 
+#  basic APP Wrap data, so remove the unneeded columns for p2.  
+
+#-------------------------------------------------------------------------------
+
+p2_app_wrap_tib = select_paper_2_cols (filtered_full_app_wrap_tib)
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (p2_app_wrap_tib, 
+                                        "p2_app_wrap_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("create_p2_appWrap_data")
+cat ("Finished create_p2_appWrap_data()")
+
+```
+
+```{r showP2AppWrapCols, include=params$chunk_include}
+
+# 2022 12 25 - Don't know if this is necessary but it was in the p6 code that 
+# I've been converting to make all this data loading code for p8.  
+# I'll leave it here for the moment but will probably delete it in the end.
+
+        #-----------------------------------------------------------------
+        #  Taken from create_p2_app_wrap_data() in v2_p6_unifiedDataLoading.R.
+        #  
+        #  Write spec showing data types of app wrap tib columns.
+        #  Is this unnecessary?  Can you just use str() instead?
+        #  
+        #  *** NOTE:  readr::spec() returns NULL when the tibs are generated  
+        #             here rather than read in using a readr function.
+        #-----------------------------------------------------------------
+    
+    cat ("\n\n=========================================================")
+    # cat ("\nAbout to readr::spec (p2_app_wrap_tib)")
+    # readr::spec (p2_app_wrap_tib)
+    cat ("\nAbout to str (p2_app_wrap_tib)")
+    str (p2_app_wrap_tib)
+    cat ("\n\n=========================================================")
+    
+```
+
+```
+2024 01 27 - HAVE MOVED THIS TO WHERE IT'S USED IN THE TEXT
+{r countMags, include=FALSE, echo=params$chunk_include}
+### May want to move this to where it's used in the text.
+
+#  I think that `mag_frac` is only used in one place in the document and that's 
+#  to just embed its value in a sentence.  Having the calculation here is 
+#  something of a non-sequitir, so it might be better to just computed it 
+#  right before the line of text that uses it.
+
+mag_base_col_name_str = params$mag_base_col_name_str
+
+p2_app_wrap_mag_frac_retvals = compute_mag_frac (p2_app_wrap_tib, params)
+
+#####mag_base_col_name_str = p2_app_wrap_mag_frac_retvals$p2_app_wrap_mag_frac_retvals
+mag_col_name_str = p2_app_wrap_mag_frac_retvals$mag_col_name_str
+shortfall_mag_str = p2_app_wrap_mag_frac_retvals$shortfall_mag_str
+mag_frac = p2_app_wrap_mag_frac_retvals$mag_frac
+cat ("mag_frac = ", mag_frac)
+```
+
+```{r hackToGetGurOnlyFracThatMagInErr, include=params$chunk_include}
+#   2022 02 18 - BTL 
+#   Quick hack to get gurobi only fraction that magnified input error
+#   for use in MEE response to reviewers.  
+#   Not used in this main body of the paper since in the paper, we report 
+#   the value across all reserve selectors.  
+#   For gurobi only: 
+#     - Overall (both finished and unfinished problems), 86% amplified input error.
+#     - For unfinished problems (i.e., harder problems), 100% amplified input error.
+#     - For finished problems (i.e., easier problems), 83% amplified input error.
+
+gur_data = filter (p2_app_wrap_tib, 
+ #                  (rs_method_name == "Gurobi") & (gurobi_status == "OPTIMAL")) # leads to 83% 
+                   (rs_method_name == "ILP") & (gurobi_status == "OPTIMAL")) # leads to 83% 
+
+gurobi_app_wrap_mag_frac_retvals = compute_mag_frac (gur_data, params)
+
+mag_frac__gurobi_only = gurobi_app_wrap_mag_frac_retvals$mag_frac
+cat ("mag_frac__gurobi_only = ", mag_frac__gurobi_only)
+
+```
+
+```{r createp3AppWrapdata, include=params$chunk_include}
+
+##  Create APP Wrap data specific to p3 
+
+###  **\textcolor{red}{Need to check these two params that seem like duplicates}**
+
+#  Importing the p3 code, I came across two params that seem like duplicates 
+#  of other params (though phrased differently).  
+#  Need to check these out and see why they seem so similar.  
+
+# - use_gurobi_optimal_runs_only: FALSE    #  Is this different from option "gurobi_problem_filter"?  2022 12 25 - BTL  
+# - use_perfect_wraps_only: FALSE    #  Different from option "exclude_imperfect_wraps"?  2022 12 25 - BTL  
+
+###  Strip out the rows and columns that paper 3 doesn't need.
+
+batch_ids_to_include = c("B3","B5")
+p3_app_wrap_tib = remove_unused_rows_paper_3 (filtered_full_app_wrap_tib, 
+                                              params, 
+                                              batch_ids_to_include)
+
+p3_app_wrap_tib = remove_unused_cols_paper_3 (p3_app_wrap_tib)
+
+#--------------------
+
+#  2023 12 24 - BTL 
+#  Create another column for a variable based on dom_err_type to give a 
+#  boolean indicator of whether the dominant error type is FP (i.e., 1) or 
+#  FN (i.e., 0).  
+#  Want to test whether perfectly knowing the dominant error type improves 
+#  ability to predict.  If it does, then maybe it will pay to try to learn 
+#  a probability that an example is FN or FP-dominant.  
+
+p3_app_wrap_tib = mutate (p3_app_wrap_tib,
+                          dom_err_type_is_FP =
+                            ifelse (dom_err_type == "FP", 1, 0))
+
+#--------------------
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    write_a_tib_to_csv_file_using_params (p3_app_wrap_tib, 
+                                        "p3_app_wrap_tib", 
+                                        params, params$file_type_to_write)
+
+#usethis::ui_done ("create_p2_appWrap_data")
+cat ("Finished create_p2_appWrap_data()")
+
+```
+
+```{r endP1P2P3loadingAndPreprocessing, include=params$chunk_include}
+
+##  End p1, p2, and p3 loading and preprocessing
+
+# This is the point where no more work is done on the loading and
+# filtering of data for all 3 papers. P1 and p2 datasets are ready to go,
+# but much more work needs to be done on the p3 data to do things like
+# splitting into train and test, transforming and normalizing the data, as
+# well as removing more columns due to correlation, etc.
+
+names (p3_app_wrap_tib)
+```
+
+#  Dataset splitting for train and test
+
+```{r startP3datasetSplitting, include=FALSE}
+
+#-------------------------------------------------------------------------------
+
+#  Start p3 dataset splitting
+# 
+# There are multiple ways to split the data into training and testing, but
+# for the moment, I'm going to do the absolute simplest one so that I can
+# get other downstream things working.  The simplest way is to just use
+# one batch as training (B3) and another batch as testing (B5).  Later, I
+# can invoke some of the other functions from
+# R/v1_Paper_3_func_defns_for_tidymodels.R to make the test set more
+# reliable.
+
+##  Test set instance independence
+## 
+# When you use a full App Wrap batch as a test set, it includes 4 variants
+# of each COR Wrap problem, which means that those 4 are not independent
+# of each other.  I think that this inflates the N for computing many
+# statistics (pseudo-replication?).  It might be that you could just use
+# N/4 for those statistics to correct for this, but I really don't know.
+# 
+# The functions in the p3 tidymodels R file handle the problem by making
+# four variants of the test set, where each variant contains only one
+# problem derived from each COR Wrap problem.  This makes the test sets
+# much smaller, but every example is guaranteed to be independent that
+# way.  The function used in p3 to invoke this kind of splitting is
+# `load_bdpg_data_and_build_random_independent_subset()`.  It's defined in
+# R/v1_Paper_3_func_defns_for_tidymodels.R.
+```
+
+```
+{r}
+#temp_train_src_df = filter (p3_app_wrap_tib,  batch_id == "B3")
+temp_train_src_df = p3_app_wrap_tib
+
+
+
+
+built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+                                     use_subset = FALSE, subset_size = NA)
+
+#  This call should fail with error message:
+#      In stop_bdpg:  In build_non_independent_problem_subset(): told to use a subset so must be given a subset size, but none given.
+#built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+#                                     use_subset = TRUE, subset_size = NA)
+
+#  This call should fail with error message:
+#      In stop_bdpg:  In build_non_independent_problem_subset(): subset_size (1e+06) must be > 0 and <= to num_COR_Base_problems_in_train_src_df (1000).
+#built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+#                                     use_subset = TRUE, subset_size = 1000000)
+
+#  This call should fail with error message:
+#      In build_non_independent_problem_subset(): subset_size (0) must be > 0 and <= to num_COR_Base_problems_in_train_src_df (1000).
+#built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+#                                     use_subset = TRUE, subset_size = 0)
+
+#  This call should fail with error message:
+#      In build_non_independent_problem_subset(): subset_size (-5) must be > 0 and <= to num_COR_Base_problems_in_train_src_df (1000).
+#built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+#                                     use_subset = TRUE, subset_size = -5)
+
+built_train_df = build_training_set (train_src_df = temp_train_src_df, 
+                                     use_subset = TRUE, subset_size = 3, 
+                                     verbose = TRUE)
+
+```
+
+```
+{r}
+#temp_test_src_df = filter (p3_app_wrap_tib,  batch_id == "B5")
+temp_test_src_df = p3_app_wrap_tib
+
+#xxx = get_assigned_UUID_err_type_pairs (temp_test_src_df)
+#
+train_set_df = build_non_independent_problem_subset (train_src_df, 
+                                                     use_subset, 
+                                                     subset_size, 
+                                                     verbose)
+
+```
+
+###  Training and testing and independence
+
+In what follows, dependent and independent are used in the statistical sense of independence, not in the model RB sense of a graph theory independent set.  
+
+When methods such as lm() are used to learn a predictive model of reserve selector error, they will often compute  measures of the quality of the result (e.g., adjusted R2, rmse) as well as confidence intervals and measures of significance for the model coefficients.  Some of these calculations are based on the assumption that individual samples are statistically independent of each other.  Because of the way that the batches of App Wrap problems were produced, problems in the different batches are independent of each other but problems within the same batch are not independent of each other.  For example, there are currently four App Wrap problems derived from each COR Base problems (one for each FN/FP error type), which means that those four problems are not independent of each other.  Consequently, any measure that relies on the number of independent problems in a sample will have an inflated count.  However, we can sub-sample from within sets in a way that guarantees that problems in the subset are independent of each other.  In the chunks that follow, we will experiment with different variations of subsetting for independence and subsetting for training vs. testing sets.  The constraints on training and testing sets are as follows:  
+
+- Training and testing subsets must be independent of each other to avoid biasing test results through using problems in testing that were part of the training.
+- **\textcolor{red}{Problems inside a training set need not be independent of other problems within the same training set.}**
+- **\textcolor{blue}{Problems inside a testing set must be independent of other problems within the same testing set.}**
+
+Here are some more specific definitions and examples of dependence and independence in our data:  
+
+- dependent  
+  - "dependent inside themselves" means that at least one problem in the set may be derived from the same COR Base problem as another problem in the set.  
+    - For example, batch B3 is dependent within itself because it contains 4 App Wrap problems derived from each COR Base problem (one problem for each of the 4 FN/FP error types used).
+  - "dependent between sets" means that at least one problem in one set is derived from the same COR Base problem as a problem in the other set.  
+    - For example, if a set of App Wrap problems is chosen at random from batch B3, then one or more of those App Wrap problems *may* be derived from the same COR Base problem (though choosing a set of 1/4 of the B3 problems at  random could conceivably choose a set of problems where no problem had the same COR Base problem as any other in the random set, but this would be very unlikely to happen). 
+- independent  
+  - "independent within themselves" means that no problem in the set is derived from the same COR Base problem as any other problem in the set.  
+    - For example, choosing exactly one App Wrap problem for each COR Base problem in a set like the union of batches B3 and B5 would produce a subset that was independent within itself.  
+  - "independent between sets" means that no problem in one set is derived from the same COR Base problem as any problem in the other set.
+    - For example, choosing problems from B3 as one set and problems from B5 as another set would produce a pair of sets that were independent between the sets no matter how the problems were chosen from within either set, i.e., regardless of whether the subsets were independent within themselves.  
+
+###  Variations on building training and testing sets
+
+```{r}
+CONST_split_data_using_batch_id = 1
+CONST_split_data_using_test_train_proportions = 2
+CONST_split_data_using_4_independent_test_subsets = 3
+CONST_split_data_using_train_proportion_and_4_independent_test_subsets = 4
+CONST_split_data_using_4_independent_test_subsets_of_B3_and_same_for_B5 = 5
+
+data_splitting_type = params$data_splitting_type
+```
+
+```{r}
+    #  Variation 1: B3 train dependent, B5 test dependent 
+    #               Same as I've used all along.  
+    #               B3 and B5 are independent of each other 
+    #               but dependent inside themselves
+
+if (data_splitting_type == CONST_split_data_using_batch_id)
+    {
+
+    p3_app_wrap_tib %>% 
+        filter (batch_id == "B3") %>% 
+        mutate (is_train = TRUE) -> 
+      p3_working_train_df
+        
+    p3_app_wrap_tib %>% 
+        filter (batch_id == "B5") %>% 
+        mutate (is_train = FALSE) -> 
+      p3_working_test_df
+        
+    #--------------
+    
+        #  Verify that COR_Base problems are not duplicated between train and test.
+    COR_base_sets_are_independent_of_each_other (p3_working_train_df, 
+                                                 p3_working_test_df)
+    
+        #  Verify that COR_Base problems are not duplicated within test.
+        #  This test should fail because B5 has duplicate COR_Base problems within 
+        #  it, i.e., there should be 4 variants of each COR_Base problem, 1 for 
+        #  each error type applied to the wrapped version of the COR_Base problem.
+    #  no_duplicate_COR_base_problems_within_set (p3_working_test_df)    
+
+    }
+```
+
+```{r}
+    #  Variation 2: B3 union B5 random split by proportions prop_train & prop_test
+    #               Splits are independent of each other 
+    #               but dependent inside themselves
+
+    #  Combine B3 and B5 into one set to sample from.
+
+if (data_splitting_type == CONST_split_data_using_test_train_proportions)
+    {
+    B3unionB5 = filter (p3_app_wrap_tib, batch_id == "B3" | batch_id == "B5") 
+    
+    split_sets = split_into_train_test_non_ind_prob_subsets_by_prop (
+                          src_df = B3unionB5, 
+                          training_proportion = params$training_set_proportion, 
+                          verbose = FALSE)
+    
+    p3_working_train_df = mutate (split_sets$train_set_df, is_train = TRUE)
+    p3_working_test_df = mutate (split_sets$test_set_df, is_train = FALSE)
+    
+    #--------------
+    
+        #  Verify that COR_Base problems are not duplicated between train and test.
+    COR_base_sets_are_independent_of_each_other (p3_working_train_df, 
+                                                 p3_working_test_df)
+    
+        #  Verify that COR_Base problems are not duplicated within test.
+        #  This test should fail because B5 has duplicate COR_Base problems within 
+        #  it, i.e., there should be 4 variants of each COR_Base problem, 1 for 
+        #  each error type applied to the wrapped version of the COR_Base problem.
+    #  no_duplicate_COR_base_problems_within_set (p3_working_test_df)    
+    #  
+    }
+```
+
+```{r}
+    #  Variation 3: B3 train, B5 4 independent subsets
+
+if (data_splitting_type == CONST_split_data_using_4_independent_test_subsets)
+    {
+    p3_app_wrap_tib %>% 
+      filter (batch_id == "B3") %>% 
+      mutate (is_train = TRUE) -> 
+    p3_working_train_df
+        
+        #  Assign all problems in B5 to one of 4 independent subsets
+    B5_subsets = 
+        get_assigned_UUID_err_type_pairs (
+            original_df = filter (p3_app_wrap_tib, batch_id == "B5"), 
+            verbose = FALSE)
+    
+        #  Mark all problems in B5 as being test, not train.
+    B5_subsets = mutate (B5_subsets, is_train = FALSE)
+    
+        #  Select independent group 1 from the full test data to use as the test set.
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_1 --------------------\n")
+    B5_subsets_group_1 = filter (B5_subsets, ind_rand_prob_group == 1)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_1)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_2 --------------------\n")
+    B5_subsets_group_2 = filter (B5_subsets, ind_rand_prob_group == 2)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_2)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_3 --------------------\n")
+    B5_subsets_group_3 = filter (B5_subsets, ind_rand_prob_group == 3)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_3)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_4 --------------------\n")
+    B5_subsets_group_4 = filter (B5_subsets, ind_rand_prob_group == 4)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_4)
+    
+    p3_working_test_df = B5_subsets_group_1
+
+    #--------------
+    
+        #  Verify that COR_Base problems are not duplicated between train and test.
+    COR_base_sets_are_independent_of_each_other (p3_working_train_df, 
+                                                 p3_working_test_df)
+    
+        #  Verify that COR_Base problems are not duplicated within test.
+    no_duplicate_COR_base_problems_within_set (p3_working_test_df)    
+    
+    }
+```
+
+```{r}
+    #  Variation 4: B3 union B5 random split by proportions prop_train & prop_test
+    #               THEN, test split into 4 independent subsets
+    #               Train and test splits are independent of each other 
+    #               AND test subsets are independent inside themselves
+
+    #  Combine B3 and B5 into one set to sample from.
+
+if (data_splitting_type == CONST_split_data_using_train_proportion_and_4_independent_test_subsets)
+    {
+    B3unionB5 = filter (p3_app_wrap_tib, batch_id == "B3" | batch_id == "B5") 
+    
+    split_sets = split_into_train_test_non_ind_prob_subsets_by_prop (src_df = B3unionB5, 
+                                                                     training_proportion = params$training_set_proportion, 
+                                                                     verbose = FALSE)
+    
+    p3_working_train_df = mutate (split_sets$train_set_df, is_train = TRUE)
+#    p3_working_test_df = mutate (split_sets$test_set_df, is_train = FALSE)
+    
+    #--------------
+    
+         #  Assign all problems in B5 to one of 4 independent subsets
+    B5_subsets = 
+        get_assigned_UUID_err_type_pairs (
+#            original_df = filter (p3_app_wrap_tib, batch_id == "B5"), 
+            original_df = split_sets$test_set_df, 
+            verbose = FALSE)
+    
+        #  Mark all problems in B5 as being test, not train.
+    B5_subsets = mutate (B5_subsets, is_train = FALSE)
+    
+        #  Select independent group 1 from the full test data to use as the test set.
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_1 --------------------\n")
+    B5_subsets_group_1 = filter (B5_subsets, ind_rand_prob_group == 1)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_1)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_2 --------------------\n")
+    B5_subsets_group_2 = filter (B5_subsets, ind_rand_prob_group == 2)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_2)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_3 --------------------\n")
+    B5_subsets_group_3 = filter (B5_subsets, ind_rand_prob_group == 3)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_3)
+    
+    cat ("\n-------------------- Building and verifying independence for B5_subsets_group_4 --------------------\n")
+    B5_subsets_group_4 = filter (B5_subsets, ind_rand_prob_group == 4)
+    train_and_test_sets_are_independent_between_and_test_set_is_independent_within (
+        train_set_df = p3_working_train_df, 
+        test_set_df = B5_subsets_group_4)
+    
+    p3_working_test_df = B5_subsets_group_1
+
+    #--------------
+    
+        #  Verify that COR_Base problems are not duplicated between train and test.
+    COR_base_sets_are_independent_of_each_other (p3_working_train_df, 
+                                                 p3_working_test_df)
+    
+        #  Verify that COR_Base problems are not duplicated within test.
+    no_duplicate_COR_base_problems_within_set (p3_working_test_df)    
+    }
+```
+
+```{r}
+    #  Variation 5: 
+    #  B3 4 independent subsets for train, 
+    #  B5 4 independent subsets for test
+
+if (data_splitting_type == CONST_split_data_using_4_independent_test_subsets_of_B3_and_same_for_B5)
+    {
+    # p3_app_wrap_tib %>% 
+    #   filter (batch_id == "B3") %>% 
+    #   mutate (is_train = TRUE) -> 
+    # p3_working_train_df
+        
+        #  Assign all problems in B3 to one of 4 independent subsets
+    B3_subsets = 
+        get_assigned_UUID_err_type_pairs (
+            original_df = filter (p3_app_wrap_tib, batch_id == "B3"), 
+            verbose = FALSE)
+    
+        #  Mark all problems in B3 as being train.
+    B3_subsets = mutate (B3_subsets, is_train = TRUE)
+
+    cat ("\n-------------------- Building B3 subsets groups  --------------------\n")
+    B3_subsets_group_1 = filter (B3_subsets, ind_rand_prob_group == 1)
+    B3_subsets_group_2 = filter (B3_subsets, ind_rand_prob_group == 2)
+    B3_subsets_group_3 = filter (B3_subsets, ind_rand_prob_group == 3)
+    B3_subsets_group_4 = filter (B3_subsets, ind_rand_prob_group == 4)
+    
+        #  Select independent group 1 from the full train data to use as the train set.
+    p3_working_train_df = B3_subsets_group_1
+
+    #--------------
+    
+        #  Assign all problems in B5 to one of 4 independent subsets
+    B5_subsets = 
+        get_assigned_UUID_err_type_pairs (
+            original_df = filter (p3_app_wrap_tib, batch_id == "B5"), 
+            verbose = FALSE)
+    
+        #  Mark all problems in B5 as being test, not train.
+    B5_subsets = mutate (B5_subsets, is_train = FALSE)
+
+    cat ("\n-------------------- Building B5 subset groups --------------------\n")
+    B5_subsets_group_1 = filter (B5_subsets, ind_rand_prob_group == 1)
+    B5_subsets_group_2 = filter (B5_subsets, ind_rand_prob_group == 2)
+    B5_subsets_group_3 = filter (B5_subsets, ind_rand_prob_group == 3)
+    B5_subsets_group_4 = filter (B5_subsets, ind_rand_prob_group == 4)
+    
+        #  Select independent group 1 from the full test data to use as the test set.
+    p3_working_test_df = B5_subsets_group_1
+
+    #--------------
+
+        #  Replace last 3 lines below with this single call?  2024 03 05
+        #  Verify that train and test are independent of each other and 
+        #  verify that all problems within each of those two sets are 
+        #  independent of all other problems in the same set, i.e., 
+        #  1) Verify that COR_Base problems are not duplicated between 
+        #  train and test.
+        #  2) Verify that COR_Base problems are not duplicated within 
+        #  test or within train.
+
+    train_and_test_sets_are_independent_within_and_between (
+                                        train_set_df = p3_working_train_df, 
+                                        test_set_df = p3_working_test_df)
+        
+            #     #  Verify that COR_Base problems are not duplicated between train and test.
+            # COR_base_sets_are_independent_of_each_other (p3_working_train_df, 
+            #                                              p3_working_test_df)
+            # 
+            #     #  Verify that COR_Base problems are not duplicated within test or train.
+            # no_duplicate_COR_base_problems_within_set (p3_working_train_df)    
+            # no_duplicate_COR_base_problems_within_set (p3_working_test_df)    
+    
+    }
+```
+
+```
+{r}
+original_df = temp_test_src_df
+
+        #---------------------------------------------------------------
+        #  Get rid of all columns other than the ones necessary to see
+        #  if the UUID/error type occurs in all reserve selectors.
+        #---------------------------------------------------------------
+  
+    original_df %>% 
+        select (rs_method_name, 
+                rsp_UUID_of_COR_Base_problem_that_is_wrapped, 
+                rsp_combined_err_label
+                # , is_train
+                ) -> 
+      df
+  
+    num_unique_err_types = length (unique (df$rsp_combined_err_label))
+    successful_UUID_err_type = 
+        find_uuid_err_type_pairs_that_occur_in_all_reserve_selectors (df)
+
+    successful_UUID_err_type %>%
+        group_by (rsp_UUID_of_COR_Base_problem_that_is_wrapped ) %>%
+        mutate (
+              #  Assign what may become a cross-validation set ID to each 
+              #  problem.  Because there are 4 types of error used in the 
+              #  bdpgtext study, there can be at most 4 different independent 
+              #  sets of cross-validation problems chosen.  So, you need to 
+              #  choose a random number between 1 and 4 for the cv set ID 
+              #  assigned to each problem.  This value cannot be repeated 
+              #  within the same set of problems derived from a given 
+              #  COR Base problem.  There will usually be 4 derived (App Wrap) 
+              #  problems for each COR Base problem, but something like a 
+              #  failed run can reduce that number.  In those cases, you 
+              #  still want to draw the random cv set ID (ind_rand_prob_group) 
+              #  from the values 1:4 instead of 1 to the number of problems 
+              #  in the group.  This is because you don't end up with group 4  
+              #  being much smaller than all the other groups.  This way, 
+              #  "missing" problems will left out of all of the groups 
+              #  randomly rather than only being left out of the higher 
+              #  numbered cv set IDs.  
+              #  In the command below, we randomly choose n() numbers between 1 
+              #  and the number of error types (generally 4), where n() is the 
+              #  number of App Wrap problems derived from the current COR Base 
+              #  problem
+                                            #  2024 01 15 - SHOULDN'T THIS BE 
+                                            #  1:NUM_unique_err_types instead of 1:unique_err_types?
+#          ind_rand_prob_group = safe_sample (1:unique_err_types, n(),    
+          ind_rand_prob_group = safe_sample (1:num_unique_err_types, n(),    
+                                             replace=FALSE)
+          
+                ) %>%
+#        ungroup (successful_UUID_err_type) ->
+        ungroup () ->
+      assigned_df
+
+        #------------------------------------------------------------------
+        #  Get rid of the temporary columns that were just used to figure 
+        #  out what group to assign things to.
+        #------------------------------------------------------------------
+        #  Should end up with a data frame that has just 3 columns 
+        #  which identify an independent random problem group ID for each 
+        #  unique UUID/error type pair:
+        #     - rsp_UUID_of_COR_Base_problem_that_is_wrapped
+        #     - rsp_combined_err_label
+        #     - ind_rand_prob_group
+        #------------------------------------------------------------------
+    
+    assigned_df = select (assigned_df, -c (exists_in_ct, exists_in_all))
+
+        #------------------------------------------------------------------
+        #  Finally, reduce the original df to just the rows that met all 
+        #  the criteria here for UUID/error type occurring in all reserve 
+        #  selectors.  Also include the new column for problem group ID.
+        #------------------------------------------------------------------
+
+    original_df %>% 
+        inner_join (assigned_df) %>% 
+        ungroup() ->
+      working_tib
+
+    if(TRUE){    
+    #---------------------------------------------------
+    #  Sort for display in debugging/testing. 
+    #  Can remove/comment out once things are working.
+    #---------------------------------------------------
+    
+        working_tib %>%
+            arrange (rs_method_name, 
+                     rsp_UUID_of_COR_Base_problem_that_is_wrapped, 
+                     rsp_combined_err_label) %>%    #-> 
+            select (rs_method_name, 
+                    rsp_UUID_of_COR_Base_problem_that_is_wrapped, 
+                    rsp_combined_err_label, 
+                    ind_rand_prob_group) ->
+          narrow_working_tib
+     }
+    
+```
+
+
+```
+{r experimentWithIndependentSplitting, include=TRUE}
+
+CONST_split_data_using_batch_id = 1
+CONST_split_data_using_uuid_err_type_pairs = 2
+CONST_split_data_using_tidymodels = 3
+
+#data_splitting_type = CONST_split_data_using_batch_id
+data_splitting_type = CONST_split_data_using_uuid_err_type_pairs
+#data_splitting_type = CONST_split_data_using_tidymodels
+
+if (data_splitting_type == CONST_split_data_using_batch_id)
+    {
+    #p3_working_train_df = filter (filtered_full_app_wrap_tib,  batch_id == "B3")
+    p3_working_train_df = filter (p3_app_wrap_tib,  batch_id == "B3")
+    p3_working_train_df = mutate (p3_working_train_df, is_train = TRUE)
+    
+    #p3_working_test_df  = filter (filtered_full_app_wrap_tib, batch_id == "B5")
+    p3_working_test_df  = filter (p3_app_wrap_tib, batch_id == "B5")
+    p3_working_test_df = mutate (p3_working_test_df, is_train = FALSE)
+    
+    } else if (data_splitting_type == CONST_split_data_using_uuid_err_type_pairs)
+    {
+        ## Divide into test and training sets (from v6 p3).
+        ## Note that this split isn't quite a completely simple random draw.
+        ## We want to make sure that the test and training data are independent of each 
+        ## other, so we want to make sure that no problem in one set is derived from the 
+        ## same Base or Wrap problem as any problem in the other set.
+
+    source (file.path (proj_dir, "/R/v1_paper_3_cv_test_train_splitting_functions.R"), 
+             local = knitr::knit_global())
+    
+    p3_all_rs_working_tib = 
+        split_all_rs_into_independent_tests_and_trains (p3_app_wrap_tib,    #p3_all_rs_working_tib,
+                                                        params$training_split_denom)
+    
+    p3_working_train_df = filter (p3_all_rs_working_tib,  is_train)
+    p3_working_test_df  = filter (p3_all_rs_working_tib, !is_train)
+    
+    echo_rs_method_name_order_within_df (p3_working_train_df)
+    echo_rs_method_name_order_within_df (p3_working_test_df)
+     
+    } else if (data_splitting_type == CONST_split_data_using_tidymodels)
+    {
+    source (file.path (proj_dir, "/R/v1_Paper_3_func_defns_for_tidymodels.R"), 
+             local = knitr::knit_global())
+    
+    new_p3 = build_random_independent_subset_of_bdpg_data (p3_app_wrap_tib)
+      
+    } else
+    {
+    stop_bdpg (msg=paste0 ("data_splitting_type == ", data_splitting_type, 
+                           " but it must be 1, 2, or 3."), 
+               browser_on=TRUE)
+    }
+      
+
+```
+
+```{r}
+
+##  Training set instance independence
+## 
+# I don't think that the independence in the training set matters as much.  
+# - This is because we ignore the measured statistics like R^2 and RMSE
+#   there, except where *ranking* their relative values on the same training
+#   set (which seems ok since they all have the same quadrupling of N going
+#   on). 
+# - Another independence problem in training might be if there was an
+#   imbalance in which kinds of error model samples were used, e.g., mostly
+#   FN.  In that case, the training set distribution wouldn't match the test
+#   set distribution of FNs and FPs, so performance might be poor. 
+# - There might be a case where we do want to have an imbalance, i.e.,
+#   cost-sensitive learning.  For example, we probably care more about FP
+#   errors that lead to representation shortfall than we care about cost
+#   error that only leads to cost inefficiency.  One way to implicitly
+#   represent that would be to have more FP examples in the data sets than
+#   FN, so that overall scores for a dataset implicitly weighted in
+#   proportion to the number of FP examples vs. FN examples.
+
+##  Cross-validation  
+## 
+# For the moment, I'm also going to ignore splitting into cross-validation
+# sets so that the code is simpler.  I'll add cross-validation once the
+# downstream code is working.  In any case, the natural split into groups
+# of four independent datasets (which could in turn be split again), seems
+# a natural first cut at it.
+```
+
+```
+{r splitIntoTestTrain, include=FALSE}
+
+#p3_working_train_df = filter (filtered_full_app_wrap_tib,  batch_id == "B3")
+p3_working_train_df = filter (p3_app_wrap_tib,  batch_id == "B3")
+p3_working_train_df = mutate (p3_working_train_df, is_train = TRUE)
+
+#p3_working_test_df  = filter (filtered_full_app_wrap_tib, batch_id == "B5")
+p3_working_test_df  = filter (p3_app_wrap_tib, batch_id == "B5")
+p3_working_test_df = mutate (p3_working_test_df, is_train = FALSE)
+
+    #  This function is defined in R/v1_paper_3_utility_functions.R.
+# echo_rs_method_name_order_within_df (p3_working_train_df)
+# echo_rs_method_name_order_within_df (p3_working_test_df)
+
+
+# full_initial_exp_tib =     
+# #  new_p3_tib =     #  name that was used in the tidymodels explorations
+#     load_bdpg_data_and_build_random_independent_subset (rds_input_file_path, 
+#                                                         save_result_to_disk=FALSE) 
+
+# usethis::ui_done ("load_and_build_FULL_data_for_all_reserve_selectors")
+
+# if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+#     write_a_tib_to_csv_file_using_params (full_initial_exp_tib, 
+#                                           "p3_full_initial_exp_tib", 
+#                                           params, file_type_to_write)
+
+```
+
+
+
+```
+{r}
+
+#  2023 12 24 - BTL
+#  Temporary test of results for FN only.
+
+p3_working_train_df = filter (p3_working_train_df,  dom_err_type == "FN")
+p3_working_test_df  = filter (p3_working_test_df, dom_err_type == "FN")
+
+```
+
+
+
+
+
+
+
+```{r rememberOldWorking_dfForDebugging, include=params$chunk_include, eval=TRUE}
+
+#  Save copies of the data before any BoxCox, centering, etc is done.  
+#  Matilda file creation will need these pre-BoxCox versions.
+
+p3_working_train_df__before_any_preprocessing = p3_working_train_df
+p3_working_test_df__before_any_preprocessing = p3_working_test_df
+
+cat ("\n\ndim() for p3_working_train_df and p3_working_test_df before BoxCox, etc.\n")
+show (dim (p3_working_train_df__before_any_preprocessing))
+show (dim (p3_working_test_df__before_any_preprocessing))
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_to_csv_file_using_params (
+        p3_working_train_df__before_any_preprocessing, 
+        "p3_working_train_df__before_any_preprocessing", 
+        params, params$file_type_to_write)
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_to_csv_file_using_params (
+        p3_working_test_df__before_any_preprocessing, 
+        "p3_working_test_df__before_any_preprocessing", 
+        params, params$file_type_to_write)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r SetAsideCols-NOT-ToPreprocess, include=params$chunk_include}
+##  Set aside train and test columns that will not be preprocessed (e.g., identifiers) 
+
+# These are columns that are either not numeric or they are numeric columns 
+# that are to be the response variable in the fittings.
+
+#-------------------------------------------------------------------------------
+
+train_df_cols_not_preprocessed = set_aside_cols_NOT_to_preprocess (p3_working_train_df)
+test_df_cols_not_preprocessed  = set_aside_cols_NOT_to_preprocess (p3_working_test_df)
+
+names (test_df_cols_not_preprocessed)
+```
+
+```{r SetAsideCols-TO-Preprocess, include=params$chunk_include}
+##  Set aside train and test columns that WILL be preprocessed (i.e., learning features) 
+
+# These are the columns of the training data that will be used to determine 
+# the preprocessing parameters such as the mean and std deviation used in 
+# centering and standardizing.
+
+#-------------------------------------------------------------------------------
+
+train_df_to_build_preprocess_from = set_aside_cols_TO_preprocess (p3_working_train_df)
+test_df_cols_to_preprocess        = set_aside_cols_TO_preprocess (p3_working_test_df)
+
+names (test_df_cols_to_preprocess)
+```
+
+```{r quickNAchecks, include=params$chunk_include}
+#----------
+
+#  Preprocess the input data using Box Cox transform and center/scale normalization
+
+##  Make sure there are no NAs in the data to preprocess  
+
+#-------------------------------------------------------------------------------
+
+##  Make sure that there are no NAs in the data to preprocess
+
+quick_check_for_NAs (train_df_to_build_preprocess_from, 
+                     "train_df_to_build_preprocess_from", 
+                     "at start of preprocessing")
+
+quick_check_for_NAs (test_df_cols_to_preprocess, 
+                     "test_df_cols_to_preprocess", 
+                     "at start of preprocessing")
+```
+
+```{r makeXdfs, include=params$chunk_include}
+##  Explicitly convert tibbles into data frames  
+
+#-------------------------------------------------------------------------------
+
+##  Explicitly convert tibbles into data frames
+
+#  I was having trouble before with something in the BoxCox stuff 
+#  working ok on data frames, but not on tibbles, so convert them 
+#  to data frames here.  
+
+x_train = as.data.frame (train_df_to_build_preprocess_from)
+x_test  = as.data.frame (test_df_cols_to_preprocess)
+```
+
+```{r transformWithBoxCox, include=params$chunk_include}
+##  Do Box Cox transform  
+
+#-------------------------------------------------------------------------------
+
+if (params$do_BoxCox)
+    {
+    BoxCox_transformed_train_and_test_list = 
+        do_BoxCox_on_all_rs (rs_method_names_list, x_train, x_test)
+
+    
+    # BoxCox_transformed_train_and_test_list = do_BoxCox_transforms (x_train, 
+    #                                                                x_test)
+    x_train = BoxCox_transformed_train_and_test_list$x_train
+    x_test  = BoxCox_transformed_train_and_test_list$x_test
+  }
+
+# cat ("\n\nis_grouped_df (x_train) = ", 
+#      is_grouped_df (x_train), sep='')
+# 
+# cat ("\n\nis_grouped_df (x_test) = ", 
+#      is_grouped_df (x_test), sep='')
+
+```
+
+```{r centerAndScale, include=params$chunk_include, eval=TRUE}
+
+##  Center and scale the Box Cox transformed data  
+
+#-------------------------------------------------------------------------------
+
+###  Center and scale the data
+
+cs_results_list = center_and_scale_all_rs (rs_method_names_list, x_train, x_test)
+
+preprocessed_train_df_cols = cs_results_list$preprocessed_train_df_cols
+preprocessed_test_df_cols  = cs_results_list$preprocessed_test_df_cols
+
+# cat ("\n\nis_grouped_df (preprocessed_train_df_cols) = ", 
+#      is_grouped_df (preprocessed_train_df_cols), sep='')
+
+# cat ("\n\nis_grouped_df (preprocessed_test_df_cols) = ", 
+#      is_grouped_df (preprocessed_test_df_cols), sep='')
+```
+
+```{r checkRedundancyValues, include=params$chunk_include, eval=TRUE}
+##  Do some whole dataset sanity checks
+
+#  I'm doing these checks at the level of the whole data set rather than for 
+#  individual reserve selectors because if they were to cause a loss of a 
+#  column in one RS but not another, then the compound data set of all 
+#  reserve selectors would no longer have the right column structure.  
+#  At this point, these zero variance and NA checks don't find anything to 
+#  complain about even at the whole data set level, but I'm leaving them in 
+#  as sanity checks against future changes to the preceding code.
+
+###  Check for median redundancy values in FP and FN  
+
+#  When you run FN data only, it crashes because the median redundancies 
+#  (ig_median_bottom_bg_redundancy and ig_median_top_bg_redundancy) have no 
+#  variance and get removed by the next step below.  They all have exactly 
+#  the same value of 0.  Do any of the FPs take this value too?  Seems like 
+#  it might almost be a useful feature predictive of FN input if FPs don't 
+#  often take this value.  Seems very odd though.  Might just be a feature 
+#  of the Model RB problems and therefore, useless in general.  Then again, 
+#  does zero redundancy generally imply that you're not likely to get any 
+#  representation shortfalls?  
+
+#-------------------------------------------------------------------------------
+
+###  Check for median redundancy values in FP and FN
+
+histogram (preprocessed_train_df_cols$ig_median_top_bg_redundancy, nint=100)
+densityplot (preprocessed_train_df_cols$ig_median_top_bg_redundancy)
+
+histogram (preprocessed_train_df_cols$ig_median_bottom_bg_redundancy, nint=100)
+densityplot (preprocessed_train_df_cols$ig_median_bottom_bg_redundancy)
+```
+
+```{r makeRedundancyHistograms, include=FALSE, eval=TRUE}
+bottom_train_hist <- bind_cols (train_df_cols_not_preprocessed,
+                                preprocessed_train_df_cols)
+
+cat ("\n\nLength of unique (ig_median_bottom_bg_redundancy) for bottom = ", 
+     length (unique (bottom_train_hist$ig_median_bottom_bg_redundancy)), "\n")
+
+ggplot (bottom_train_hist, 
+        aes (x=ig_median_bottom_bg_redundancy)) + 
+  geom_density (alpha = 0.5) + 
+  aes (fill = dom_err_type) 
+
+bottom_train_hist = filter (bottom_train_hist, ig_median_bottom_bg_redundancy < - 0.5)
+
+ggplot (bottom_train_hist, 
+        aes (x=ig_median_bottom_bg_redundancy)) + 
+  geom_density (alpha = 0.5) + 
+  aes (fill = dom_err_type) 
+
+bottom_train_hist = NULL
+
+#----------
+
+top_train_hist <- bind_cols (train_df_cols_not_preprocessed,
+                                preprocessed_train_df_cols)
+
+cat ("\n\nLength of unique (ig_median_top_bg_redundancy) for top = ", 
+     length (unique (top_train_hist$ig_median_top_bg_redundancy)), "\n")
+
+ggplot (top_train_hist, 
+        aes (x=ig_median_top_bg_redundancy)) + 
+  geom_density (alpha = 0.5) + 
+  aes (fill = dom_err_type) 
+
+top_train_hist = filter (top_train_hist, ig_median_top_bg_redundancy < - 0.5)
+
+ggplot (top_train_hist, 
+        aes (x=ig_median_top_bg_redundancy)) + 
+  geom_density (alpha = 0.5) + 
+  aes (fill = dom_err_type) 
+
+top_train_hist = NULL
+```
+
+```{r setIncludeMedianRedundancies, include=params$chunk_include}
+###  Check for variables with zero or near zero variance
+
+#  Remove any columns that you find have zero or near zero variance since 
+#  they're no use to the fitting.
+
+#  Temporarily add this chunk since the one after it is commented out and 
+#  that's where this value was set before.  The variable is a required 
+#  argument to some downstream function calls.  
+
+#-------------------------------------------------------------------------------
+
+include_median_redundancies = FALSE
+```
+
+```{r checkForZeroVariance, include=params$chunk_include, eval=TRUE}
+
+nzv <- nearZeroVar (preprocessed_train_df_cols, saveMetrics= TRUE)
+
+zv_row_indices = which (nzv$zeroVar == TRUE)
+if (length (zv_row_indices) > 0)
+  {
+  cat ("\n\nTraining data variables with zero variance =\n")
+  print (rownames (nzv [zv_row_indices,]))
+  show (nzv [zv_row_indices, ])
+  } else
+  {
+  cat ("\n\nNo training data variables have zero variance.")
+  }
+    
+    #  Ignore the results of the near-zero part of the nearZeroVar() tests.
+    #  2020 02 17 - BTL
+    #  This is where you test for near-zero variance instead of zero variance, 
+    #  but this test was claiming that rsp_realized_FP_rate and 
+    #  rsp_euc_realized_FP_and_cost_in_err_frac had near zero variance.
+    #  Consequently, I was tossing those columns.
+    #  When I ran paper 3 with just FP values, it was crashing when it tried 
+    #  to build the input df for fitting to input error values because it 
+    #  couldn't find these 2 FP-related columns.  
+    #  Looking at the FP-related values in that case showed that they were fine.
+    #  They were just failing some ratio test set by caret as the default and 
+    #  that ratio didn't really apply to my data.  The test wasn't particularly 
+    #  important since I was really after constant values (i.e., zero variance), 
+    #  so I'm now ignoring the near-zero part of the returns from the  
+    #  nearZeroVar() function.  
+    #  I've wrapped the old code here with a flag that allows it to still exist 
+    #  in case I ever need it again.
+ignore_nearZero_claims = TRUE
+if (ignore_nearZero_claims)
+    {
+    nzv_row_indices = NULL
+    } else
+    {
+    nzv_row_indices = which (nzv$nzv == TRUE)
+    if (length (nzv_row_indices) > 0)
+      {
+      cat ("\n\nTraining data variables with NEAR zero variance =\n")
+      print (rownames (nzv [nzv_row_indices,]))
+      show (nzv [nzv_row_indices, ])
+      } else
+      {
+      cat ("\n\nNo training data variables have NEAR zero variance.")
+      }
+    }
+
+include_median_redundancies = TRUE
+indices_of_vars_to_remove = union (zv_row_indices, nzv_row_indices)
+if (length (indices_of_vars_to_remove) > 0)
+  {
+  cat ("\n\nRemoving variables with zero or near zero variance: ")
+  show (colnames (preprocessed_train_df_cols) [indices_of_vars_to_remove])
+         
+  preprocessed_train_df_cols = preprocessed_train_df_cols [, -indices_of_vars_to_remove]
+  preprocessed_test_df_cols  = preprocessed_test_df_cols  [, -indices_of_vars_to_remove]
+  
+      #  At the moment (2019 11 08), median redundancies under FN-only 
+      #  are the only columns that have the zero variance problem, 
+      #  so flag the issue of excluding them from analyses downstream.
+  include_median_redundancies = FALSE  
+  }
+
+    #  2022 03 26 - BTL
+    #  Can't remember why I was testing whether these data frames were grouped.   
+    #  So, commenting this out for now. 
+# cat ("\n\nis_grouped_df (preprocessed_train_df_cols) = ", 
+#      is_grouped_df (preprocessed_train_df_cols), sep='')
+
+# cat ("\n\nis_grouped_df (preprocessed_test_df_cols) = ", 
+#      is_grouped_df (preprocessed_test_df_cols), sep='')
+```
+
+```{r recombinePrepAndNonPrepCols, include=params$chunk_include, eval=TRUE}
+##  Recombine data that was and wasn't preprocessed  
+
+#  The data that was preprocessed with BoxCox and scaling was cleaved off 
+#  from its descriptive, non-numeric data to allow the preprocessing.  
+#  Now need to join them back up to allow incorporation of non-numeric 
+#  information such as dom_err_type on plotting and fitting.
+
+#-------------------------------------------------------------------------------
+
+# p3_working_train_df <- bind_cols (train_df_cols_not_preprocessed,
+#                                preprocessed_train_df_cols)
+# p3_working_test_df <- bind_cols (test_df_cols_not_preprocessed,
+#                               preprocessed_test_df_cols)
+
+    #  NOTE:  You need both the rsr_UUID AND the rs_method_name to do this join 
+    #         because Marxan_SA and Marxan_SA_SS share the same rsr_UUID for 
+    #         a given run since the Marxan_SA_SS values are calculated from 
+    #         the results of the Marxan_SA run on a given problem.
+    #         All other reserve selectors have unique rsr_UUIDs that don't 
+    #         match each other or the Marxan rsr_UUID.
+
+p3_working_train_df <- inner_join (train_df_cols_not_preprocessed,
+                                preprocessed_train_df_cols, 
+#                               by = "rsr_UUID")
+                                by = c("rsr_UUID", "rs_method_name"))
+p3_working_test_df <- inner_join (test_df_cols_not_preprocessed,
+                               preprocessed_test_df_cols, 
+#                               by = "rsr_UUID")
+                               by = c("rsr_UUID", "rs_method_name"))
+
+cat ("\n\ndim() for not_preprocessed and preprocessed\n")
+cat ("\n\nTRAIN:")
+cat ("\ntrain_df_cols_not_preprocessed: ")
+show (dim (train_df_cols_not_preprocessed))
+cat ("\npreprocessed_train_df_cols: ")
+show (dim (preprocessed_train_df_cols))
+cat ("\n\nTEST:")
+cat ("\ntest_df_cols_not_preprocessed: ")
+show (dim (test_df_cols_not_preprocessed))
+cat ("\npreprocessed_test_df_cols: ")
+show (dim (preprocessed_test_df_cols))
+
+cat ("\n\ndim() for p3_working_train_df and p3_working_test_df\n")
+cat ("\np3_working_train_df: ")
+show (dim (p3_working_train_df))
+cat ("\np3_working_test_df: ")
+show (dim (p3_working_test_df))
+
+cat ("\n\nis_grouped_df (train_df_cols_not_preprocessed) = ", 
+     is_grouped_df (train_df_cols_not_preprocessed), sep='')
+
+cat ("\n\nis_grouped_df (test_df_cols_not_preprocessed) = ", 
+     is_grouped_df (test_df_cols_not_preprocessed), sep='')
+
+cat ("\n\nis_grouped_df (p3_working_train_df) = ", 
+     is_grouped_df (p3_working_train_df), sep='')
+
+cat ("\n\nis_grouped_df (p3_working_test_df) = ", 
+     is_grouped_df (p3_working_test_df), sep='')
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    {
+    write_a_tib_to_csv_file_using_params (p3_working_train_df, 
+                                          "p3_working_train_df", 
+                                          params, params$file_type_to_write)
+    
+    write_a_tib_to_csv_file_using_params (p3_working_test_df, 
+                                          "p3_working_test_df", 
+                                          params, params$file_type_to_write)
+    }
+
+```
+
+```{r repeatNAcheck, include=params$chunk_include, eval=TRUE}
+###  Repeat check for any NAs  
+
+#-------------------------------------------------------------------------------
+
+###  Quick check for NAs
+
+quick_check_for_NAs (p3_working_train_df, "p3_working_train_df", "just before fittings")
+quick_check_for_NAs (p3_working_test_df, "p3_working_test_df", "just before fittings")
+```
+
+
+
+
+xxx  
+
+# Protocol for conducting and presenting results of regression-type analyses  
+
+Taken from @zuur2016mee.  
+
+1. State appropriate questions
+2. Visualize the experimental design
+3. Conduct data exploration
+4. Identify the dependency structure in the data
+5. Present the statistical model
+6. Fit the model
+7. Validate the model
+8. Interpret and present the numerical output of the model
+9. Create a visual representation of the model
+10. Simulate from the model
+
+# Protocol for data exploration  
+
+Taken from @zuur2010mee.  
+
+1. Outliers Y & X
+    a. boxplot & Cleveland dotplot
+2. Homogeneity Y
+    a. conditional boxplot
+3. Normality Y
+    a. histogram or QQ-plot
+4. Zero trouble Y
+    a. frequency plot or corrgram
+5. Collinearity X
+    a. VIF & scatterplots
+    b. correlations & PCA
+6. Relationships & & X
+    a. (multi-panel) scatterplots
+    b. conditional boxplots
+7. Interactions
+    a. coplots
+8. Independence Y
+    a. ACF & variogram
+    b. plot Y versus time/space
+
+
+
+
+xxx
+
+----------
+
+#  Explore correlations to help choose more columns to remove or include in fitting
+
+##  igraph Latapy correlations
+
+```
+{r computeBipartiteCorrelations, include=TRUE, eval=TRUE}
+library (corrplot)  #  For correlation plots
+
+#library(dplyr)
+library (corrr)
+
+ig_bipartite_vars_train_df = 
+    select (p3_working_train_df, #c (
+
+        #Results and their errors
+        rs_solution_cost_err_frac
+        , rsr_COR_spp_rep_shortfall
+        
+        #err_mag
+        #rsr_COR_euc_out_err_frac
+
+                        # , rsp_num_PUs
+                        # , rsp_num_spp
+                        # , rsp_num_spp_per_PU
+        #sppPUsum
+        , sppPUprod
+
+        #igraph Latapy metrics
+                                                                    # , ig_top
+                                                                    # , ig_bottom
+# 2022 03 25 - Moved to problem size        , ig_num_edges_m
+# 2022 03 25 - Moved to problem size        , ig_ktop
+# 2022 03 25 - Moved to problem size        , ig_kbottom
+        #, ig_bidens
+        , ig_lcctop
+        , ig_lccbottom
+        , ig_distop
+        , ig_disbottom
+        , ig_cctop
+        , ig_ccbottom
+        , ig_cclowdottop
+        , ig_cclowdotbottom
+        , ig_cctopdottop
+        , ig_cctopdotbottom
+                  
+                #  The two median variables below can cause a problem when 
+                #  only running FN_dom problems, because their values are 
+                #  all zero and the test for variables with zero variance 
+                #  removes them.  Not sure if other variables 
+                #  also get removed.  Variables to be removed are listed in 
+                #  the the variable "indices_of_vars_to_remove".  
+        , ig_mean_bottom_bg_redundancy
+        , ig_median_bottom_bg_redundancy
+        , ig_mean_top_bg_redundancy
+        , ig_median_top_bg_redundancy
+
+    )
+
+
+    #----------------------------------------------
+    #  Correlations using the base cor functions.
+    #----------------------------------------------
+
+correlations = cor (ig_bipartite_vars_train_df)
+
+    #  Plot the correlation matrix.
+
+corrplot (correlations, tl.cex=0.5
+#          , order = "hclust"    #  This fails because of NAs or NaNs in the data...
+          )
+
+#ggpairs (ig_bipartite_vars_train_df) + theme_bw()
+
+
+    #----------------------------------------------------------------------
+    #  Correlation analyses taken from description of corrr package at:
+    #  https://drsimonj.svbtle.com/exploring-correlations-in-r-with-corrr
+    #----------------------------------------------------------------------
+    #  
+rs = correlate (ig_bipartite_vars_train_df)
+rs
+
+#any_over_90 <- function(x) any(x > .9, na.rm = TRUE)
+#rs %>% select_if(any_over_90)
+
+rs %>% 
+  focus(sppPUprod)
+
+rs %>%
+  focus(sppPUprod) %>%
+  mutate(term = reorder(term, sppPUprod)) %>%
+  ggplot(aes(term, sppPUprod)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rs_solution_cost_err_frac) %>%
+  mutate(term = reorder(term, rs_solution_cost_err_frac)) %>%
+  ggplot(aes(term, rs_solution_cost_err_frac)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsr_COR_spp_rep_shortfall) %>%
+  mutate(term = reorder(term, rsr_COR_spp_rep_shortfall)) %>%
+  ggplot(aes(term, rsr_COR_spp_rep_shortfall)) +
+    geom_col() + coord_flip()
+
+# rs %>%
+#   focus(rsp_num_spp) %>%
+#   mutate(term = reorder(term, rsp_num_spp)) %>%
+#   ggplot(aes(term, rsp_num_spp)) +
+#     geom_col() + coord_flip()
+# 
+# 
+# rs %>%
+#   focus(rsp_num_PUs) %>%
+#   mutate(term = reorder(term, rsp_num_PUs)) %>%
+#   ggplot(aes(term, rsp_num_PUs)) +
+#     geom_col() + coord_flip()
+
+
+
+rs %>% rearrange()
+
+# rs %>%
+#   shave() %>% 
+#   stretch(na.rm = FALSE) %>% 
+#   ggplot(aes(r)) +
+#     geom_histogram()
+
+rs %>%
+  rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colors = c("red", "green"))
+
+#rs %>% network_plot(min_cor = .8, curved=FALSE)
+```
+##  Fifth cut correlations  
+
+```{r}
+fifth_cut_vars_train_df = 
+    select (p3_working_train_df, #c (
+
+        rs_solution_cost_err_frac
+        , rsr_COR_spp_rep_shortfall
+, links_per_PUsAndSpp
+, sppPUsum
+, functional.complementarity.PUs
+, rsp_num_spp_per_PU
+, specialisation_asymmetry
+, web_asymmetry
+#, cluster.coefficient.PUs
+, cluster.coefficient.Spp
+, V.ratio.PUs
+
+)
+
+
+    #----------------------------------------------
+    #  Correlations using the base cor functions.
+    #----------------------------------------------
+
+correlations = cor (fifth_cut_vars_train_df)
+
+    #  Plot the correlation matrix.
+
+corrplot (correlations, tl.cex=0.5
+#          , order = "hclust"    #  This fails because of NAs or NaNs in the data...
+          )
+
+```
+
+
+##  Third removal correlations
+
+```{r}
+third_removal_vars_train_df =
+    select (p3_working_train_df, #c (
+
+        rs_solution_cost_err_frac
+        , rsr_COR_spp_rep_shortfall
+        , links_per_PUsAndSpp
+        , sppPUsum
+        , functional.complementarity.PUs
+        , functional.complementarity.Spp
+        , rsp_num_spp_per_PU
+        , Shannon_diversity
+        , specialisation_asymmetry
+        , web_asymmetry
+        , cluster.coefficient.PUs
+        , niche.overlap.Spp
+        , weighted_connectance
+        , togetherness.Spp
+        , C.score.Spp
+        , generality.PUs
+        , cluster.coefficient.Spp
+        , niche.overlap.PUs
+        , cluster_coefficient
+        , ig_distop
+        , Alatalo_interaction_evenness
+        , C.score.PUs
+        , V.ratio.PUs
+        , ig_disbottom
+        , V.ratio.Spp
+
+                      )
+
+
+    #----------------------------------------------
+    #  Correlations using the base cor functions.
+    #----------------------------------------------
+
+correlations = cor (third_removal_vars_train_df)
+
+    #  Plot the correlation matrix.
+
+corrplot (correlations, tl.cex=0.5
+#          , order = "hclust"    #  This fails because of NAs or NaNs in the data...
+          )
+
+```
+
+```{r}
+    #----------------------------------------------------------------------
+    #  Correlation analyses taken from description of corrr package at:
+    #  https://drsimonj.svbtle.com/exploring-correlations-in-r-with-corrr
+    #----------------------------------------------------------------------
+    #  
+rs = correlate (third_removal_vars_train_df)
+rs
+
+```
+
+```
+#any_over_90 <- function(x) any(x > .9, na.rm = TRUE)
+#rs %>% select_if(any_over_90)
+
+rs %>% 
+  focus(sppPUprod)
+
+rs %>%
+  focus(sppPUprod) %>%
+  mutate(term = reorder(term, sppPUprod)) %>%
+  ggplot(aes(term, sppPUprod)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rs_solution_cost_err_frac) %>%
+  mutate(term = reorder(term, rs_solution_cost_err_frac)) %>%
+  ggplot(aes(term, rs_solution_cost_err_frac)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsr_COR_spp_rep_shortfall) %>%
+  mutate(term = reorder(term, rsr_COR_spp_rep_shortfall)) %>%
+  ggplot(aes(term, rsr_COR_spp_rep_shortfall)) +
+    geom_col() + coord_flip()
+
+# rs %>%
+#   focus(rsp_num_spp) %>%
+#   mutate(term = reorder(term, rsp_num_spp)) %>%
+#   ggplot(aes(term, rsp_num_spp)) +
+#     geom_col() + coord_flip()
+# 
+# 
+# rs %>%
+#   focus(rsp_num_PUs) %>%
+#   mutate(term = reorder(term, rsp_num_PUs)) %>%
+#   ggplot(aes(term, rsp_num_PUs)) +
+#     geom_col() + coord_flip()
+
+
+
+rs %>% rearrange()
+
+# rs %>%
+#   shave() %>% 
+#   stretch(na.rm = FALSE) %>% 
+#   ggplot(aes(r)) +
+#     geom_histogram()
+
+rs %>%
+  rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colors = c("red", "green"))
+
+#rs %>% network_plot(min_cor = .8, curved=FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+##  Dormann bipartite correlations
+
+```{r}
+bp_bipartite_vars_train_df = 
+    select (p3_working_train_df, #c (
+
+        #Results and their errors
+        rs_solution_cost_err_frac
+        , rsr_COR_spp_rep_shortfall
+        
+        #err_mag
+        #rsr_COR_euc_out_err_frac
+
+                         , rsp_num_occupied_PUs    #  , rsp_num_PUs
+                         , rsp_num_spp
+                        # , rsp_num_spp_per_PU
+        #sppPUsum
+        , sppPUprod
+
+        #bipartite package metrics
+# 2022 03 25 - Moved to problem size as equivalent variable edge_frac_of_possible        , connectance
+        , web_asymmetry
+        , links_per_PUsAndSpp
+        , cluster_coefficient
+        , specialisation_asymmetry
+        , linkage_density
+        , weighted_connectance
+        , Shannon_diversity
+        , interaction_evenness
+        , Alatalo_interaction_evenness
+                                                      # , number.of.PUs
+                                                      # , number.of.Spp
+        , mean.number.of.shared.partners.PUs
+        , mean.number.of.shared.partners.Spp
+        , cluster.coefficient.PUs
+        , cluster.coefficient.Spp
+        , niche.overlap.PUs
+        , niche.overlap.Spp
+        , togetherness.PUs
+        , togetherness.Spp
+        , C.score.PUs
+        , C.score.Spp
+        , V.ratio.PUs
+        , V.ratio.Spp
+        , functional.complementarity.PUs
+        , functional.complementarity.Spp
+        , partner.diversity.PUs
+        , partner.diversity.Spp
+        , generality.PUs
+        , vulnerability.Spp
+                    
+                      )
+
+
+    #----------------------------------------------
+    #  Correlations using the base cor functions.
+    #----------------------------------------------
+
+correlations = cor (bp_bipartite_vars_train_df)
+
+    #  Plot the correlation matrix.
+
+corrplot (correlations, tl.cex=0.5
+#          , order = "hclust"    #  This fails because of NAs or NaNs in the data...
+          )
+
+    #----------------------------------------------------------------------
+    #  Correlation analyses taken from description of corrr package at:
+    #  https://drsimonj.svbtle.com/exploring-correlations-in-r-with-corrr
+    #----------------------------------------------------------------------
+    #  
+rs = correlate (bp_bipartite_vars_train_df)
+rs
+
+#any_over_90 <- function(x) any(x > .9, na.rm = TRUE)
+#rs %>% select_if(any_over_90)
+
+# rs %>% 
+#   focus(sppPUprod)
+
+rs %>%
+  focus(rs_solution_cost_err_frac) %>%
+  mutate(term = reorder(term, rs_solution_cost_err_frac)) %>%
+  ggplot(aes(term, rs_solution_cost_err_frac)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsr_COR_spp_rep_shortfall) %>%
+  mutate(term = reorder(term, rsr_COR_spp_rep_shortfall)) %>%
+  ggplot(aes(term, rsr_COR_spp_rep_shortfall)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(sppPUprod) %>%
+  mutate(term = reorder(term, sppPUprod)) %>%
+  ggplot(aes(term, sppPUprod)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(links_per_PUsAndSpp) %>%
+  mutate(term = reorder(term, links_per_PUsAndSpp)) %>%
+  ggplot(aes(term, links_per_PUsAndSpp)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsp_num_spp) %>%
+  mutate(term = reorder(term, rsp_num_spp)) %>%
+  ggplot(aes(term, rsp_num_spp)) +
+    geom_col() + coord_flip()
+
+
+rs %>%
+  focus(rsp_num_occupied_PUs) %>%
+  mutate(term = reorder(term, rsp_num_occupied_PUs)) %>%
+  ggplot(aes(term, rsp_num_occupied_PUs)) +
+    geom_col() + coord_flip()
+
+
+
+rs %>% rearrange()
+
+# rs %>%
+#   shave() %>% 
+#   stretch(na.rm = FALSE) %>% 
+#   ggplot(aes(r)) +
+#     geom_histogram()
+
+rs %>%
+  rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colors = c("red", "green"))
+
+#rs %>% network_plot(min_cor = .8, curved=FALSE)
+```
+
+##  Both igraph and bipartite correlations  
+
+```{r}
+
+both_bipartite_vars_train_df = 
+    select (p3_working_train_df, #c (
+
+        #Results and their errors
+        rs_solution_cost_err_frac
+        , rsr_COR_spp_rep_shortfall
+        
+        #err_mag
+        #rsr_COR_euc_out_err_frac
+
+                         , rsp_num_occupied_PUs    #  , rsp_num_PUs
+                         , rsp_num_spp
+                        # , rsp_num_spp_per_PU
+        #sppPUsum
+        , sppPUprod
+
+        #igraph Latapy metrics
+                                                                    # , ig_top
+                                                                    # , ig_bottom
+# 2022 03 25 - Moved to problem size        , ig_num_edges_m
+# 2022 03 25 - Moved to problem size        , ig_ktop
+# 2022 03 25 - Moved to problem size        , ig_kbottom
+        #, ig_bidens
+        , ig_lcctop
+        , ig_lccbottom
+        , ig_distop
+        , ig_disbottom
+        , ig_cctop
+        , ig_ccbottom
+        , ig_cclowdottop
+        , ig_cclowdotbottom
+        , ig_cctopdottop
+        , ig_cctopdotbottom
+        , ig_mean_bottom_bg_redundancy
+        , ig_median_bottom_bg_redundancy
+        , ig_mean_top_bg_redundancy
+        , ig_median_top_bg_redundancy
+
+        
+        #bipartite package metrics
+# 2022 03 25 - Moved to problem size as equivalent variable edge_frac_of_possible        , connectance
+        , web_asymmetry
+        , links_per_PUsAndSpp
+        , cluster_coefficient
+        , specialisation_asymmetry
+        , linkage_density
+        , weighted_connectance
+        , Shannon_diversity
+        , interaction_evenness
+        , Alatalo_interaction_evenness
+                                                      # , number.of.PUs
+                                                      # , number.of.Spp
+        , mean.number.of.shared.partners.PUs
+        , mean.number.of.shared.partners.Spp
+        , cluster.coefficient.PUs
+        , cluster.coefficient.Spp
+        , niche.overlap.PUs
+        , niche.overlap.Spp
+        , togetherness.PUs
+        , togetherness.Spp
+        , C.score.PUs
+        , C.score.Spp
+        , V.ratio.PUs
+        , V.ratio.Spp
+        , functional.complementarity.PUs
+        , functional.complementarity.Spp
+        , partner.diversity.PUs
+        , partner.diversity.Spp
+        , generality.PUs
+        , vulnerability.Spp
+                    
+                      )
+
+    #----------------------------------------------
+    #  Correlations using the base cor functions.
+    #----------------------------------------------
+
+correlations = cor (both_bipartite_vars_train_df)
+
+    #  Plot the correlation matrix.
+
+corrplot (correlations, tl.cex=0.5
+#          , order = "hclust"    #  This fails because of NAs or NaNs in the data...
+          )
+
+    #----------------------------------------------------------------------
+    #  Correlation analyses taken from description of corrr package at:
+    #  https://drsimonj.svbtle.com/exploring-correlations-in-r-with-corrr
+    #----------------------------------------------------------------------
+    #  
+rs = correlate (both_bipartite_vars_train_df)
+rs
+
+#any_over_90 <- function(x) any(x > .9, na.rm = TRUE)
+#rs %>% select_if(any_over_90)
+
+# rs %>% 
+#   focus(sppPUprod)
+
+rs %>%
+  focus(rs_solution_cost_err_frac) %>%
+  mutate(term = reorder(term, rs_solution_cost_err_frac)) %>%
+  ggplot(aes(term, rs_solution_cost_err_frac)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsr_COR_spp_rep_shortfall) %>%
+  mutate(term = reorder(term, rsr_COR_spp_rep_shortfall)) %>%
+  ggplot(aes(term, rsr_COR_spp_rep_shortfall)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(sppPUprod) %>%
+  mutate(term = reorder(term, sppPUprod)) %>%
+  ggplot(aes(term, sppPUprod)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(links_per_PUsAndSpp) %>%
+  mutate(term = reorder(term, links_per_PUsAndSpp)) %>%
+  ggplot(aes(term, links_per_PUsAndSpp)) +
+    geom_col() + coord_flip()
+
+rs %>%
+  focus(rsp_num_spp) %>%
+  mutate(term = reorder(term, rsp_num_spp)) %>%
+  ggplot(aes(term, rsp_num_spp)) +
+    geom_col() + coord_flip()
+
+
+rs %>%
+  focus(rsp_num_occupied_PUs) %>%
+  mutate(term = reorder(term, rsp_num_occupied_PUs)) %>%
+  ggplot(aes(term, rsp_num_occupied_PUs)) +
+    geom_col() + coord_flip()
+
+
+
+rs %>% rearrange()
+
+# rs %>%
+#   shave() %>% 
+#   stretch(na.rm = FALSE) %>% 
+#   ggplot(aes(r)) +
+#     geom_histogram()
+
+rs %>%
+  rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colors = c("red", "green"))
+
+#rs %>% network_plot(min_cor = .8, curved=FALSE)
+
+```
+
+```{r showRepShortfallCDFs, include=FALSE, eval=TRUE}
+#----------
+
+##  Show cdfs  
+
+###  cdfs for rep shortfall  
+
+#  Rep shortfall cdfs immediately jump up above 0.5 density at 0 rep shortfall 
+#  because FN-dominant problems make up 50% of the problems and they have no 
+#  rep shortfall.  The rest of the curve represents the FP-dominant problems.  
+
+#-------------------------------------------------------------------------------
+
+#  Show cdfs for train and test sets.
+
+###  More than half of the cases have no rep shortfall.
+
+# This is true for all reserve selectors.
+
+show_rep_shortfall_cdfs (p3_working_train_df, p3_working_test_df, rs_method_name)
+```
+
+```{r showCostErrCDFs, include=params$chunk_include, eval=TRUE}
+###  cdfs for solution cost error    
+
+#  Solution cost error is present in both FN-dominant and FP-dominant problems, 
+#  so it doesn't jump up at 0 the way rep shortfall does.  Also, output cost 
+#  error can be negative when solution cost is underestimated.  Rep shortfall 
+#  can never be negative.  
+
+#-------------------------------------------------------------------------------
+
+###  Nearly all cases have cost error in the outputs.
+
+# More than 50% overestimate the cost.  More than a quarter underestimate the cost.
+
+show_cost_err_cdfs (p3_working_train_df, p3_working_test_df, rs_method_name)
+```
+
+```{r buildAuxDataFrames, include=params$chunk_include}
+
+### Build auxiliary data frames to hold things not used in fit but used in plots, etc.
+
+p3_train_aux_df = select (p3_working_train_df, 
+                                         rs_method_name, 
+                                         dom_err_type)
+p3_test_aux_df  = select (p3_working_test_df,  
+                                         rs_method_name, 
+                                         dom_err_type)
+
+    #  2022 03 25 - BTL
+    #  Can't remember why I was doing this grouping test, so commenting it out 
+    #  for now.
+# cat ("\n\nis_grouped_df (p3_train_aux_df) = ", 
+#      is_grouped_df (p3_train_aux_df), sep='')
+# cat ("\n\nis_grouped_df (p3_test_aux_df) = ", 
+#      is_grouped_df (p3_test_aux_df), sep='')
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    {
+    write_a_tib_to_csv_file_using_params (p3_train_aux_df, 
+                                          "p3_train_aux_df", 
+                                          params, params$file_type_to_write)
+    
+    write_a_tib_to_csv_file_using_params (p3_test_aux_df, 
+                                          "p3_test_aux_df", 
+                                          params, params$file_type_to_write)
+    }
+```
+
+----------
+
+\newpage
+
+#  References  
+
+<div id="refs"></div>
+
+```{r includeOrExcludeAppendices, echo=FALSE}
+
+#  Temporary exit to avoid building appendices every time
+#  Remove this chunk when you're ready to build appendices too.
+
+if (!params$build_appendices) knitr::knit_exit()
+```
+

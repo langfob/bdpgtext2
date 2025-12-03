@@ -1,0 +1,104 @@
+---
+params:
+  initialDate: "2022-12-29"
+title: "Notes on a problem with log10 data in bdpg"
+author: |  
+    | Bill Langford
+date: "`r paste(params$initialDate,'thru', Sys.time())`"
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+bibliography: ../btl_zotero_lib.bib
+csl: ../Zotero/styles/methods-in-ecology-and-evolution.csl
+---
+
+```{r version_history, eval=FALSE, echo=FALSE, cache=TRUE}
+
+#  Version history
+
+##  notes_on_log10_problem_found_by_way_of_matilda__2022_12_29.Rmd - 
+##  v01 December 20, 2022  
+
+Created.
+```
+
+#  Notes copied from daily log file entry for 2022-12-29 Thursday
+
+## Generalized matilda file writing in p8.matildaFunctions.v01.R. 
+
+Looking at one of the log10 variables made me go back and look for where it was created and **\textcolor{red}{I came across a number of log10 variables, some with different ways of modifying the variable before taking its log (e.g., adding 1 to it).}**  
+
+These inconsistencies made me think that I **\textcolor{red}{need to go back and take a closer look at these log variables to make them consistent and/or not redundant.  In fact, I think I might want to just eliminate all of them}** since I don't think they're really used for anything since they weren't all that informative   
+
+- though there might be one use of them in the p1 plotting of COR results and/or in the Shiny app.  
+
+I made a quick little Rmd file with some notes about this in the p8 v1 directory to remind myself:  
+
+- notes_on_log10_problem_found_by_way_of_matilda__2022_12_29.Rmd
+
+#  log10 issues
+
+log10 values are odd or not right.  See p8.unifiedDataLoading.v01.R around lines 1280-1288 and another line where `log10 (1+errMag)` is used.  
+
+On the other hand, I'm not sure I use any log values in any of the analysis other than possibly in the plotting in p1 or its SI and/or in the Shiny app.  Maybe I can just delete everything to do with logs everywhere.  
+
+
+```{r}
+#-------------------------------------------------------------------------------
+
+# [18] "log10_err_mag"                                  
+
+      #  PROBLEMS HERE AND EVERYWHERE WITH LOG OF ERR MAG.
+      #  SEE LINES 1280-1288 OF unifiedDataLoading R FILE>
+if(FALSE){
+    #  ***  THIS MIGHT NEED ABSOLUTE VALUE TAKEN FIRST.  ***
+    #  ***  HAVEN'T DONE THAT YET.                       ***
+    #  ***  2022 12 29 - BTL                             ***
+write_matilda_file (p3_working_test_df, "log10_err_mag", probSize_inVars, "probSize_lm", 
+                    "TEST", params)
+}
+
+if (FALSE){
+log10_euc_err_mag_one_col_df = 
+    build_perf_metric_col_df_for_matilda (p3_working_test_df, "log10_err_mag")
+
+csv_tib = 
+    build_matilda_metadata_df (p3_working_test_df, 
+                               inVars = probSize_inVars, 
+                               perfMeasure_one_col_df = log10_euc_err_mag_one_col_df, 
+                               source_string = "probSize_lm", 
+                               perf_metric_col_name_str = "log10_euc_out_err_mag")
+
+write_a_tib_to_csv_file_using_params (csv_tib, 
+                                      "matilda__TEST__probSize_lm__log10_euc_out_err_mag__input", 
+                                      params, "csv")
+}
+
+
+```
+

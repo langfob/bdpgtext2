@@ -1,0 +1,202 @@
+---
+title: "draft of overview"
+date: "2025-12-01"
+header-includes: 
+- \usepackage{longtable}
+output:
+  bookdown::pdf_document2: 
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+    extra_dependencies: ["float"]
+  bookdown::word_document2: 
+    reference_docx: ../rmarkdownWordTemplate.docx
+    keep_tex: true
+    includes:
+      in_header: header.tex
+    toc: yes
+    toc_depth: '6'
+    fig_caption: yes
+    number_sections: yes
+#    extra_dependencies: ["booktabs"]
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '6'
+    toc_float: yes
+  html_notebook: 
+    toc: yes
+    toc_depth: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Explanatory stuff
+
+- I have a large (for one person working alone) set of directories, files, R code, and R packages that I have been working on off and on for the last 10 years or so.
+
+- The work was done in the context of producing several academic papers in conservation biology as well as producing a benchmark set of problems for testing  and evaluating conservation planning software under uncertainty.  
+
+- When I began the project, I had only a vague idea whether my original idea would work and what I needed to do to support it for publication.  I also had no experience in developing R packages or in using documentation and testing tools (such as Rmarkdown, Roxygen2, and testthat) or in using packages related to what has since become "the tidyverse".  I also had no experience in using and coordinating clusters of 30 or 40 computers.   
+
+- Consequently, the code and the documentation and the academic paper drafts and the massive output data sets lack coherence and documentation and often, proper use of the R tools that I was learning as I went along.  
+
+- The fact that this all began as an exploratory and experimental academic research project means that there are also many stubbed out dead ends for features and abstractions and explorations that ended up being irrelevant to the final form of the papers.  At this point, there are about 9 different variants of papers based on the outputs and on the comments of reviewers.  There are maybe 5 different small R packages that I have created and quite a bit of R code embedded in R markdown files as well as in miscellaneous R files to support the analysis done in the R markdown files.  
+
+- All of this work is done in subdirectories of a single overall directory (~/D/Projects/ProblemDifficulty), however there are also many other irrelevant directories and files strewn throughout this directory tree that contain things like notes and old snapshots of directories full of code that are no longer useful.  
+
+- What I want to do with all this is to create a few new packages/directories (and corresponding github repositories) that contain only the currently  relevant files and directories and where the code is cleaned up and refactored and contains proper documentation, testing, and code review.  
+
+- However, doing all of that is quite a large project and I only want to bite off a part of it for now, though even that will be a fair amount of work.  What I want to work on right now is cleaning up everything related to the latest paper, which I am preparing for submission.  
+
+- The basic structure of all of the work in this project is that 
+    - I created an R package called "bdpg" containing a method for generating a kind of biodiversity reserve selection optimization problem with a known correct answer but containing input uncertainties, then 
+    - applied various reserve selection methods to each problem, then 
+    - created 6 batches of 500 problems each and ran the reserve selectors on every problem, then
+    - measured the solution cost error and representation shortfall error in each reserve selector's solution, then 
+    - converted the problem structures to bipartite graph form, 
+    - then computed graph measures for each problem's structure, then
+    - used the graph measures as inputs in learning to predict the amount of error in the solutions provided by each of the optimizers.
+    
+- The paper that I have drafted attempts to summarize the methods, feature selection, results, and analysis.  The entire process is complex and difficult to condense.  I have a number of small bugs and possible issues with coding the graphics of the presentation and with the analysis and learning to predict outcomes (e.g., feature selection issues, choice and encoding of learning algorithm, etc.).  I also need to create R code to support making the data available as a usable, online benchmark repository of problems for reserve selectors under uncertainty.  
+
+- Currently, all error prediction values reported in the manuscript and supplementary files are computed using only two of the experiment batches and leave four other batches in reserve for final results.  This is to avoid polluting the final scores with any form of data peeping.  
+    - In the current manuscript, one batch is generally used as the training data and the other batch is used as the test data.  
+    - Notably, I have not dealt with the problem independence issue in these two batches for most of the work I've done in building the manuscript.  It should not be difficult to substitute correctly structured sets for the final runs since it will just be a matter of pointing at the correct data set.  However, there may be some complication of the code because there will be at least four different independent sets out of any one original batch (since there are four APP Wrap problems created from each COR Base problem.)
+
+- I would suggest beginning by reading the Smith-Miles summary .docx file, then the Paper_9 body pdf file to understand the basic idea of what all the underlying experiments and code are trying to serve.  
+- I would then read the Paper 8/9 Rmd file about building the input files to get an idea of how the raw data is structured and how it is transformed into usable input files for the manuscript analysis.  
+
+
+
+
+- So, think carefully and systematically about all of this and suggest a strategy for how best to present decompose the whole tangled mess to claude code so that it will be able to work most effectively.  Explain your reasoning to me.  
+
+- My ultimate goal in this conversation is to simply come up with a strategy for best way of helping Claude help me with this big project of restructuring and streamlining as well as adding some new functionality.  
+- I don't want you to run any code.  I want a suggested plan and  explanation of it first, plus any questions that you need for me to answer to help you.  
+- Once we have gone back and forth on this, then I would like to end up with asking you to write a prompt to use in  Claude code to start this big rebuilding effort.
+
+## Look at Summary directory for a start
+
+Particularly, bdpg_short_summary.possible_smith-miles_revision.docx.  
+
+# Problems I want to fix
+
+## Need to streamline and document code in R_new and in code chunks
+
+## Display of plots does not always have SA over SA_SS in rightmost column
+
+I think that this has something to do with the creation of factors used in ggplot2 input for building the plots.
+
+Figures 5-7 all have the wrong order of subplots in the layout (i.e., SA is over UR_Forward).  Figures 8-11 has the order that I want (i.e., SA is over SA_SS).  
+
+Oddly, the figures shown in the Summary files have SA and SA_SS in the correct place.  I think that they came from Paper 1 and Paper 2 originally.  
+
+## Eric's request for density information in plots
+
+Need to look up exactly what he said.
+
+## Is there a way to sensibly combine solution cost error and representation error into a single aggregate score?
+
+Currently have simple euclidean combination, but doesn't make sense because representation error is bounded at 100% while solution cost error is unbounded and therefore dominates the combined measure.
+
+# Explanation of 
+
+## data directory structures and file naming conventions
+
+### File name components
+
+- UUIDs
+- APP/COR
+- Base/Wrap
+- RS_prob/RS_run
+
+### Examplee directory
+
+- /D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext2/MetadataForDataFilesAndTibs/full_out_tree.txt
+
+
+
+# Need to design robust method for train/test split in final tests
+
+### How to characterize & display results that have probably have 4 test sets in split
+
+Does bootstrapping fit into this?
+
+## How and where might prediction intervals fit into all of this?
+
+Bootstrap them?
+
+
+
+
+
+
+# Set up for a data repository
+
+## Code to walk the tree of experimental results and apply a function
+
+### Write example code to test and use tree walking
+
+- Simple echoing of what dirs are visited
+- Strip unneeded columns from all files to shrink repository?
+- Run nestedness calculations
+
+## Code to upload/download the data?
+
+
+
+
+
+# Need much better documentation of (bipartite) variables that I've used
+
+Need table with good explanations in Methods section?
+
+
+
+
+# Issues with the very deep nesting of lm call and how to simplify it
+
+## Need much simpler and more understandable call structure
+
+- Need to try to recode analysis to use tidyverse ml packages if possible
+- Still need adjusted R2 and rmse on plots
+
+
+
+
+# Issues with feature selection/transformation and correlation
+
+I wanted to do a more systematic exploration and analysis of the data to justify selections of variables (what was the statistician that had the 8(?) step method?)
+
+- Have I done Box-Cox transform correctly?
+- PCA and PLS didn't seem to do anything useful, but did I do them right?
+
+
+
+
+# Need to document everything about how bdpg output files turn into bdpgtext input files
+
+
+
+
+
+
+# bdpg -> bdpg2 refactor and rewrite
+
+## Write and test ensemble optimizer using percentile
+
+## Recode methods to use the R package everyone loves
+
+- Encode and test robust ILP using that package
+- Encode marxan calls using that package too
+
+
+
+

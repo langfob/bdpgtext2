@@ -1,0 +1,1904 @@
+[26078_default_scenario]
+├── [RSprob-APP-Wrap.19810d60-f715-47f2-8ea8-5f3aa5d02ced]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── APP_final_degree_dist.pdf
+│   │   └── APP_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   └── saved.RSprob-APP-Wrap.19810d60-f715-47f2-8ea8-5f3aa5d02ced.rds
+├── [RSprob-APP-Wrap.a3b07601-b6fb-462a-ab3a-9b5a755c7bcf]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── APP_final_degree_dist.pdf
+│   │   └── APP_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   └── saved.RSprob-APP-Wrap.a3b07601-b6fb-462a-ab3a-9b5a755c7bcf.rds
+├── [RSprob-APP-Wrap.b2cd842a-3d9b-42e0-b76a-d6fa0c118b63]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── APP_final_degree_dist.pdf
+│   │   └── APP_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   └── saved.RSprob-APP-Wrap.b2cd842a-3d9b-42e0-b76a-d6fa0c118b63.rds
+├── [RSprob-APP-Wrap.cc1f55f7-0f02-4799-8cbf-508d03a62f60]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── APP_final_degree_dist.pdf
+│   │   └── APP_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   └── saved.RSprob-APP-Wrap.cc1f55f7-0f02-4799-8cbf-508d03a62f60.rds
+├── [RSprob-COR-Base.d51f1d63-d401-4f14-97dd-9263a26a6145]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── COR_final_degree_dist.pdf
+│   │   └── COR_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   └── saved.RSprob-COR-Base.d51f1d63-d401-4f14-97dd-9263a26a6145.rds
+├── [RSprob-COR-Wrap.cd5c873a-f74c-43e9-9a76-0eac08bc282f]
+│   ├── [networks]
+│   │   ├── bg-bipartite_graph_edgelist.txt
+│   │   ├── bgp_proj1_PUs_edgelist.txt
+│   │   ├── bgp_proj2_spp_edgelist.txt
+│   │   ├── bipartite_metrics_from_bipartite_pkg_df.csv
+│   │   └── bipartite_metrics_from_igraph_pkg_df.csv
+│   ├── [plots]
+│   │   ├── COR_final_degree_dist.pdf
+│   │   └── COR_final_rank_abundance_dist.pdf
+│   ├── prob_characteristics.csv
+│   ├── prob_characteristics_with_0_run_id.csv
+│   ├── saved.RSprob-COR-Wrap.cd5c873a-f74c-43e9-9a76-0eac08bc282f.rds
+│   └── wrap_search_outfile.csv
+├── [RSrun_-APP-Wrap-Gurobi.52a00727-997a-4459-b353-91048924d5b8]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Gurobi.52a00727-997a-4459-b353-91048924d5b8.rds
+├── [RSrun_-APP-Wrap-Gurobi.64970f02-9732-45b5-891c-fd58fc1d74c8]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Gurobi.64970f02-9732-45b5-891c-fd58fc1d74c8.rds
+├── [RSrun_-APP-Wrap-Gurobi.afcbe5d9-cabd-4bdc-87f5-34d22a844448]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Gurobi.afcbe5d9-cabd-4bdc-87f5-34d22a844448.rds
+├── [RSrun_-APP-Wrap-Gurobi.cdebc801-be45-41dd-88bb-ed3d19729720]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Gurobi.cdebc801-be45-41dd-88bb-ed3d19729720.rds
+├── [RSrun_-APP-Wrap-Marxan_SA.2122f013-35ef-4fc5-a176-1907e26dc5f1]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Marxan_SA.2122f013-35ef-4fc5-a176-1907e26dc5f1.rds
+├── [RSrun_-APP-Wrap-Marxan_SA.23aa5f8b-1441-4c96-9eaf-2bdae14b280c]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Marxan_SA.23aa5f8b-1441-4c96-9eaf-2bdae14b280c.rds
+├── [RSrun_-APP-Wrap-Marxan_SA.35f18ea6-991d-45c0-bbd3-a45c67bead9f]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Marxan_SA.35f18ea6-991d-45c0-bbd3-a45c67bead9f.rds
+├── [RSrun_-APP-Wrap-Marxan_SA.b8e7f7d6-9979-4d58-bd10-50d70d0ceb84]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-Marxan_SA.b8e7f7d6-9979-4d58-bd10-50d70d0ceb84.rds
+├── [RSrun_-APP-Wrap-SR_Backward.0504e710-e04b-4ffb-8ce2-d175b24f4104]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Backward.0504e710-e04b-4ffb-8ce2-d175b24f4104.rds
+├── [RSrun_-APP-Wrap-SR_Backward.56db73a4-84fc-4668-9d4e-0e6cd4691f4b]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Backward.56db73a4-84fc-4668-9d4e-0e6cd4691f4b.rds
+├── [RSrun_-APP-Wrap-SR_Backward.92da2554-f36b-4fdb-aea7-ca582ff6491e]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Backward.92da2554-f36b-4fdb-aea7-ca582ff6491e.rds
+├── [RSrun_-APP-Wrap-SR_Backward.cc91026a-b455-4e83-aa86-df1ad8245451]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Backward.cc91026a-b455-4e83-aa86-df1ad8245451.rds
+├── [RSrun_-APP-Wrap-SR_Forward.3f72728d-9be6-49fe-813c-cb11fcfad0c3]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Forward.3f72728d-9be6-49fe-813c-cb11fcfad0c3.rds
+├── [RSrun_-APP-Wrap-SR_Forward.8e587f4a-4b99-4c82-b855-10a7c0447789]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Forward.8e587f4a-4b99-4c82-b855-10a7c0447789.rds
+├── [RSrun_-APP-Wrap-SR_Forward.e5070e8b-4641-4775-bb00-e1767871db04]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Forward.e5070e8b-4641-4775-bb00-e1767871db04.rds
+├── [RSrun_-APP-Wrap-SR_Forward.ee0ec9a0-9a22-436c-8ca7-37c4f8f5fc29]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-SR_Forward.ee0ec9a0-9a22-436c-8ca7-37c4f8f5fc29.rds
+├── [RSrun_-APP-Wrap-UR_Backward.2d4415c2-b86e-4d79-89c2-4c107992faf3]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Backward.2d4415c2-b86e-4d79-89c2-4c107992faf3.rds
+├── [RSrun_-APP-Wrap-UR_Backward.51049ecd-887e-4475-970c-d104bb2d4663]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Backward.51049ecd-887e-4475-970c-d104bb2d4663.rds
+├── [RSrun_-APP-Wrap-UR_Backward.a154ba5a-3cb9-4117-8a69-af130eb42800]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Backward.a154ba5a-3cb9-4117-8a69-af130eb42800.rds
+├── [RSrun_-APP-Wrap-UR_Backward.d74ae6b0-84f9-4bd2-b710-4f6bf8fa0fc7]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Backward.d74ae6b0-84f9-4bd2-b710-4f6bf8fa0fc7.rds
+├── [RSrun_-APP-Wrap-UR_Forward.123a9787-00a9-44dc-840b-f0d23a3e4bd7]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Forward.123a9787-00a9-44dc-840b-f0d23a3e4bd7.rds
+├── [RSrun_-APP-Wrap-UR_Forward.ab3c5e09-f61b-4c5b-8cbb-ceb841c15b38]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Forward.ab3c5e09-f61b-4c5b-8cbb-ceb841c15b38.rds
+├── [RSrun_-APP-Wrap-UR_Forward.e401b13b-5cba-4f25-9157-73cda4f5a1ba]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Forward.e401b13b-5cba-4f25-9157-73cda4f5a1ba.rds
+├── [RSrun_-APP-Wrap-UR_Forward.f7ef5b54-2577-4c7c-bf65-fbd102eafaaf]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-UR_Forward.f7ef5b54-2577-4c7c-bf65-fbd102eafaaf.rds
+├── [RSrun_-APP-Wrap-ZL_Backward.30254d7d-30fd-401a-abfe-8e119d76c9f7]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Backward.30254d7d-30fd-401a-abfe-8e119d76c9f7.rds
+├── [RSrun_-APP-Wrap-ZL_Backward.55c4fbae-dca4-42d0-9d93-7e3db6614697]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Backward.55c4fbae-dca4-42d0-9d93-7e3db6614697.rds
+├── [RSrun_-APP-Wrap-ZL_Backward.94ca89ba-172c-480e-bca4-97b09b4612e0]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Backward.94ca89ba-172c-480e-bca4-97b09b4612e0.rds
+├── [RSrun_-APP-Wrap-ZL_Backward.958036ef-9636-4f51-af3c-c5323a5c5386]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Backward.958036ef-9636-4f51-af3c-c5323a5c5386.rds
+├── [RSrun_-APP-Wrap-ZL_Forward.06ed3739-89d0-49b5-a64f-bbf7fdee79de]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Forward.06ed3739-89d0-49b5-a64f-bbf7fdee79de.rds
+├── [RSrun_-APP-Wrap-ZL_Forward.3719bfd8-2d4b-4e16-b4de-e923ce8b9194]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Forward.3719bfd8-2d4b-4e16-b4de-e923ce8b9194.rds
+├── [RSrun_-APP-Wrap-ZL_Forward.6986be61-ded9-48f8-af5c-ca52bfb39881]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Forward.6986be61-ded9-48f8-af5c-ca52bfb39881.rds
+├── [RSrun_-APP-Wrap-ZL_Forward.b852b386-5688-4802-b9c8-5602785d11ee]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-APP-Wrap-ZL_Forward.b852b386-5688-4802-b9c8-5602785d11ee.rds
+├── [RSrun_-COR-Base-Gurobi.b742df95-d0e8-4145-844a-f3316065c9fb]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-Gurobi.b742df95-d0e8-4145-844a-f3316065c9fb.rds
+├── [RSrun_-COR-Base-Marxan_SA.d0f327e8-65d9-4d3e-9122-78dc03b255ec]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-Marxan_SA.d0f327e8-65d9-4d3e-9122-78dc03b255ec.rds
+├── [RSrun_-COR-Base-SR_Backward.15553f4c-0216-49a6-9c42-2f5aa3f110b2]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-SR_Backward.15553f4c-0216-49a6-9c42-2f5aa3f110b2.rds
+├── [RSrun_-COR-Base-SR_Forward.2e080da5-a25a-4c39-bd12-7e455405f043]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-SR_Forward.2e080da5-a25a-4c39-bd12-7e455405f043.rds
+├── [RSrun_-COR-Base-UR_Backward.2fb5e2a1-38f2-4e04-82c8-3d180dd78d66]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-UR_Backward.2fb5e2a1-38f2-4e04-82c8-3d180dd78d66.rds
+├── [RSrun_-COR-Base-UR_Forward.5d9be6ea-e459-4224-b491-0e7aec040a86]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-UR_Forward.5d9be6ea-e459-4224-b491-0e7aec040a86.rds
+├── [RSrun_-COR-Base-ZL_Backward.7221957b-598e-4af3-bc05-d444a717522b]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-ZL_Backward.7221957b-598e-4af3-bc05-d444a717522b.rds
+├── [RSrun_-COR-Base-ZL_Forward.48a0c3f2-e400-4f71-bdc0-fe562a9ae86d]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Base-ZL_Forward.48a0c3f2-e400-4f71-bdc0-fe562a9ae86d.rds
+├── [RSrun_-COR-Wrap-Gurobi.265af0a7-703d-401f-ad74-e0df17f90977]
+│   ├── [input]
+│   │   ├── gurobi_model.rds
+│   │   └── gurobi_params.rds
+│   ├── [output]
+│   │   ├── gurobi_controls.rds
+│   │   └── solution_PU_IDs.rds
+│   ├── [plots]
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-Gurobi.265af0a7-703d-401f-ad74-e0df17f90977.rds
+├── [RSrun_-COR-Wrap-Marxan_SA.b950ceff-50ed-4995-a1ef-12b5144b4bf8]
+│   ├── [input]
+│   │   ├── pu.dat
+│   │   ├── puvspr.dat
+│   │   └── spec.dat
+│   ├── input.dat
+│   ├── [output]
+│   │   ├── output_best.csv
+│   │   ├── output_log.dat
+│   │   ├── output_mv00001.csv
+│   │   ├── output_mv00002.csv
+│   │   ├── output_mv00003.csv
+│   │   ├── output_mv00004.csv
+│   │   ├── output_mv00005.csv
+│   │   ├── output_mv00006.csv
+│   │   ├── output_mv00007.csv
+│   │   ├── output_mv00008.csv
+│   │   ├── output_mv00009.csv
+│   │   ├── output_mv00010.csv
+│   │   ├── output_mv00011.csv
+│   │   ├── output_mv00012.csv
+│   │   ├── output_mv00013.csv
+│   │   ├── output_mv00014.csv
+│   │   ├── output_mv00015.csv
+│   │   ├── output_mv00016.csv
+│   │   ├── output_mv00017.csv
+│   │   ├── output_mv00018.csv
+│   │   ├── output_mv00019.csv
+│   │   ├── output_mv00020.csv
+│   │   ├── output_mv00021.csv
+│   │   ├── output_mv00022.csv
+│   │   ├── output_mv00023.csv
+│   │   ├── output_mv00024.csv
+│   │   ├── output_mv00025.csv
+│   │   ├── output_mv00026.csv
+│   │   ├── output_mv00027.csv
+│   │   ├── output_mv00028.csv
+│   │   ├── output_mv00029.csv
+│   │   ├── output_mv00030.csv
+│   │   ├── output_mv00031.csv
+│   │   ├── output_mv00032.csv
+│   │   ├── output_mv00033.csv
+│   │   ├── output_mv00034.csv
+│   │   ├── output_mv00035.csv
+│   │   ├── output_mv00036.csv
+│   │   ├── output_mv00037.csv
+│   │   ├── output_mv00038.csv
+│   │   ├── output_mv00039.csv
+│   │   ├── output_mv00040.csv
+│   │   ├── output_mv00041.csv
+│   │   ├── output_mv00042.csv
+│   │   ├── output_mv00043.csv
+│   │   ├── output_mv00044.csv
+│   │   ├── output_mv00045.csv
+│   │   ├── output_mv00046.csv
+│   │   ├── output_mv00047.csv
+│   │   ├── output_mv00048.csv
+│   │   ├── output_mv00049.csv
+│   │   ├── output_mv00050.csv
+│   │   ├── output_mv00051.csv
+│   │   ├── output_mv00052.csv
+│   │   ├── output_mv00053.csv
+│   │   ├── output_mv00054.csv
+│   │   ├── output_mv00055.csv
+│   │   ├── output_mv00056.csv
+│   │   ├── output_mv00057.csv
+│   │   ├── output_mv00058.csv
+│   │   ├── output_mv00059.csv
+│   │   ├── output_mv00060.csv
+│   │   ├── output_mv00061.csv
+│   │   ├── output_mv00062.csv
+│   │   ├── output_mv00063.csv
+│   │   ├── output_mv00064.csv
+│   │   ├── output_mv00065.csv
+│   │   ├── output_mv00066.csv
+│   │   ├── output_mv00067.csv
+│   │   ├── output_mv00068.csv
+│   │   ├── output_mv00069.csv
+│   │   ├── output_mv00070.csv
+│   │   ├── output_mv00071.csv
+│   │   ├── output_mv00072.csv
+│   │   ├── output_mv00073.csv
+│   │   ├── output_mv00074.csv
+│   │   ├── output_mv00075.csv
+│   │   ├── output_mv00076.csv
+│   │   ├── output_mv00077.csv
+│   │   ├── output_mv00078.csv
+│   │   ├── output_mv00079.csv
+│   │   ├── output_mv00080.csv
+│   │   ├── output_mv00081.csv
+│   │   ├── output_mv00082.csv
+│   │   ├── output_mv00083.csv
+│   │   ├── output_mv00084.csv
+│   │   ├── output_mv00085.csv
+│   │   ├── output_mv00086.csv
+│   │   ├── output_mv00087.csv
+│   │   ├── output_mv00088.csv
+│   │   ├── output_mv00089.csv
+│   │   ├── output_mv00090.csv
+│   │   ├── output_mv00091.csv
+│   │   ├── output_mv00092.csv
+│   │   ├── output_mv00093.csv
+│   │   ├── output_mv00094.csv
+│   │   ├── output_mv00095.csv
+│   │   ├── output_mv00096.csv
+│   │   ├── output_mv00097.csv
+│   │   ├── output_mv00098.csv
+│   │   ├── output_mv00099.csv
+│   │   ├── output_mv00100.csv
+│   │   ├── output_mvbest.csv
+│   │   ├── output_penalty.csv
+│   │   ├── output_penalty_planning_units.csv
+│   │   ├── output_r00001.csv
+│   │   ├── output_r00002.csv
+│   │   ├── output_r00003.csv
+│   │   ├── output_r00004.csv
+│   │   ├── output_r00005.csv
+│   │   ├── output_r00006.csv
+│   │   ├── output_r00007.csv
+│   │   ├── output_r00008.csv
+│   │   ├── output_r00009.csv
+│   │   ├── output_r00010.csv
+│   │   ├── output_r00011.csv
+│   │   ├── output_r00012.csv
+│   │   ├── output_r00013.csv
+│   │   ├── output_r00014.csv
+│   │   ├── output_r00015.csv
+│   │   ├── output_r00016.csv
+│   │   ├── output_r00017.csv
+│   │   ├── output_r00018.csv
+│   │   ├── output_r00019.csv
+│   │   ├── output_r00020.csv
+│   │   ├── output_r00021.csv
+│   │   ├── output_r00022.csv
+│   │   ├── output_r00023.csv
+│   │   ├── output_r00024.csv
+│   │   ├── output_r00025.csv
+│   │   ├── output_r00026.csv
+│   │   ├── output_r00027.csv
+│   │   ├── output_r00028.csv
+│   │   ├── output_r00029.csv
+│   │   ├── output_r00030.csv
+│   │   ├── output_r00031.csv
+│   │   ├── output_r00032.csv
+│   │   ├── output_r00033.csv
+│   │   ├── output_r00034.csv
+│   │   ├── output_r00035.csv
+│   │   ├── output_r00036.csv
+│   │   ├── output_r00037.csv
+│   │   ├── output_r00038.csv
+│   │   ├── output_r00039.csv
+│   │   ├── output_r00040.csv
+│   │   ├── output_r00041.csv
+│   │   ├── output_r00042.csv
+│   │   ├── output_r00043.csv
+│   │   ├── output_r00044.csv
+│   │   ├── output_r00045.csv
+│   │   ├── output_r00046.csv
+│   │   ├── output_r00047.csv
+│   │   ├── output_r00048.csv
+│   │   ├── output_r00049.csv
+│   │   ├── output_r00050.csv
+│   │   ├── output_r00051.csv
+│   │   ├── output_r00052.csv
+│   │   ├── output_r00053.csv
+│   │   ├── output_r00054.csv
+│   │   ├── output_r00055.csv
+│   │   ├── output_r00056.csv
+│   │   ├── output_r00057.csv
+│   │   ├── output_r00058.csv
+│   │   ├── output_r00059.csv
+│   │   ├── output_r00060.csv
+│   │   ├── output_r00061.csv
+│   │   ├── output_r00062.csv
+│   │   ├── output_r00063.csv
+│   │   ├── output_r00064.csv
+│   │   ├── output_r00065.csv
+│   │   ├── output_r00066.csv
+│   │   ├── output_r00067.csv
+│   │   ├── output_r00068.csv
+│   │   ├── output_r00069.csv
+│   │   ├── output_r00070.csv
+│   │   ├── output_r00071.csv
+│   │   ├── output_r00072.csv
+│   │   ├── output_r00073.csv
+│   │   ├── output_r00074.csv
+│   │   ├── output_r00075.csv
+│   │   ├── output_r00076.csv
+│   │   ├── output_r00077.csv
+│   │   ├── output_r00078.csv
+│   │   ├── output_r00079.csv
+│   │   ├── output_r00080.csv
+│   │   ├── output_r00081.csv
+│   │   ├── output_r00082.csv
+│   │   ├── output_r00083.csv
+│   │   ├── output_r00084.csv
+│   │   ├── output_r00085.csv
+│   │   ├── output_r00086.csv
+│   │   ├── output_r00087.csv
+│   │   ├── output_r00088.csv
+│   │   ├── output_r00089.csv
+│   │   ├── output_r00090.csv
+│   │   ├── output_r00091.csv
+│   │   ├── output_r00092.csv
+│   │   ├── output_r00093.csv
+│   │   ├── output_r00094.csv
+│   │   ├── output_r00095.csv
+│   │   ├── output_r00096.csv
+│   │   ├── output_r00097.csv
+│   │   ├── output_r00098.csv
+│   │   ├── output_r00099.csv
+│   │   ├── output_r00100.csv
+│   │   ├── output_sen.dat
+│   │   ├── output_solutionsmatrix.csv
+│   │   ├── output_ssoln.csv
+│   │   └── output_sum.csv
+│   ├── [plots]
+│   │   ├── app_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   ├── app_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_all_solutions_frac_rep_vs_raw_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_over_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_frac_optimal_cost.pdf
+│   │   ├── cor_marxan_ssoln_frac_rep_vs_normalized_cost.pdf
+│   │   └── cor_marxan_ssoln_frac_rep_vs_raw_cost.pdf
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_summed_solution.csv
+│   ├── rsrun_results_summed_solution_with_0_run_id.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-Marxan_SA.b950ceff-50ed-4995-a1ef-12b5144b4bf8.rds
+├── [RSrun_-COR-Wrap-SR_Backward.d411f94f-b5e9-4710-9a79-1c6476dc9808]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-SR_Backward.d411f94f-b5e9-4710-9a79-1c6476dc9808.rds
+├── [RSrun_-COR-Wrap-SR_Forward.4d2da451-f704-43d6-917d-d880f4e755b7]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-SR_Forward.4d2da451-f704-43d6-917d-d880f4e755b7.rds
+├── [RSrun_-COR-Wrap-UR_Backward.93f91773-b9b2-40c2-b24a-da9d9c9d8c29]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-UR_Backward.93f91773-b9b2-40c2-b24a-da9d9c9d8c29.rds
+├── [RSrun_-COR-Wrap-UR_Forward.8c4e4d9a-43db-421e-9b47-7d226a1c4bad]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-UR_Forward.8c4e4d9a-43db-421e-9b47-7d226a1c4bad.rds
+├── [RSrun_-COR-Wrap-ZL_Backward.5869ffd0-1fdd-4b3a-b880-78abce34069d]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-ZL_Backward.5869ffd0-1fdd-4b3a-b880-78abce34069d.rds
+├── [RSrun_-COR-Wrap-ZL_Forward.b67350f3-b3cb-4a60-b0d5-41f56e704845]
+│   ├── [input]
+│   │   └── input_params.rds
+│   ├── [output]
+│   │   └── results.rds
+│   ├── [plots]
+│   ├── repro.rds
+│   ├── rsrun_results.csv
+│   ├── rsrun_results_with_0_run_id.csv
+│   └── saved.RSrun_-COR-Wrap-ZL_Forward.b67350f3-b3cb-4a60-b0d5-41f56e704845.rds
+└── [metadata]
+    ├── R_sessionInfo.txt
+    ├── libraries.csv
+    ├── logging.log
+    ├── parameters.R
+    └── parameters.yaml
