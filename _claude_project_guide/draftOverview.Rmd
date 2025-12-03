@@ -58,8 +58,8 @@ knitr::opts_chunk$set(echo = TRUE)
 - The basic structure of all of the work in this project is that 
     - I created an R package called "bdpg" containing a method for generating a kind of biodiversity reserve selection optimization problem with a known correct answer but containing input uncertainties, then 
     - applied various reserve selection methods to each problem, then 
-    - created thousands of problems and ran the reserve selectors on each problem, then
-    - measured the error in each reserve selector's solution, then 
+    - created 6 batches of 500 problems each and ran the reserve selectors on every problem, then
+    - measured the solution cost error and representation shortfall error in each reserve selector's solution, then 
     - converted the problem structures to bipartite graph form, 
     - then computed graph measures for each problem's structure, then
     - used the graph measures as inputs in learning to predict the amount of error in the solutions provided by each of the optimizers.
