@@ -697,72 +697,84 @@ p3_working_test_df__before_any_preprocessing =
 filtered_full_initial_exp_tib <- filtered_full_initial_exp_tib %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 #--------------------  
 
 p2_app_wrap_tib <- p2_app_wrap_tib %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 #--------------------  
 
 p3_working_train_df <- p3_working_train_df %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 
 
 p3_working_test_df <- p3_working_test_df %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 #--------------------  
 
 p3_train_aux_df <- p3_train_aux_df %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 
 
 p3_test_aux_df <- p3_test_aux_df %>%
   mutate(rs_method_name = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Gurobi", "ILP", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
   mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA", "SA", rs_method_name)) %>%
-  
+
   mutate(rs_method_name = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
-  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name))
+  mutate(rs_method_name_fac = ifelse(rs_method_name == "Marxan_SA_SS", "SA_SS", rs_method_name)) %>%
+
+  mutate(rs_method_name_fac = convert_rs_method_name_to_ordered_factor(rs_method_name))
 
 #--------------------  
 
