@@ -107,6 +107,7 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
                                           alpha_level = 0.1,
 
                                           add_axis_histograms = FALSE,
+                                          add_density_contours = FALSE,
 
                                           gg_verbose = FALSE
                                           )
@@ -433,6 +434,25 @@ base_plot =
                         size = 0.5,
                         alpha = 0.5,
                         inherit.aes = FALSE)
+        }
+
+    #  Add 2D density contours to show point concentration patterns
+    #  Contours overlay directly on scatter plot, computed per-facet automatically by ggplot2
+    #  Shows joint density in both x and y dimensions (complementary to histogram's marginal density)
+
+    if (add_density_contours)
+        {
+        #  Add 2D density contours using kernel density estimation
+        #  ggplot2 automatically computes density separately for each facet
+        #  Using high contrast styling to make contours visible among dense scatter points
+        base_plot =
+            base_plot +
+            geom_density_2d(aes(x = !!x_var, y = !!y_var),
+                           color = "black",
+                           alpha = 0.8,
+                           bins = 6,
+                           size = 0.3,
+                           inherit.aes = FALSE)
         }
 
     return (base_plot)

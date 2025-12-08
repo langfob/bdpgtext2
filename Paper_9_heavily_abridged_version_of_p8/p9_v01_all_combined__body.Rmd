@@ -1517,7 +1517,8 @@ ggplot_faceted_with_mag_rays (rs_method_names_list,
                               plot_rays = TRUE,
                               plot_neg_rays_too = TRUE,
 
-                              add_axis_histograms = TRUE
+                              add_axis_histograms = TRUE,
+                              add_density_contours = FALSE
                                                    ) +
 
                               background_grid (major = c("y"),
@@ -1554,7 +1555,8 @@ ggplot_faceted_with_mag_rays (rs_method_names_list,
         x_axis_label = "Input Error",
         y_axis_label = "Representation Shortfall",
 
-        add_axis_histograms = FALSE
+        add_axis_histograms = FALSE,
+        add_density_contours = FALSE
                              ) + 
   
   background_grid (major = c("y"),
@@ -1601,7 +1603,8 @@ ggplot_faceted_with_mag_rays (rs_method_names_list,
                               plot_rays = FALSE,
                               plot_neg_rays_too = FALSE,
 
-                              add_axis_histograms = TRUE
+                              add_axis_histograms = TRUE,
+                              add_density_contours = FALSE
                                                    ) + 
                         
                               background_grid (major = c("y"), 
