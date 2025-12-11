@@ -107,6 +107,8 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
                                           alpha_level = 0.1,
 
                                           add_axis_histograms = FALSE,
+                                          add_x_histogram = FALSE,
+                                          add_y_histogram = FALSE,
 
                                           gg_verbose = FALSE
                                           )
@@ -114,7 +116,13 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
     x_var     = ensym (x_var)        #enquo (x_var)
     y_var     = ensym (y_var)        #enquo (y_var)
     color_var = ensym (color_var)    #enquo (color_var)                #  rsp_combined_err_label
-    
+
+    #  Backward compatibility: if add_axis_histograms is TRUE, map it to add_y_histogram
+    #  This preserves existing behavior for Figures 5-7
+    if (add_axis_histograms && !add_y_histogram) {
+        add_y_histogram = TRUE
+    }
+
     facet_formula = as.formula (paste0 ("~ ", facet_var))
     num_facets = length (unique (sorted_msa_tib [[facet_var]]))
     
@@ -207,18 +215,16 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
 # coord_cartesian (xlim = c(x_min, x_max)) +     #, xlim = c(0, 50))
 # coord_cartesian (ylim = c(y_min, y_max)) +     #, xlim = c(0, 50))
 
-    #  If adding axis histograms, extend x-axis slightly negative to allow
-    #  histogram bars to reach back to the y-axis edge
+    #  If adding axis histograms, extend axes slightly negative to allow
+    #  histogram bars to reach back to the axis edges
+    #  Y-axis histogram needs x-axis extension (horizontal bars on left)
+    #  X-axis histogram needs y-axis extension (vertical bars on bottom)
     {
-    if (add_axis_histograms)
-        {
-        # Extend x_min by the same amount as histogram intrusion (8%)
-        hist_extension = 0.08 * (x_max - x_min)
-        coord_cartesian (xlim = c(x_min - hist_extension, x_max), ylim = c(y_min, y_max))
-        } else
-        {
-        coord_cartesian (xlim = c(x_min, x_max), ylim = c(y_min, y_max))
-        }
+    x_hist_extension = if (add_y_histogram) 0.08 * (x_max - x_min) else 0
+    y_hist_extension = if (add_x_histogram) 0.08 * (y_max - y_min) else 0
+
+    coord_cartesian (xlim = c(x_min - x_hist_extension, x_max),
+                     ylim = c(y_min - y_hist_extension, y_max))
     } +
       
       
@@ -346,93 +352,184 @@ base_plot =
             }
         }
 
-    #  Add histogram-lines along left axis to show marginal density distribution
-    #  of the y variable. Uses thin horizontal lines with length encoding bin count,
-    #  providing density information without obscuring the scatter plot.
+    #  Add histogram-lines along axes to show marginal density distributions.
+    #  Y-axis histogram: horizontal lines on left side showing distribution of y variable
+    #  X-axis histogram: vertical lines on bottom showing distribution of x variable
+    #  Uses thin lines with length encoding bin count, providing density info without obscuring plot.
 
-    if (add_axis_histograms)
+    if (add_y_histogram || add_x_histogram)
         {
-        #  Calculate histogram bins for y variable (left axis)
+        #  Calculate histogram bins for both axes
         #  IMPORTANT: Calculate separately for each facet so each panel shows its own distribution
-        y_breaks = seq(y_min, y_max, length.out = 21)  # 20 bins for y-axis
-        max_y_intrusion = 0.08 * (x_max - x_min)
+
+        #  Y-axis histogram setup (if enabled)
+        if (add_y_histogram) {
+            y_breaks = seq(y_min, y_max, length.out = 21)  # 20 bins for y-axis
+            max_y_intrusion = 0.08 * (x_max - x_min)
+        }
+
+        #  X-axis histogram setup (if enabled)
+        if (add_x_histogram) {
+            x_breaks = seq(x_min, x_max, length.out = 21)  # 20 bins for x-axis
+            max_x_intrusion = 0.08 * (y_max - y_min)
+        }
 
         #  Initialize empty data frames to accumulate results
         y_hist_df = data.frame()
-        spine_df = data.frame()
+        y_spine_df = data.frame()
+        x_hist_df = data.frame()
+        x_spine_df = data.frame()
 
         #  Loop through each facet IN THE CORRECT ORDER (using rs_method_names_list)
         #  This ensures histogram data frames have the same factor ordering as the main plot
         for (facet_value in rs_method_names_list)
             {
-            #  Filter data for this facet only
+            #  Filter data for this facet
             facet_data = sorted_msa_tib %>%
-                filter(!!sym(facet_var) == facet_value) %>%
-                pull(!!y_var)
+                filter(!!sym(facet_var) == facet_value)
 
             #  Skip if no data for this facet (shouldn't happen, but be safe)
-            if (length(facet_data) == 0) next
+            if (nrow(facet_data) == 0) next
 
-            #  Calculate histogram for this facet
-            y_hist = hist(facet_data, breaks = y_breaks, plot = FALSE)
-            y_counts = y_hist$counts
-            y_mids = y_hist$mids
+            #  ===== Y-AXIS HISTOGRAM (horizontal bars on left) =====
+            if (add_y_histogram) {
+                #  Extract y variable data for this facet
+                facet_y_data = facet_data %>% pull(!!y_var)
 
-            #  Normalize bar lengths: tallest bar in THIS facet extends full 8%
-            #  Handle case where all counts are zero (max would be 0, causing division by zero)
-            max_count = max(y_counts)
-            if (max_count > 0) {
-                y_normalized = (y_counts / max_count) * max_y_intrusion
-            } else {
-                y_normalized = rep(0, length(y_counts))  # All bars have zero length
+                #  Calculate histogram for this facet
+                y_hist = hist(facet_y_data, breaks = y_breaks, plot = FALSE)
+                y_counts = y_hist$counts
+                y_mids = y_hist$mids
+
+                #  Normalize bar lengths: tallest bar in THIS facet extends full 8%
+                #  Handle case where all counts are zero (max would be 0, causing division by zero)
+                max_count = max(y_counts)
+                if (max_count > 0) {
+                    y_normalized = (y_counts / max_count) * max_y_intrusion
+                } else {
+                    y_normalized = rep(0, length(y_counts))  # All bars have zero length
+                }
+
+                #  Create histogram bar data for this facet
+                facet_y_hist_df = data.frame(
+                    y = y_mids,
+                    x_start = x_min - max_y_intrusion,
+                    x_end = x_min - max_y_intrusion + y_normalized
+                )
+                facet_y_hist_df[[facet_var]] = facet_value  # Add facet identifier
+
+                #  Create spine line data for this facet
+                facet_y_spine_df = data.frame(
+                    x = x_min - max_y_intrusion,
+                    y_start = min(y_mids),
+                    y_end = max(y_mids)
+                )
+                facet_y_spine_df[[facet_var]] = facet_value  # Add facet identifier
+
+                #  Append to accumulated data frames
+                y_hist_df = rbind(y_hist_df, facet_y_hist_df)
+                y_spine_df = rbind(y_spine_df, facet_y_spine_df)
             }
 
-            #  Create histogram bar data for this facet
-            facet_hist_df = data.frame(
-                y = y_mids,
-                x_start = x_min - max_y_intrusion,
-                x_end = x_min - max_y_intrusion + y_normalized
-            )
-            facet_hist_df[[facet_var]] = facet_value  # Add facet identifier
+            #  ===== X-AXIS HISTOGRAM (vertical bars on bottom) =====
+            if (add_x_histogram) {
+                #  Extract x variable data for this facet
+                facet_x_data = facet_data %>% pull(!!x_var)
 
-            #  Create spine line data for this facet
-            facet_spine_df = data.frame(
-                x = x_min - max_y_intrusion,
-                y_start = min(y_mids),
-                y_end = max(y_mids)
-            )
-            facet_spine_df[[facet_var]] = facet_value  # Add facet identifier
+                #  Calculate histogram for this facet
+                x_hist = hist(facet_x_data, breaks = x_breaks, plot = FALSE)
+                x_counts = x_hist$counts
+                x_mids = x_hist$mids
 
-            #  Append to accumulated data frames
-            y_hist_df = rbind(y_hist_df, facet_hist_df)
-            spine_df = rbind(spine_df, facet_spine_df)
+                #  Normalize bar lengths: tallest bar in THIS facet extends full 8%
+                #  Handle case where all counts are zero (max would be 0, causing division by zero)
+                max_count = max(x_counts)
+                if (max_count > 0) {
+                    x_normalized = (x_counts / max_count) * max_x_intrusion
+                } else {
+                    x_normalized = rep(0, length(x_counts))  # All bars have zero length
+                }
+
+                #  Create histogram bar data for this facet (vertical bars)
+                facet_x_hist_df = data.frame(
+                    x = x_mids,
+                    y_start = y_min - max_x_intrusion,
+                    y_end = y_min - max_x_intrusion + x_normalized
+                )
+                facet_x_hist_df[[facet_var]] = facet_value  # Add facet identifier
+
+                #  Create spine line data for this facet (horizontal line at bottom)
+                facet_x_spine_df = data.frame(
+                    y = y_min - max_x_intrusion,
+                    x_start = min(x_mids),
+                    x_end = max(x_mids)
+                )
+                facet_x_spine_df[[facet_var]] = facet_value  # Add facet identifier
+
+                #  Append to accumulated data frames
+                x_hist_df = rbind(x_hist_df, facet_x_hist_df)
+                x_spine_df = rbind(x_spine_df, facet_x_spine_df)
+            }
             }
 
         #  Convert facet column to factor with correct level ordering
         #  This ensures ggplot respects the rs_method_names_list ordering
-        y_hist_df[[facet_var]] = factor(y_hist_df[[facet_var]],
-                                         levels = rs_method_names_list,
-                                         ordered = TRUE)
-        spine_df[[facet_var]] = factor(spine_df[[facet_var]],
-                                        levels = rs_method_names_list,
-                                        ordered = TRUE)
+        if (add_y_histogram) {
+            y_hist_df[[facet_var]] = factor(y_hist_df[[facet_var]],
+                                            levels = rs_method_names_list,
+                                            ordered = TRUE)
+            y_spine_df[[facet_var]] = factor(y_spine_df[[facet_var]],
+                                             levels = rs_method_names_list,
+                                             ordered = TRUE)
+        }
 
-        #  Add histogram bars and spine line to plot
+        if (add_x_histogram) {
+            x_hist_df[[facet_var]] = factor(x_hist_df[[facet_var]],
+                                            levels = rs_method_names_list,
+                                            ordered = TRUE)
+            x_spine_df[[facet_var]] = factor(x_spine_df[[facet_var]],
+                                             levels = rs_method_names_list,
+                                             ordered = TRUE)
+        }
+
+        #  Add histogram bars and spine lines to plot
         #  Using gray color and lower alpha for subtlety - provides density info without distraction
-        base_plot =
-            base_plot +
-            geom_segment(data = y_hist_df,
-                        aes(x = x_start, xend = x_end, y = y, yend = y),
-                        color = "gray50",
-                        size = 0.4,
-                        alpha = 0.5,
-                        inherit.aes = FALSE) +
-            geom_segment(data = spine_df,
-                        aes(x = x, xend = x, y = y_start, yend = y_end),
-                        color = "gray50",
-                        size = 0.5,
-                        alpha = 0.5,
-                        inherit.aes = FALSE)
+
+        #  Y-axis histogram (horizontal bars on left)
+        if (add_y_histogram) {
+            base_plot =
+                base_plot +
+                geom_segment(data = y_hist_df,
+                            aes(x = x_start, xend = x_end, y = y, yend = y),
+                            color = "gray50",
+                            size = 0.4,
+                            alpha = 0.5,
+                            inherit.aes = FALSE) +
+                geom_segment(data = y_spine_df,
+                            aes(x = x, xend = x, y = y_start, yend = y_end),
+                            color = "gray50",
+                            size = 0.5,
+                            alpha = 0.5,
+                            inherit.aes = FALSE)
+        }
+
+        #  X-axis histogram (vertical bars on bottom)
+        if (add_x_histogram) {
+            base_plot =
+                base_plot +
+                geom_segment(data = x_hist_df,
+                            aes(x = x, xend = x, y = y_start, yend = y_end),
+                            color = "gray50",
+                            size = 0.4,
+                            alpha = 0.5,
+                            inherit.aes = FALSE) +
+                geom_segment(data = x_spine_df,
+                            aes(x = x_start, xend = x_end, y = y, yend = y),
+                            color = "gray50",
+                            size = 0.5,
+                            alpha = 0.5,
+                            inherit.aes = FALSE)
+        }
         }
 
     return (base_plot)

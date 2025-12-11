@@ -852,10 +852,11 @@ ggtitle (paste0 (
                                               legend.direction = "vertical") } + 
                         
                 { if (num_facets == 4) theme (legend.position = "right",
-                                              legend.direction = "vertical") } + 
-      
-{ if (!is.na (x_min_on_plot) | !is.na(x_max_on_plot)) xlim (x_min_on_plot, x_max_on_plot) } + 
-{ if (!is.na (y_min_on_plot) | !is.na(y_max_on_plot)) ylim (y_min_on_plot, y_max_on_plot) } + 
+                                              legend.direction = "vertical") } +
+
+#BTL 2025-12-09: REMOVED xlim()/ylim() calls - moved limit logic to coord_cartesian() to fix histogram rendering
+# { if (!is.na (x_min_on_plot) | !is.na(x_max_on_plot)) xlim (x_min_on_plot, x_max_on_plot) } +
+# { if (!is.na (y_min_on_plot) | !is.na(y_max_on_plot)) ylim (y_min_on_plot, y_max_on_plot) } +
 
                     #  Symbols on the plot itself are small and semi-transparent, 
                     #  but in the legend that makes them nearly invisible.
@@ -872,25 +873,268 @@ ggtitle (paste0 (
                                                          , fill = NA
                                                          ))) +
 
-                geom_text (aes (x, y, label = R2_label), 
-                           data=locs_R2, 
-                           family="Times", fontface="italic", #lineheight=.03, 
-                           size=3, hjust = 0, 
-                           parse = T) + 
+                # BTL 2025-12-09: Use Inf coordinates for panel-relative positioning
+                # This ensures labels appear at same physical location in all facets/figures
+                geom_text (aes (x = -Inf, y = Inf, label = R2_label),
+                           data=locs_R2,
+                           family="Times", fontface="italic",
+                           size=3,
+                           hjust = -0.315,  #-0.1,  # Offset right from left edge
+                           vjust = 1.75,   # Offset down from top edge
+                           parse = TRUE) +
 
-                geom_text (aes (x, y, label = rmse_label), 
-                           data=locs_rmse, 
-                           family="Times", fontface="italic", #lineheight=.03, 
-                           size=3, hjust = 0, 
-                           parse = T) + 
-      
-###2025 07 25 - BTL###                { if (pred_value_name_display_str == "Cost Error") ylim (NA, 1.5) }
-                { if (pred_value_name_display_str == "Solution Cost Error") ylim (NA, 1.5) }
-          
-  
-    cur_plot_name = paste0 ("full_fits.", test_or_train_str, ".predVsTrue.using.", 
-                            pred_value_name_display_str, 
-                            ".for.", model_name_str, 
+                geom_text (aes (x = -Inf, y = Inf, label = rmse_label),
+                           data=locs_rmse,
+                           family="Times", fontface="italic",
+                           size=3,
+                           hjust = -0.35,  #-0.1,  # Offset right from left edge
+                           vjust = 4.0,  #3.0,   # Offset further down (below R2)
+                           parse = TRUE)
+
+#BTL 2025-12-09: REMOVED ylim() call for cost error - moved limit logic to coord_cartesian() to fix histogram rendering
+###2025 07 25 - BTL###                # { if (pred_value_name_display_str == "Cost Error") ylim (NA, 1.5) }
+                # { if (pred_value_name_display_str == "Solution Cost Error") ylim (NA, 1.5) }
+
+
+    #  ===== ADD HISTOGRAMS TO PREDICTION PLOTS (Figures 8-11) =====
+    #  NOTE: This is temporary code duplication pending future refactoring.
+    #  See ggplot_faceted_with_mag_rays() in v2_Paper_2_func_defns_for_plotting.R
+    #  for the canonical implementation of this histogram functionality.
+    #  Both implementations should be unified during future refactoring.
+
+    #  Determine plot limits (use provided values or calculate from data)
+    if (is.na(x_min_on_plot)) x_min_on_plot = min(full_true_vs_pred_df$pred_values, na.rm = TRUE)
+    if (is.na(x_max_on_plot)) x_max_on_plot = max(full_true_vs_pred_df$pred_values, na.rm = TRUE)
+    if (is.na(y_min_on_plot)) y_min_on_plot = min(full_true_vs_pred_df$true_values, na.rm = TRUE)
+    if (is.na(y_max_on_plot)) y_max_on_plot = max(full_true_vs_pred_df$true_values, na.rm = TRUE)
+
+    #  Calculate histogram bins for both axes (20 bins each)
+    x_breaks = seq(x_min_on_plot, x_max_on_plot, length.out = 21)
+    y_breaks = seq(y_min_on_plot, y_max_on_plot, length.out = 21)
+
+    #  Calculate intrusion amounts (8% of axis range)
+    max_x_intrusion = 0.08 * (y_max_on_plot - y_min_on_plot)
+    max_y_intrusion = 0.08 * (x_max_on_plot - x_min_on_plot)
+
+    #  BTL 2025-12-09: Helper function to center bin containing 0 on 0
+    #  This shifts all histogram bars so the bar for data at y=0 or x=0 is centered on 0
+    calc_zero_centering_shift <- function(breaks) {
+        # Check if 0 is within the breaks range
+        if (min(breaks) > 0 || max(breaks) < 0) {
+            return(0)  # 0 is not in any bin, no shift
+        }
+
+        # Find which bin contains 0
+        bin_index = findInterval(0, breaks, rightmost.closed = TRUE)
+
+        # Clamp to valid bin range
+        n_bins = length(breaks) - 1
+        if (bin_index < 1) bin_index = 1
+        if (bin_index > n_bins) bin_index = n_bins
+
+        # Calculate midpoints
+        mids = (breaks[-length(breaks)] + breaks[-1]) / 2
+
+        # Return shift amount
+        return(0 - mids[bin_index])
+    }
+
+    #  Initialize empty data frames for histogram data
+    y_hist_df = data.frame()
+    y_spine_df = data.frame()
+    x_hist_df = data.frame()
+    x_spine_df = data.frame()
+
+    #  Get list of facet values in correct order
+    facet_levels = levels(full_true_vs_pred_df$rs_method_name_fac)
+
+    #  Loop through each facet to calculate histograms
+    for (facet_value in facet_levels) {
+        #  Filter data for this facet
+        facet_data = full_true_vs_pred_df %>%
+            filter(rs_method_name_fac == facet_value)
+
+        #  Skip if no data
+        if (nrow(facet_data) == 0) next
+
+        #  === Y-AXIS HISTOGRAM (horizontal bars on left) ===
+        facet_y_data = facet_data$true_values
+
+        #  Calculate histogram
+        y_hist = hist(facet_y_data, breaks = y_breaks, plot = FALSE)
+        y_counts = y_hist$counts
+        y_mids = y_hist$mids
+
+        #  Calculate shift to center the bin containing 0 on 0
+        y_shift = calc_zero_centering_shift(y_breaks)
+        y_mids_shifted = y_mids + y_shift
+
+        #  Normalize bar lengths
+        max_count = max(y_counts)
+        if (max_count > 0) {
+            y_normalized = (y_counts / max_count) * max_y_intrusion
+        } else {
+            y_normalized = rep(0, length(y_counts))
+        }
+
+        #  Create bar data (using shifted midpoints)
+        facet_y_hist_df = data.frame(
+            y = y_mids_shifted,  # Use shifted midpoints
+            x_start = x_min_on_plot - max_y_intrusion,
+            x_end = x_min_on_plot - max_y_intrusion + y_normalized,
+            rs_method_name_fac = facet_value
+        )
+
+        #  Create spine data
+        #  Use facet data range but clamp to plot limits to prevent extending beyond visible area
+        y_data_min = min(facet_y_data, na.rm = TRUE)
+        y_data_max = max(facet_y_data, na.rm = TRUE)
+
+        #  BTL 2025-12-09: Extend spine to lowest histogram bar position (using shifted midpoints)
+        #  Now that bars are shifted to center bin containing 0, spine uses shifted positions too
+        y_lowest_bar = min(y_mids_shifted)
+        y_spine_start_unclamped = min(y_data_min, y_lowest_bar)
+
+        #  Clamp spine to plot limits (use extended limit to allow reaching bottom histogram)
+        y_spine_start = max(y_min_on_plot - max_x_intrusion, y_spine_start_unclamped)
+        y_spine_end = min(y_max_on_plot, y_data_max)
+
+        facet_y_spine_df = data.frame(
+            x = x_min_on_plot - max_y_intrusion,
+            y_start = y_spine_start,
+            y_end = y_spine_end,
+            rs_method_name_fac = facet_value
+        )
+
+        y_hist_df = rbind(y_hist_df, facet_y_hist_df)
+        y_spine_df = rbind(y_spine_df, facet_y_spine_df)
+
+        #  === X-AXIS HISTOGRAM (vertical bars on bottom) ===
+        facet_x_data = facet_data$pred_values
+
+        #  Calculate histogram
+        x_hist = hist(facet_x_data, breaks = x_breaks, plot = FALSE)
+        x_counts = x_hist$counts
+        x_mids = x_hist$mids
+
+        #  Calculate shift to center the bin containing 0 on 0
+        x_shift = calc_zero_centering_shift(x_breaks)
+        x_mids_shifted = x_mids + x_shift
+
+        #  Normalize bar lengths
+        max_count = max(x_counts)
+        if (max_count > 0) {
+            x_normalized = (x_counts / max_count) * max_x_intrusion
+        } else {
+            x_normalized = rep(0, length(x_counts))
+        }
+
+        #  Create bar data (using shifted midpoints)
+        facet_x_hist_df = data.frame(
+            x = x_mids_shifted,  # Use shifted midpoints
+            y_start = y_min_on_plot - max_x_intrusion,
+            y_end = y_min_on_plot - max_x_intrusion + x_normalized,
+            rs_method_name_fac = facet_value
+        )
+
+        #  Create spine data (horizontal line at bottom)
+        #  Use facet data range but clamp to plot limits
+        x_data_min = min(facet_x_data, na.rm = TRUE)
+        x_data_max = max(facet_x_data, na.rm = TRUE)
+
+        x_spine_start = max(x_min_on_plot, x_data_min)
+        x_spine_end = min(x_max_on_plot, x_data_max)
+
+        facet_x_spine_df = data.frame(
+            y = y_min_on_plot - max_x_intrusion,
+            x_start = x_spine_start,
+            x_end = x_spine_end,
+            rs_method_name_fac = facet_value
+        )
+
+        x_hist_df = rbind(x_hist_df, facet_x_hist_df)
+        x_spine_df = rbind(x_spine_df, facet_x_spine_df)
+    }
+
+    #  Convert facet columns to factors with correct ordering
+    y_hist_df$rs_method_name_fac = factor(y_hist_df$rs_method_name_fac,
+                                          levels = facet_levels,
+                                          ordered = TRUE)
+    y_spine_df$rs_method_name_fac = factor(y_spine_df$rs_method_name_fac,
+                                           levels = facet_levels,
+                                           ordered = TRUE)
+    x_hist_df$rs_method_name_fac = factor(x_hist_df$rs_method_name_fac,
+                                          levels = facet_levels,
+                                          ordered = TRUE)
+    x_spine_df$rs_method_name_fac = factor(x_spine_df$rs_method_name_fac,
+                                           levels = facet_levels,
+                                           ordered = TRUE)
+
+    #  ===== HISTOGRAM STYLING PARAMETERS =====
+    #  Adjust these values to control histogram appearance:
+    #  - color: Use gray30 (darker), gray40, gray50 (medium), gray60 (lighter), or "black"
+    #  - size: Width of bars (try 0.4 thin, 0.8 medium, 1.2 thick)
+    #  - alpha: Transparency (0.5 = semi-transparent, 1.0 = fully opaque)
+
+    hist_bar_color = "gray40"    # Darker gray (was gray50, now slightly darker)
+    hist_bar_size = 0.6          # Doubled from 0.4 to make more visible
+    hist_bar_alpha = 1.0         # Fully opaque
+    hist_spine_size = 0.6        # Slightly thicker than bars
+
+    #  Add histogram layers to plot
+    #  Y-axis histogram (horizontal bars on left)
+    full_fits_plot = full_fits_plot +
+        geom_segment(data = y_hist_df,
+                    aes(x = x_start, xend = x_end, y = y, yend = y),
+                    color = hist_bar_color,
+                    size = hist_bar_size,
+                    alpha = hist_bar_alpha,
+                    inherit.aes = FALSE) +
+        geom_segment(data = y_spine_df,
+                    aes(x = x, xend = x, y = y_start, yend = y_end),
+                    color = hist_bar_color,
+                    size = hist_spine_size,
+                    alpha = hist_bar_alpha,
+                    inherit.aes = FALSE)
+
+    #  X-axis histogram (vertical bars on bottom)
+    full_fits_plot = full_fits_plot +
+        geom_segment(data = x_hist_df,
+                    aes(x = x, xend = x, y = y_start, yend = y_end),
+                    color = hist_bar_color,
+                    size = hist_bar_size,
+                    alpha = hist_bar_alpha,
+                    inherit.aes = FALSE) +
+        geom_segment(data = x_spine_df,
+                    aes(x = x_start, xend = x_end, y = y, yend = y),
+                    color = hist_bar_color,
+                    size = hist_spine_size,
+                    alpha = hist_bar_alpha,
+                    inherit.aes = FALSE)
+
+    #  Extend coordinate limits to accommodate histograms
+    #  BTL 2025-12-09: Consolidated all limit logic here (removed xlim/ylim calls above)
+    #  This fixes histogram rendering issues by using only coord_cartesian() for limits
+
+    #  Apply special y-limit for cost error plots (cap at 1.5)
+    final_y_max = if (pred_value_name_display_str == "Solution Cost Error") {
+        min(1.5, y_max_on_plot)  # Use 1.5 or actual max, whichever is smaller
+    } else {
+        y_max_on_plot
+    }
+
+    full_fits_plot = full_fits_plot +
+        coord_cartesian(xlim = c(x_min_on_plot - max_y_intrusion, x_max_on_plot),
+                       ylim = c(y_min_on_plot - max_x_intrusion, final_y_max))
+
+    #  ===== END HISTOGRAM CODE =====
+    #  Note: Label positions now use Inf coordinates (see geom_text calls above)
+    #  so no dynamic position calculation needed here
+
+
+    cur_plot_name = paste0 ("full_fits.", test_or_train_str, ".predVsTrue.using.",
+                            pred_value_name_display_str,
+                            ".for.", model_name_str,
                             ".Using.", vars_used_str)
     
     save_this_ggplot (full_fits_plot, cur_plot_name, params)
@@ -925,18 +1169,18 @@ fit_cost_err_frac <- function (rs_names_vec,
         
     if (params$exclude_greedy_rs_in_fit_plots)
         {
-        R2_x_loc = -0.8 
+        R2_x_loc = -0.95    # BTL 2025-12-09: Adjusted from -0.8 to account for y-axis histogram
         R2_y_loc = 2
-        
-        rmse_x_loc = -0.8 
+
+        rmse_x_loc = -0.95    # BTL 2025-12-09: Adjusted from -0.8 to account for y-axis histogram
         rmse_y_loc = 1.8
-        
+
         } else
         {
-        R2_x_loc = -0.8 
+        R2_x_loc = -0.95    # BTL 2025-12-09: Adjusted from -0.8 to account for y-axis histogram
         R2_y_loc = 1.4    #####2    #####4.5    #10
-        
-        rmse_x_loc = -0.8 
+
+        rmse_x_loc = -0.95    # BTL 2025-12-09: Adjusted from -0.8 to account for y-axis histogram
         rmse_y_loc = 1.2    #####1.8    #####4    #9
         }
         
@@ -1057,15 +1301,15 @@ fit_rep_shortfall <- function (rs_names_vec,
                                )
     {
         #  Values specific to rep shortfall plotting
-        
+
     target_col_name = "rsr_COR_spp_rep_shortfall"
 ###2025 07 25 - BTL###    pred_value_name_display_str = "Rep Shortfall"
     pred_value_name_display_str = "Representation Shortfall"
 
-    R2_x_loc = -0.1 
+    R2_x_loc = -0.15    # BTL 2025-12-09: Adjusted from -0.1 to account for y-axis histogram
     R2_y_loc = 1.1
-    
-    rmse_x_loc = -0.1 
+
+    rmse_x_loc = -0.15    # BTL 2025-12-09: Adjusted from -0.1 to account for y-axis histogram
     rmse_y_loc = 0.95    #  0.78
 
         #----------
