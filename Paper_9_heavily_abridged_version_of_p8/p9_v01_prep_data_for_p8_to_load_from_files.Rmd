@@ -38,7 +38,7 @@ params:
   add_gen_time_to_csv_name: FALSE
 #-----  path variables  -----# 
   relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
-  relative_path_to_data_out_loc: "Data/TempOutput"
+  relative_path_to_data_out_loc: "Data/TempOutput_2026_03_dataprov"   #"Data/TempOutput"
   ggplot_save_path: "Paper_8_all_combined_for_Ecological_Monographs/Saved_plots"
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
