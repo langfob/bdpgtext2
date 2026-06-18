@@ -102,10 +102,13 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
                                           plot_neg_rays_too = FALSE, 
                   
                                           
-                                          ref_y = 0, 
-                                          shape_type = ".", 
-                                          alpha_level = 0.1, 
-                                          
+                                          ref_y = 0,
+                                          shape_type = ".",
+                                          alpha_level = 0.1,
+
+                                          add_axis_histograms = FALSE,
+                                          add_density_contours = FALSE,
+
                                           gg_verbose = FALSE
                                           )
     {
@@ -201,10 +204,23 @@ ggplot_faceted_with_mag_rays <- function (rs_method_names_list,
 #  theme (strip.background = element_rect (fill="grey95")) +
   theme (strip.text = element_text (face="bold")) +    #  Specify header bar for each facet to show reserve selector name
       
-#ylim (y_min, y_max) + 
+#ylim (y_min, y_max) +
 # coord_cartesian (xlim = c(x_min, x_max)) +     #, xlim = c(0, 50))
 # coord_cartesian (ylim = c(y_min, y_max)) +     #, xlim = c(0, 50))
-coord_cartesian (xlim = c(x_min, x_max), ylim = c(y_min, y_max)) +     #, xlim = c(0, 50))
+
+    #  If adding axis histograms, extend x-axis slightly negative to allow
+    #  histogram bars to reach back to the y-axis edge
+    {
+    if (add_axis_histograms)
+        {
+        # Extend x_min by the same amount as histogram intrusion (8%)
+        hist_extension = 0.08 * (x_max - x_min)
+        coord_cartesian (xlim = c(x_min - hist_extension, x_max), ylim = c(y_min, y_max))
+        } else
+        {
+        coord_cartesian (xlim = c(x_min, x_max), ylim = c(y_min, y_max))
+        }
+    } +
       
       
         #theme (legend.position = "bottom") + 
@@ -328,9 +344,117 @@ base_plot =
                 #
                 stat_function (fun = function (x) 1/x)
                
-            } 
+            }
         }
-    
+
+    #  Add histogram-lines along left axis to show marginal density distribution
+    #  of the y variable. Uses thin horizontal lines with length encoding bin count,
+    #  providing density information without obscuring the scatter plot.
+
+    if (add_axis_histograms)
+        {
+        #  Calculate histogram bins for y variable (left axis)
+        #  IMPORTANT: Calculate separately for each facet so each panel shows its own distribution
+        y_breaks = seq(y_min, y_max, length.out = 21)  # 20 bins for y-axis
+        max_y_intrusion = 0.08 * (x_max - x_min)
+
+        #  Initialize empty data frames to accumulate results
+        y_hist_df = data.frame()
+        spine_df = data.frame()
+
+        #  Loop through each facet IN THE CORRECT ORDER (using rs_method_names_list)
+        #  This ensures histogram data frames have the same factor ordering as the main plot
+        for (facet_value in rs_method_names_list)
+            {
+            #  Filter data for this facet only
+            facet_data = sorted_msa_tib %>%
+                filter(!!sym(facet_var) == facet_value) %>%
+                pull(!!y_var)
+
+            #  Skip if no data for this facet (shouldn't happen, but be safe)
+            if (length(facet_data) == 0) next
+
+            #  Calculate histogram for this facet
+            y_hist = hist(facet_data, breaks = y_breaks, plot = FALSE)
+            y_counts = y_hist$counts
+            y_mids = y_hist$mids
+
+            #  Normalize bar lengths: tallest bar in THIS facet extends full 8%
+            #  Handle case where all counts are zero (max would be 0, causing division by zero)
+            max_count = max(y_counts)
+            if (max_count > 0) {
+                y_normalized = (y_counts / max_count) * max_y_intrusion
+            } else {
+                y_normalized = rep(0, length(y_counts))  # All bars have zero length
+            }
+
+            #  Create histogram bar data for this facet
+            facet_hist_df = data.frame(
+                y = y_mids,
+                x_start = x_min - max_y_intrusion,
+                x_end = x_min - max_y_intrusion + y_normalized
+            )
+            facet_hist_df[[facet_var]] = facet_value  # Add facet identifier
+
+            #  Create spine line data for this facet
+            facet_spine_df = data.frame(
+                x = x_min - max_y_intrusion,
+                y_start = min(y_mids),
+                y_end = max(y_mids)
+            )
+            facet_spine_df[[facet_var]] = facet_value  # Add facet identifier
+
+            #  Append to accumulated data frames
+            y_hist_df = rbind(y_hist_df, facet_hist_df)
+            spine_df = rbind(spine_df, facet_spine_df)
+            }
+
+        #  Convert facet column to factor with correct level ordering
+        #  This ensures ggplot respects the rs_method_names_list ordering
+        y_hist_df[[facet_var]] = factor(y_hist_df[[facet_var]],
+                                         levels = rs_method_names_list,
+                                         ordered = TRUE)
+        spine_df[[facet_var]] = factor(spine_df[[facet_var]],
+                                        levels = rs_method_names_list,
+                                        ordered = TRUE)
+
+        #  Add histogram bars and spine line to plot
+        #  Using gray color and lower alpha for subtlety - provides density info without distraction
+        base_plot =
+            base_plot +
+            geom_segment(data = y_hist_df,
+                        aes(x = x_start, xend = x_end, y = y, yend = y),
+                        color = "gray50",
+                        size = 0.4,
+                        alpha = 0.5,
+                        inherit.aes = FALSE) +
+            geom_segment(data = spine_df,
+                        aes(x = x, xend = x, y = y_start, yend = y_end),
+                        color = "gray50",
+                        size = 0.5,
+                        alpha = 0.5,
+                        inherit.aes = FALSE)
+        }
+
+    #  Add 2D density contours to show point concentration patterns
+    #  Contours overlay directly on scatter plot, computed per-facet automatically by ggplot2
+    #  Shows joint density in both x and y dimensions (complementary to histogram's marginal density)
+
+    if (add_density_contours)
+        {
+        #  Add 2D density contours using kernel density estimation
+        #  ggplot2 automatically computes density separately for each facet
+        #  Using high contrast styling to make contours visible among dense scatter points
+        base_plot =
+            base_plot +
+            geom_density_2d(aes(x = !!x_var, y = !!y_var),
+                           color = "black",
+                           alpha = 0.8,
+                           bins = 6,
+                           size = 0.3,
+                           inherit.aes = FALSE)
+        }
+
     return (base_plot)
     }
 

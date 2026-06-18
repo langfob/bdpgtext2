@@ -1499,30 +1499,33 @@ Signed solution cost errors are shown in Fig.  \ref{fig:InVsCostErrLE125inResult
 
 ggplot_faceted_with_mag_rays (rs_method_names_list,
                               plot_title_str = paste0 ("Signed Solution Cost Error"),
-                              filter (p2_app_wrap_tib, rs_solution_cost_err_frac <= 1.25), 
+                              filter (p2_app_wrap_tib, rs_solution_cost_err_frac <= 1.25),
 
                               x_var     = !!mag_base_col_name_str,    #"max_TOT_FN_FP_rate",
-                              y_var     = "rs_solution_cost_err_frac", 
-                              
+                              y_var     = "rs_solution_cost_err_frac",
+
                               color_var = dom_err_type,    #"id",
-                              facet_var = "rs_method_name_fac",    #"rs_method_name" 
-                                  
+                              facet_var = "rs_method_name_fac",    #"rs_method_name"
+
                               y_min = -1,
                               y_max = 1.25,
-                              
-                              x_axis_label = "Input Error", 
+
+                              x_axis_label = "Input Error",
                               y_axis_label = "Signed Solution Cost Error",
-                  
-                              plot_rep_shortfall_err_bound = FALSE, 
-                              plot_rays = TRUE, 
-                              plot_neg_rays_too = TRUE
-                                                   ) + 
-                        
-                              background_grid (major = c("y"), 
-                                               minor = c("y"), 
-                                               size.major = 0.5, 
-                                               size.minor = 0.2, 
-                                               color.major = "grey85", 
+
+                              plot_rep_shortfall_err_bound = FALSE,
+                              plot_rays = TRUE,
+                              plot_neg_rays_too = TRUE,
+
+                              add_axis_histograms = TRUE,
+                              add_density_contours = FALSE
+                                                   ) +
+
+                              background_grid (major = c("y"),
+                                               minor = c("y"),
+                                               size.major = 0.5,
+                                               size.minor = 0.2,
+                                               color.major = "grey85",
                                                color.minor = "grey85") 
 
 ```
@@ -1537,20 +1540,23 @@ Representation shortfall errors are shown in Fig.  \ref{fig:inVsRepShortfallinRe
 #  FP-dominated problems are in red.  FN-dominated problems are in blue.  Since there is very little representation shortfall in FN-dominated problems,the blue FN dots on the graph are very localized and overplot each other.  The 1x, 5x, and 10x rays indicate the level where output error is 1 times input error, 5 times input error, and 10 times input error.
 
 
-ggplot_faceted_with_mag_rays (rs_method_names_list, 
+ggplot_faceted_with_mag_rays (rs_method_names_list,
         plot_title_str = paste0 ("Representation Shortfall Error"),
-    p2_app_wrap_tib, 
-        x_var     = !!mag_base_col_name_str,    #"max_TOT_FN_FP_rate",    #"rsp_euc_realized_Ftot_and_cost_in_err_frac", 
-        y_var     = "rsr_COR_spp_rep_shortfall", 
+    p2_app_wrap_tib,
+        x_var     = !!mag_base_col_name_str,    #"max_TOT_FN_FP_rate",    #"rsp_euc_realized_Ftot_and_cost_in_err_frac",
+        y_var     = "rsr_COR_spp_rep_shortfall",
 #        color_var = "id",
       color_var = "dom_err_type",
         facet_var = "rs_method_name_fac",    #"rs_method_name"
-    
+
                               y_min = 0,
                               y_max = 1,
-                              
-        x_axis_label = "Input Error", 
+
+        x_axis_label = "Input Error",
         y_axis_label = "Representation Shortfall",
+
+        add_axis_histograms = FALSE,
+        add_density_contours = FALSE
                              ) + 
   
   background_grid (major = c("y"),
@@ -1575,27 +1581,30 @@ The large black rectangles in Fig.  \ref{fig:repShortfallVsCostErrLE125inResults
 # repShortfallVsCostErrLE125inResultsPlot = 
   
 ggplot_faceted_with_mag_rays (rs_method_names_list,
-                              plot_title_str = paste0 ("Representation shortfall vs. Signed solution cost Error"), 
-                              filter (p2_app_wrap_tib, rs_solution_cost_err_frac <= 1.25), 
+                              plot_title_str = paste0 ("Representation shortfall vs. Signed solution cost Error"),
+                              filter (p2_app_wrap_tib, rs_solution_cost_err_frac <= 1.25),
 
-                              x_var     = "rsr_COR_spp_rep_shortfall", 
-                              y_var     = "rs_solution_cost_err_frac", 
-                              
+                              x_var     = "rsr_COR_spp_rep_shortfall",
+                              y_var     = "rs_solution_cost_err_frac",
+
                               color_var = dom_err_type,    #"id",
-                              facet_var = "rs_method_name_fac", 
-                                  
+                              facet_var = "rs_method_name_fac",
+
                               x_min = 0,
                               x_max = 1,
-                              
+
                               y_min = -1,
                               y_max = 1.25,
-                              
-                              x_axis_label = "Representation Shortfall", 
+
+                              x_axis_label = "Representation Shortfall",
                               y_axis_label = "Solution Cost Error",
-                  
-                              plot_rep_shortfall_err_bound = FALSE, 
-                              plot_rays = FALSE, 
-                              plot_neg_rays_too = FALSE
+
+                              plot_rep_shortfall_err_bound = FALSE,
+                              plot_rays = FALSE,
+                              plot_neg_rays_too = FALSE,
+
+                              add_axis_histograms = TRUE,
+                              add_density_contours = FALSE
                                                    ) + 
                         
                               background_grid (major = c("y"), 
