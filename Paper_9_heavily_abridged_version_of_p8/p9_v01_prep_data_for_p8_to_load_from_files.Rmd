@@ -1791,7 +1791,11 @@ if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
 
 
 
+#-------------------------------------------------------------------------------
 
+#  Preprocess the input data using Box Cox transform and center/scale normalization
+
+#-------------------------------------------------------------------------------
 
 ```{r SetAsideCols-NOT-ToPreprocess, include=params$chunk_include}
 ##  Set aside train and test columns that will not be preprocessed (e.g., identifiers) 
@@ -1824,8 +1828,6 @@ names (test_df_cols_to_preprocess)
 
 ```{r quickNAchecks, include=params$chunk_include}
 #----------
-
-#  Preprocess the input data using Box Cox transform and center/scale normalization
 
 ##  Make sure there are no NAs in the data to preprocess  
 
@@ -2161,7 +2163,7 @@ quick_check_for_NAs (p3_working_test_df, "p3_working_test_df", "just before fitt
 
 xxx  
 
-# Protocol for conducting and presenting results of regression-type analyses  
+# Notes: Protocol for conducting and presenting results of regression-type analyses  
 
 Taken from @zuur2016mee.  
 
@@ -2176,7 +2178,7 @@ Taken from @zuur2016mee.
 9. Create a visual representation of the model
 10. Simulate from the model
 
-# Protocol for data exploration  
+## Protocol for data exploration  
 
 Taken from @zuur2010mee.  
 
