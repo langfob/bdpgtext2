@@ -2158,6 +2158,37 @@ quick_check_for_NAs (p3_working_train_df, "p3_working_train_df", "just before fi
 quick_check_for_NAs (p3_working_test_df, "p3_working_test_df", "just before fittings")
 ```
 
+```{r buildAuxDataFrames, include=params$chunk_include}
+
+### Build auxiliary data frames to hold things not used in fit but used in plots, etc.
+
+p3_train_aux_df = select (p3_working_train_df, 
+                                         rs_method_name, 
+                                         dom_err_type)
+p3_test_aux_df  = select (p3_working_test_df,  
+                                         rs_method_name, 
+                                         dom_err_type)
+
+    #  2022 03 25 - BTL
+    #  Can't remember why I was doing this grouping test, so commenting it out 
+    #  for now.
+# cat ("\n\nis_grouped_df (p3_train_aux_df) = ", 
+#      is_grouped_df (p3_train_aux_df), sep='')
+# cat ("\n\nis_grouped_df (p3_test_aux_df) = ", 
+#      is_grouped_df (p3_test_aux_df), sep='')
+
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+    {
+    write_a_tib_to_csv_file_using_params (p3_train_aux_df, 
+                                          "p3_train_aux_df", 
+                                          params, params$file_type_to_write)
+    
+    write_a_tib_to_csv_file_using_params (p3_test_aux_df, 
+                                          "p3_test_aux_df", 
+                                          params, params$file_type_to_write)
+    }
+```
+
 
 
 
@@ -2837,37 +2868,6 @@ show_rep_shortfall_cdfs (p3_working_train_df, p3_working_test_df, rs_method_name
 # More than 50% overestimate the cost.  More than a quarter underestimate the cost.
 
 show_cost_err_cdfs (p3_working_train_df, p3_working_test_df, rs_method_name)
-```
-
-```{r buildAuxDataFrames, include=params$chunk_include}
-
-### Build auxiliary data frames to hold things not used in fit but used in plots, etc.
-
-p3_train_aux_df = select (p3_working_train_df, 
-                                         rs_method_name, 
-                                         dom_err_type)
-p3_test_aux_df  = select (p3_working_test_df,  
-                                         rs_method_name, 
-                                         dom_err_type)
-
-    #  2022 03 25 - BTL
-    #  Can't remember why I was doing this grouping test, so commenting it out 
-    #  for now.
-# cat ("\n\nis_grouped_df (p3_train_aux_df) = ", 
-#      is_grouped_df (p3_train_aux_df), sep='')
-# cat ("\n\nis_grouped_df (p3_test_aux_df) = ", 
-#      is_grouped_df (p3_test_aux_df), sep='')
-
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    {
-    write_a_tib_to_csv_file_using_params (p3_train_aux_df, 
-                                          "p3_train_aux_df", 
-                                          params, params$file_type_to_write)
-    
-    write_a_tib_to_csv_file_using_params (p3_test_aux_df, 
-                                          "p3_test_aux_df", 
-                                          params, params$file_type_to_write)
-    }
 ```
 
 ----------
