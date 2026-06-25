@@ -2190,7 +2190,10 @@ if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
 ```
 
 
+# Move rest of file to its own file?
 
+The rest of this file is doing exploratory data analysis, particularly analysis of the correlation among features.  It should probably be moved into a separate Rmd file.  However, it assumes that p3_working_train_df is already loaded, so 
+that loading would have to be added to the Rmd file.  There may be other assumptions as well, but that's the only one that I know of at the moment.
 
 xxx  
 
