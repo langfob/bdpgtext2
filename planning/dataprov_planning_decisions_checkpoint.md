@@ -90,6 +90,8 @@ provenance-tracked and reads pin the exact intended files:
 - Per-record description text (left unspecified by the plan). Set to "bdpg p9 prep tib '<tib_name>' (<ext>)". The session-level description uses the plan's suggested format verbatim.  
 - prep_session_uuid YAML default placeholder is "REPLACE_WITH_PREP_SESSION_UUID" — a literal string a user must overwrite before knitting the main body, not a valid UUID.  
 - Added verbose_verify flag to resolve_prov_file() — not in the original plan. Requested after the Stage 5 checkpoint: resolve_prov_file(..., verbose_verify = FALSE). Default FALSE keeps knit output silent on successful prov_verify() calls; TRUE prints "VERIFIED: tib '<name>' (<ext>) -> <path>", useful for debugging. Covered by two tests (silent by default; prints when enabled).  
+    - Added verbose_verify_prov_reads: FALSE to the YAML params so that I don't forget that this is something that can be set in the calls.  Defaults to FALSE though.
+    - Threaded verbose_verify = params$verbose_verify_prov_reads into all 8 resolve_prov_file() calls.
 - No package scaffold in bdpgtext2 (no DESCRIPTION), so tests run via plain testthat::test_file(), not devtools::test(). Each test file is run manually after source("R/provenance_helpers.R") plus library(dataprov) / library(bdpg) / library(testthat). withr::local_tempdir(.local_envir = parent.frame()) is used throughout per the standard temp-file-in-tests convention.  
 
 ## Working-practice notes
