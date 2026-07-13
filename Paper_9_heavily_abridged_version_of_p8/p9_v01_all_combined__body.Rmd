@@ -33,6 +33,7 @@ params:
   relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
   relative_path_to_data_out_loc: "Data/TempOutput"
   ggplot_save_path: "Paper_9_heavily_abridged_version_of_p8/Saved_plots"
+  prep_session_uuid: "4c261db9-913b-4a1b-abc1-88cd1cbd0665"    #  UUID printed by p9_v01_prep_data_for_p8_to_load_from_files.Rmd
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
   show_only_test_results: TRUE
@@ -104,9 +105,9 @@ output:
     toc: yes
     toc_depth: '6'
     toc_float: yes
-  html_notebook: 
-    toc: yes
-    toc_depth: 6
+  # html_notebook: 
+  #   toc: yes
+  #   toc_depth: 6
 bibliography: ../btl_zotero_lib.bib
 #csl: ../Zotero/styles/ecological-monographs.csl
 csl: ../Zotero/styles/ecology.csl
@@ -474,6 +475,9 @@ library (bdpg)    #  For safe_sample().
 library (broom)    #  For tidy() to apply to glm prediction results.
 
 library (latex2exp)    #  For Tex() function to use latex math formatting in ggplot title
+
+library (dataprov)    #  For read-side provenance resolution of prepped inputs.
+library (DBI)
 ```
 
 ```{r setFilePaths, include=params$chunk_include}
@@ -595,8 +599,20 @@ source (file.path (proj_dir, "/R/p8.matildaFunctions.v01.R"),
 source (file.path (proj_dir, "/R/v2_paper_2_func_defns_for_plotting.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
+source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"),
          local = knitr::knit_global())
+```
+
+```{r initProvenanceTracking, include=FALSE}
+
+#  Open the dataprov registry for resolving prepped inputs pinned to
+#  params$prep_session_uuid (the session UUID printed by
+#  p9_v01_prep_data_for_p8_to_load_from_files.Rmd).
+
+source (file.path (proj_dir, "R/provenance_helpers.R"),
+         local = knitr::knit_global())
+
+reg = dataprov::prov_registry_open (file.path (proj_dir, "Data", "dataprov_registry"))
 ```
 
 ```{r loadPreppedDataFromFiles, include=FALSE}
@@ -608,68 +624,75 @@ source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"
 
 #--------------------  
 
-filtered_full_initial_exp_tib = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "filtered_full_initial_exp_tib.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "filtered_full_initial_exp_tib", ext = "csv")
+filtered_full_initial_exp_tib =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-#--------------------  
+#--------------------
 
-p2_app_wrap_tib = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p2_app_wrap_tib.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p2_app_wrap_tib", ext = "csv")
+p2_app_wrap_tib =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-#--------------------  
+#--------------------
 
-p3_working_train_df = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_working_train_df.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_working_train_df", ext = "csv")
+p3_working_train_df =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-p3_working_test_df = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_working_test_df.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_working_test_df", ext = "csv")
+p3_working_test_df =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-#--------------------  
+#--------------------
 
-p3_train_aux_df = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_train_aux_df.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_train_aux_df", ext = "csv")
+p3_train_aux_df =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-p3_test_aux_df = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_test_aux_df.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_test_aux_df", ext = "csv")
+p3_test_aux_df =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 
-#--------------------  
+#--------------------
 
 ```
 
 ```{r load_p3_working_train_data, include=FALSE}
 
-p3_working_train_df__before_any_preprocessing = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_working_train_df__before_any_preprocessing.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_working_train_df__before_any_preprocessing", ext = "csv")
+p3_working_train_df__before_any_preprocessing =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
 ```
 
 ```{r load_p3_working_test_data, include=FALSE}
 
-p3_working_test_df__before_any_preprocessing = 
-    load_file_into_tibble (
-                base_path = file.path (proj_dir, 
-                                       params$relative_path_to_data_out_loc), 
-                "p3_working_test_df__before_any_preprocessing.gurobi__all.exclude_imperfect_wraps__FALSE.csv")
+resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
+                                   "p3_working_test_df__before_any_preprocessing", ext = "csv")
+p3_working_test_df__before_any_preprocessing =
+    load_file_into_tibble (file_name = basename (resolved_path),
+                           base_path = dirname (resolved_path))
+```
+
+```{r closeProvenanceTracking, include=FALSE}
+
+#  All 8 provenance-resolved reads are done; close the registry connection.
+
+DBI::dbDisconnect (reg$conn)
 ```
 
 

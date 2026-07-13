@@ -38,7 +38,7 @@ params:
   add_gen_time_to_csv_name: FALSE
 #-----  path variables  -----# 
   relative_path_to_input_data: "Data/Clean/All_batches/cln_exp."
-  relative_path_to_data_out_loc: "Data/TempOutput_2026_03_dataprov"   #"Data/TempOutput"
+  relative_path_to_data_out_loc: "Data/TempOutput"
   ggplot_save_path: "Paper_8_all_combined_for_Ecological_Monographs/Saved_plots"
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
@@ -567,6 +567,9 @@ library (bdpg)    #  For safe_sample().
 
 library (broom)    #  For tidy() to apply to glm prediction results.
 
+library (dataprov)    #  For write-side provenance tracking of prep outputs.
+library (DBI)
+
 ```
 
 ```{r setFilePaths, include=params$chunk_include}
@@ -698,11 +701,32 @@ source (file.path (proj_dir, "/R/p8.matildaFunctions.v01.R"),
 source (file.path (proj_dir, "/R/v2_paper_2_func_defns_for_plotting.R"), 
          local = knitr::knit_global())
 
-source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"), 
+source (file.path (proj_dir, "/R/v2_paper_3_cv_test_train_splitting_functions.R"),
          local = knitr::knit_global())
 ```
 
-#  Load data  
+```{r initProvenanceTracking, include=FALSE}
+
+#  Initialize dataprov provenance tracking for this prep run.
+
+source (file.path (proj_dir, "R/provenance_helpers.R"),
+         local = knitr::knit_global())
+
+reg = open_or_init_registry (file.path (proj_dir, "Data", "dataprov_registry"))
+
+data_out_loc = file.path (proj_dir, params$relative_path_to_data_out_loc)
+
+sess = prov_session_start (
+    reg,
+    description = paste0 ("bdpg p9 prep run; gurobi_problem_filter=",
+                          params$gurobi_problem_filter,
+                          "; exclude_imperfect_wraps=",
+                          params$exclude_imperfect_wraps),
+    parameters  = params
+    )
+```
+
+#  Load data
 
 ```{r loadFullBdpgDataSet, include=params$chunk_include}
 
@@ -750,10 +774,10 @@ full_initial_exp_tib <- full_initial_exp_tib %>%
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (full_initial_exp_tib, 
-                                          "full_initial_exp_tib", 
-                                          params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, full_initial_exp_tib,
+                                 "full_initial_exp_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("load_and_build_FULL_data_for_all_reserve_selectors")
 cat ("Finished load_and_build_FULL_data_for_all_reserve_selectors()")
@@ -785,10 +809,10 @@ filtered_full_initial_exp_tib =
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (filtered_full_initial_exp_tib, 
-                                        "filtered_full_initial_exp_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, filtered_full_initial_exp_tib,
+                                 "filtered_full_initial_exp_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("remove_param_excluded_rows_from_full_data")
 cat ("Finished remove_param_excluded_rows_from_full_data()")
@@ -825,10 +849,10 @@ max_wrap_PUs = cor_data_retvals$max_wrap_PUs
 #--------------------
 
     #  Write the assembled COR data to a file if requested.
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (cor_tib, 
-                                        "cor_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, cor_tib,
+                                 "cor_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("create_p1_COR_data")
 cat ("Finished create_p1_COR_data()")
@@ -852,10 +876,10 @@ full_app_wrap_tib =
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (full_app_wrap_tib, 
-                                        "full_app_wrap_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, full_app_wrap_tib,
+                                 "full_app_wrap_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("create_app_wrap_tib_from_full_exp_tib")
 cat ("Finished create_app_wrap_tib_from_full_exp_tib()")
@@ -885,10 +909,10 @@ filtered_full_app_wrap_tib =
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (filtered_full_app_wrap_tib, 
-                                        "filtered_full_app_wrap_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, filtered_full_app_wrap_tib,
+                                 "filtered_full_app_wrap_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("filter_out_unwanted_rows_of_APP_data")
 cat ("Finished filter_out_unwanted_rows_of_APP_data()")
@@ -985,10 +1009,10 @@ p2_app_wrap_tib = select_paper_2_cols (filtered_full_app_wrap_tib)
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (p2_app_wrap_tib, 
-                                        "p2_app_wrap_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, p2_app_wrap_tib,
+                                 "p2_app_wrap_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("create_p2_appWrap_data")
 cat ("Finished create_p2_appWrap_data()")
@@ -1101,10 +1125,10 @@ p3_app_wrap_tib = mutate (p3_app_wrap_tib,
 
 #--------------------
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-    write_a_tib_to_csv_file_using_params (p3_app_wrap_tib, 
-                                        "p3_app_wrap_tib", 
-                                        params, params$file_type_to_write)
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+    write_a_tib_with_provenance (sess, p3_app_wrap_tib,
+                                 "p3_app_wrap_tib",
+                                 data_out_loc, params, params$file_type_to_write)
 
 #usethis::ui_done ("create_p2_appWrap_data")
 cat ("Finished create_p2_appWrap_data()")
@@ -1729,10 +1753,10 @@ p3_working_test_df = mutate (p3_working_test_df, is_train = FALSE)
 
 # usethis::ui_done ("load_and_build_FULL_data_for_all_reserve_selectors")
 
-# if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
-#     write_a_tib_to_csv_file_using_params (full_initial_exp_tib, 
-#                                           "p3_full_initial_exp_tib", 
-#                                           params, file_type_to_write)
+# if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
+#     write_a_tib_with_provenance (sess, full_initial_exp_tib,
+#                                  "p3_full_initial_exp_tib",
+#                                  data_out_loc, params, params$file_type_to_write)
 
 ```
 
@@ -1768,16 +1792,16 @@ show (dim (p3_working_train_df__before_any_preprocessing))
 show (dim (p3_working_test_df__before_any_preprocessing))
 
 if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
-    write_a_tib_to_csv_file_using_params (
-        p3_working_train_df__before_any_preprocessing, 
-        "p3_working_train_df__before_any_preprocessing", 
-        params, params$file_type_to_write)
+    write_a_tib_with_provenance (
+        sess, p3_working_train_df__before_any_preprocessing,
+        "p3_working_train_df__before_any_preprocessing",
+        data_out_loc, params, params$file_type_to_write)
 
 if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
-    write_a_tib_to_csv_file_using_params (
-        p3_working_test_df__before_any_preprocessing, 
-        "p3_working_test_df__before_any_preprocessing", 
-        params, params$file_type_to_write)
+    write_a_tib_with_provenance (
+        sess, p3_working_test_df__before_any_preprocessing,
+        "p3_working_test_df__before_any_preprocessing",
+        data_out_loc, params, params$file_type_to_write)
 ```
 
 
@@ -2134,15 +2158,15 @@ cat ("\n\nis_grouped_df (p3_working_train_df) = ",
 cat ("\n\nis_grouped_df (p3_working_test_df) = ", 
      is_grouped_df (p3_working_test_df), sep='')
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
     {
-    write_a_tib_to_csv_file_using_params (p3_working_train_df, 
-                                          "p3_working_train_df", 
-                                          params, params$file_type_to_write)
-    
-    write_a_tib_to_csv_file_using_params (p3_working_test_df, 
-                                          "p3_working_test_df", 
-                                          params, params$file_type_to_write)
+    write_a_tib_with_provenance (sess, p3_working_train_df,
+                                 "p3_working_train_df",
+                                 data_out_loc, params, params$file_type_to_write)
+
+    write_a_tib_with_provenance (sess, p3_working_test_df,
+                                 "p3_working_test_df",
+                                 data_out_loc, params, params$file_type_to_write)
     }
 
 ```
@@ -2177,16 +2201,31 @@ p3_test_aux_df  = select (p3_working_test_df,
 # cat ("\n\nis_grouped_df (p3_test_aux_df) = ", 
 #      is_grouped_df (p3_test_aux_df), sep='')
 
-if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv) 
+if (params$write_tibs_to_csv  |  params$write_most_important_tibs_to_csv)
     {
-    write_a_tib_to_csv_file_using_params (p3_train_aux_df, 
-                                          "p3_train_aux_df", 
-                                          params, params$file_type_to_write)
-    
-    write_a_tib_to_csv_file_using_params (p3_test_aux_df, 
-                                          "p3_test_aux_df", 
-                                          params, params$file_type_to_write)
+    write_a_tib_with_provenance (sess, p3_train_aux_df,
+                                 "p3_train_aux_df",
+                                 data_out_loc, params, params$file_type_to_write)
+
+    write_a_tib_with_provenance (sess, p3_test_aux_df,
+                                 "p3_test_aux_df",
+                                 data_out_loc, params, params$file_type_to_write)
     }
+```
+
+```{r closeProvenanceTracking, include=TRUE}
+
+#  Close out the dataprov session for this prep run and print the session
+#  UUID so it can be pinned as params$prep_session_uuid in the main body Rmd.
+
+prov_session_close (sess)
+
+cat ("\n\n=========================================================\n")
+message ("PREP SESSION UUID: ", sess$uuid)
+cat ("PREP SESSION UUID: ", sess$uuid, "\n", sep='')
+cat ("=========================================================\n\n")
+
+DBI::dbDisconnect (reg$conn)
 ```
 
 
