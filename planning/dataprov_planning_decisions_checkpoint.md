@@ -55,6 +55,10 @@ provenance-tracked and reads pin the exact intended files:
 - Registry: `prov_registry_init()` (create), `prov_registry_open()` (reopen, used by reads),
   `prov_registry_rebuild()`; disconnect with `DBI::dbDisconnect(reg$conn)`. Sidecar is canonical;
   registry is a rebuildable index.  
+- prov_session_start() returns a session whose UUID is read via sess$uuid (confirmed empirically; used for the printed "PREP SESSION UUID" and for pinning prep_session_uuid).  
+- prov_get(reg, uuid)$locations is a list of list(type=, path=) entries — the resolver filters for type == "local" and file.exists(path) to get the authoritative path.  
+- prov_verify() returns TRUE invisibly and prints nothing on success; it throws a classed dataprov_verify_error on a hash mismatch. There is no built-in success message — any confirmation output has to be added by the caller (see verbose_verify decision below).  
+- The registry's on-disk database file is named dataprov_registry.sqlite, but this is treated as an internal implementation detail — open_or_init_registry() deliberately avoids hardcoding it, instead using tryCatch(prov_registry_open(...)) falling back to prov_registry_init(...) on error, relying only on documented behavior.  
 
 ## I/O map (established)
 
@@ -75,6 +79,18 @@ provenance-tracked and reads pin the exact intended files:
 - Pin mechanism: prep prints its `session_uuid`; new main-body param name (e.g. `prep_session_uuid`).  
 - Registry directory location and init/open/disconnect policy.  
 - Whether to include light unit tests for the wrapper and resolver.  
+
+## Implementation-time decisions and corrections (Stages 0-6)
+
+- Authoritative source file resolved (Stage 0). Both p9 Rmd files source R/p8.unifiedDataLoading.v01.R directly for write_a_tib_to_csv_file, write_a_tib_to_csv_file_using_params, and load_file_into_tibble. The near-duplicate R/v2_p6_unifiedDataLoading.R is not used by either p9 Rmd — it's only reachable via R/v1_p6_load_libraries_and_R_source_code.R, which neither file sources. All "read the real source" work in this plan was done against p8.unifiedDataLoading.v01.R. The file R/v2_p6_unifiedDataLoading.R was already in R_old but had not been deleted from R, so it has now been deleted from R.  
+- Active write-call-site count corrected: 12, not 13. The planning chat that produced this plan miscounted a disabled call site near cor_tib as active. It actually sits inside a plain, non-```{r} fenced block in the prep Rmd (opened with a bare ```), so it never executes. Confirmed during Stage 3: exactly 12 write_a_tib_to_csv_file_using_params() calls are live; two are inert (the cor_tib block, and one genuinely #-commented block near full_initial_exp_tib/p3_full_initial_exp_tib).  
+- Disabled/commented call sites were updated to the new syntax too, even though inert (user decision, Stage 3). Both inactive sites were rewritten to call write_a_tib_with_provenance() with correct arguments, as a hedge against stale syntax if either is ever re-enabled later. No test coverage was added for these since they don't execute. While updating the commented block, also fixed a pre-existing latent bug in that dead code — it referenced an undefined bare file_type_to_write instead of params$file_type_to_write.  
+- write_a_tib_with_provenance() fails loudly on an unrecognized file_type, unlike the old writer. write_a_tib_to_csv_file_using_params() silently treats any file_type_to_write value other than "csv"/"rds" as "both". The new wrapper instead stop()s on anything other than "csv", "rds", or "both" — deliberately stricter, matching the fail-loud philosophy used elsewhere in this integration.  
+- Registry connection lifecycle in the main body Rmd. The plan left disconnect placement as "at the end (if appropriate for the doc)." Since reg is only used by the 8 provenance-resolved reads and nothing later in the (very long) document touches it again, DBI::dbDisconnect(reg$conn) was placed immediately after the last read chunk rather than at the literal end of the file.  
+- Per-record description text (left unspecified by the plan). Set to "bdpg p9 prep tib '<tib_name>' (<ext>)". The session-level description uses the plan's suggested format verbatim.  
+- prep_session_uuid YAML default placeholder is "REPLACE_WITH_PREP_SESSION_UUID" — a literal string a user must overwrite before knitting the main body, not a valid UUID.  
+- Added verbose_verify flag to resolve_prov_file() — not in the original plan. Requested after the Stage 5 checkpoint: resolve_prov_file(..., verbose_verify = FALSE). Default FALSE keeps knit output silent on successful prov_verify() calls; TRUE prints "VERIFIED: tib '<name>' (<ext>) -> <path>", useful for debugging. Covered by two tests (silent by default; prints when enabled).  
+- No package scaffold in bdpgtext2 (no DESCRIPTION), so tests run via plain testthat::test_file(), not devtools::test(). Each test file is run manually after source("R/provenance_helpers.R") plus library(dataprov) / library(bdpg) / library(testthat). withr::local_tempdir(.local_envir = parent.frame()) is used throughout per the standard temp-file-in-tests convention.  
 
 ## Working-practice notes
 
