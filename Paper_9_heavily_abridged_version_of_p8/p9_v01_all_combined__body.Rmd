@@ -34,6 +34,7 @@ params:
   relative_path_to_data_out_loc: "Data/TempOutput"
   ggplot_save_path: "Paper_9_heavily_abridged_version_of_p8/Saved_plots"
   prep_session_uuid: "4c261db9-913b-4a1b-abc1-88cd1cbd0665"    #  UUID printed by p9_v01_prep_data_for_p8_to_load_from_files.Rmd
+  verbose_verify_prov_reads: FALSE    #  If TRUE, resolve_prov_file() prints a VERIFIED line for each of the 8 prepped inputs it loads
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
   show_only_test_results: TRUE
@@ -625,7 +626,8 @@ reg = dataprov::prov_registry_open (file.path (proj_dir, "Data", "dataprov_regis
 #--------------------  
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "filtered_full_initial_exp_tib", ext = "csv")
+                                   "filtered_full_initial_exp_tib", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 filtered_full_initial_exp_tib =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
@@ -633,7 +635,8 @@ filtered_full_initial_exp_tib =
 #--------------------
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p2_app_wrap_tib", ext = "csv")
+                                   "p2_app_wrap_tib", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p2_app_wrap_tib =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
@@ -641,13 +644,15 @@ p2_app_wrap_tib =
 #--------------------
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_working_train_df", ext = "csv")
+                                   "p3_working_train_df", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_working_train_df =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_working_test_df", ext = "csv")
+                                   "p3_working_test_df", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_working_test_df =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
@@ -655,13 +660,15 @@ p3_working_test_df =
 #--------------------
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_train_aux_df", ext = "csv")
+                                   "p3_train_aux_df", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_train_aux_df =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_test_aux_df", ext = "csv")
+                                   "p3_test_aux_df", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_test_aux_df =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
@@ -673,7 +680,8 @@ p3_test_aux_df =
 ```{r load_p3_working_train_data, include=FALSE}
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_working_train_df__before_any_preprocessing", ext = "csv")
+                                   "p3_working_train_df__before_any_preprocessing", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_working_train_df__before_any_preprocessing =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
@@ -682,7 +690,8 @@ p3_working_train_df__before_any_preprocessing =
 ```{r load_p3_working_test_data, include=FALSE}
 
 resolved_path = resolve_prov_file (reg, params$prep_session_uuid,
-                                   "p3_working_test_df__before_any_preprocessing", ext = "csv")
+                                   "p3_working_test_df__before_any_preprocessing", ext = "csv",
+                                   verbose_verify = params$verbose_verify_prov_reads)
 p3_working_test_df__before_any_preprocessing =
     load_file_into_tibble (file_name = basename (resolved_path),
                            base_path = dirname (resolved_path))
