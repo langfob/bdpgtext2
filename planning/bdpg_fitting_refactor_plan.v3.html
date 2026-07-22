@@ -11,7 +11,7 @@
 
 
 
-<title>bdpg_fitting_refactor_plan</title>
+<title>bdpg_fitting_refactor_plan.v3</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -352,7 +352,6 @@ display: none;
 </div>
 
 
-<hr />
 <div id="plan-refactor-of-the-error-prediction-fitting-evaluation-pipeline-bdpg-paper" class="section level1">
 <h1>Plan: refactor of the error-prediction fitting &amp; evaluation
 pipeline (bdpg paper)</h1>
@@ -368,12 +367,13 @@ only then behind a switch with the old path still callable.</p>
 <div id="context-and-goal" class="section level2">
 <h2>1. Context and goal</h2>
 <p>The paper fits per-problem predictive models of two reserve-selection
-output-error types (representation shortfall <code>E_rep</code>, signed
-solution cost error <code>E_sc</code>) for four reserve selectors,
-across several input feature sets. Fitting, evaluation, and plotting
-currently live in a deeply nested set of functions that are hard to
-read, hard to extend with new learners, and hard to re-evaluate under
-different train/test schemes.</p>
+output-error types (representation shortfall, the column
+<code>rsr_COR_spp_rep_shortfall</code>; and solution cost error, the
+column <code>rs_solution_cost_err_frac</code>) for four reserve
+selectors, across several input feature sets. Fitting, evaluation, and
+plotting currently live in a deeply nested set of functions that are
+hard to read, hard to extend with new learners, and hard to re-evaluate
+under different train/test schemes.</p>
 <p>The refactor has four goals:</p>
 <ul>
 <li>Make the <strong>learning method swappable</strong> (LM now; random
@@ -458,8 +458,13 @@ checkpoints 5–6.</li>
 <div id="create-new" class="section level3">
 <h3>Create (new)</h3>
 <ul>
-<li><code>R/v2_paper_3_fitting_and_eval_pipeline.R</code> — the new
-pipeline (naming proposed in §10, pending author approval).<br />
+<li><code>R/v1_paper_9_fitting_and_eval_pipeline.R</code> — the new
+pipeline. The <code>v1_paper_9</code> prefix marks when/where this block
+of code was first added; include a header comment in the file noting its
+relationship to
+<code>R/v2_paper_3_cv_test_train_splitting_functions.R</code> (the
+upstream COR-disjoint splitting it will eventually consume) rather than
+implying that relationship through a shared prefix.<br />
 </li>
 <li>Test files and fixtures under the test tree (paths resolved in
 Checkpoint 0).</li>
@@ -629,6 +634,32 @@ reported</em> model is a separate, deferred step (§6 gate + §11).</li>
 <p>The correctness strategy is <strong>golden-master
 equivalence</strong>: capture the current pipeline’s numeric outputs as
 frozen fixtures, then assert the new pipeline reproduces them.</p>
+<p>Two distinct things get frozen, and it is important not to conflate
+them:</p>
+<ul>
+<li><strong>Frozen <em>inputs</em></strong> (Checkpoint 0) — a stable
+copy of the working frames the pipeline consumes:
+<code>p3_working_train_df</code> / <code>p3_working_test_df</code> plus
+the aux frames <code>p3_train_aux_df</code> /
+<code>p3_test_aux_df</code>. These already exist (the prep Rmd produces
+them and the analysis Rmd reads them); the only new work is placing a
+snapshot copy under version control in the test tree, because the
+project’s data is otherwise not committed. See the capture-point notes
+in Checkpoint 0 and in “Golden-master specifics” below — the snapshot
+must be taken <strong>in memory at the fit call site as RDS</strong>,
+not copied from the on-disk CSVs (details there).<br />
+</li>
+<li><strong>Frozen <em>outputs</em> = the golden master</strong>
+(Checkpoint 1) — the <code>adj_R2</code> / <code>rmse</code> /
+<code>R2</code> and predictions produced by running the
+<strong>old</strong> pipeline on those frozen inputs. This is the
+reference the new code must reproduce.</li>
+</ul>
+<p>Division of labor: <strong>Claude Code drafts the capture script; the
+author does not hand-write any capture code.</strong> The author
+<em>runs</em> the drafted script once on the full batches (trusted
+environment, untouched old code) and commits the result as the canonical
+golden; Claude Code runs the same script on the fast subset.</p>
 <ul>
 <li><p><strong>Fixtures are captured from the OLD code, before the new
 code exists</strong>, in the author’s trusted environment. A golden that
@@ -663,7 +694,71 @@ a ggplot with one facet per reserve selector and the expected
 annotation/diagonal layers. (Optional, heavier: a <code>vdiffr</code>
 snapshot test — propose but do not require.)</p></li>
 </ul>
+<div id="golden-master-specifics-resolved-2026-07-21" class="section level3">
+<h3>Golden-master specifics (resolved 2026-07-21)</h3>
+<p>These settle the mechanics that the two-tier and equivalence bullets
+above left open. They refine, not replace, those bullets.</p>
+<ul>
+<li><p><strong>What is captured (and what is not).</strong> Freeze two
+<em>data</em> artifacts per tier: (a) the final
+<code>all_fitting_scores_df</code> (the metric golden), and (b) the
+per-cell true-vs-predicted frame (the predictions golden, with the keys
+needed to join per selector / feature set / error type / TRAIN-TEST). Do
+<strong>not</strong> freeze a rendered plot. The predictions frame is
+the real ground truth — metrics are a deterministic function of it, and
+the figure is a deterministic function of both — so freezing predictions
+lets everything downstream be reconstructed and re-checked. A frozen
+image would instead couple the test to ggplot/font/OS versions and
+produce loud, meaningless failures; the figure is guarded by the
+structural test above (with <code>vdiffr</code> optional only).</p></li>
+<li><p><strong>Equivalence tolerance.</strong> Assert both metrics and
+predictions at testthat’s default tolerance (<code>~1.5e-8</code>,
+absolute+relative). LM through parsnip wraps <code>stats::lm</code>, so
+with an identically built design matrix agreement should be near machine
+precision. <strong>If the tolerance has to be loosened to pass, do not
+loosen it — investigate.</strong> The one place equivalence can quietly
+break is design-matrix construction at the recipe seam: intercept
+handling, factor contrasts, or column ordering differing between the
+pass-through recipe/hardhat path and the old code’s manual
+<code>as.matrix</code>/<code>model.matrix</code>. A tight tolerance is
+doing double duty as a correctness probe on that seam.</p></li>
+<li><p><strong>Fast-subset selection rule.</strong> Subsample by COR
+group, not by row: fixed seed, then take the <em>smallest</em> set of
+distinct <code>rsp_UUID_of_COR_Base_problem_that_is_wrapped</code>
+values that still (a) populates all 4 reserve selectors × 2 error types,
+(b) retains both <code>dom_err_type</code> levels, and (c) leaves every
+cell non-degenerate for an LM fit (comfortably
+<code>n &gt; p + 1</code>, not rank-deficient). The fast fixture is a
+plumbing/equivalence gate, <strong>not</strong> an estimate of the
+science — statistical representativeness of the full-batch numbers is
+explicitly <em>not</em> a goal, because the test asserts
+new-code-vs-its-own-golden, not new-code-vs-truth. Selecting on the COR
+group (rather than random rows) also keeps the fixture usable for FC-1’s
+grouped CV.</p></li>
+<li><p><strong>The two goldens are two independent gates, not two
+measurements of one quantity.</strong> They describe different inputs,
+so their <em>values</em> are expected to differ and must never be
+reconciled against each other (no averaging, no relaxing one to match
+the other). The fast-subset golden is the inner-loop gate (Claude Code
+runs it constantly); the full-batch canonical is the release gate (the
+author runs it). The only meaningful failure is the <strong>new code
+passing one tier but failing the other</strong> — that signals a
+scale/edge-case bug (e.g. a cell degenerate at subset size but not at
+full size, or a numerical/branching path reached only at full n);
+investigate that specific divergence.</p></li>
+<li><p><strong>Refresh protocol.</strong> Goldens are frozen artifacts,
+regenerated only by a deliberate, reviewed act — never hand-edited,
+never auto-refreshed. When a <em>legitimate</em> behavior change lands:
+make the change, re-run the committed capture script, review the diff in
+the golden files as the explicit record of what changed, and commit it
+alongside a <code>DECISIONS.md</code> entry stating why. The author
+regenerates the full-batch canonical in the trusted environment; Claude
+Code may regenerate the fast subset. Keeping the capture script in the
+repo is what makes a refresh reproducible; forcing it through a reviewed
+diff is what keeps unintended drift loud.</p></li>
+</ul>
 <hr />
+</div>
 </div>
 <div id="staged-implementation-with-checkpoints" class="section level2">
 <h2>6. Staged implementation with checkpoints</h2>
@@ -672,7 +767,7 @@ snapshot test — propose but do not require.)</p></li>
 <div id="checkpoint-0-environment-repo-detection-scaffolding" class="section level3">
 <h3>Checkpoint 0 — Environment, repo detection, scaffolding</h3>
 <ul>
-<li><strong>Environment check (first action of the whole
+<li><p><strong>Environment check (first action of the whole
 effort).</strong> Confirm R runs and the existing code is sourceable:
 source <code>R/v1_paper_3_fitting_functions.R</code> and
 <code>R/v1_paper_3_plotting_and_evaluation_functions.R</code>, and run
@@ -681,38 +776,78 @@ exactly which, and stop. Required for old path: tidyverse, caret, plus
 whatever the sourced files <code>library()</code>. Required additionally
 for new path: tidymodels (parsnip, recipes, workflows, rsample,
 yardstick); ranger for the RF smoke test.<br />
-</li>
-<li><strong>Detect repo structure.</strong> If a
-<code>DESCRIPTION</code> file exists at repo root, treat
-<code>bdpgtext2</code> as an R package and use
-<code>tests/testthat/fixtures/</code>. Otherwise use
-<code>tests/fixtures/</code>. Record the resolved root as
-<code>FIXTURE_ROOT</code> and use it everywhere. Report which was
-chosen.<br />
-</li>
-<li><strong>Create fixture directories:</strong>
+</p></li>
+<li><p><strong>Fixture location.</strong> <code>bdpgtext2</code> is a
+plain project repo, <strong>not</strong> an R package, so use
+<code>tests/fixtures/</code> as <code>FIXTURE_ROOT</code>. (No
+<code>DESCRIPTION</code>-based detection is needed.)<br />
+</p></li>
+<li><p><strong>Create fixture directories:</strong>
 <code>FIXTURE_ROOT/inputs/</code> and
 <code>FIXTURE_ROOT/golden/</code>.<br />
+</p></li>
+<li><p><strong>Freeze the input snapshot (Checkpoint 0 = inputs only,
+not the golden).</strong> Snapshot the <strong>working frames plus
+aux</strong> — <code>p3_working_train_df</code> /
+<code>p3_working_test_df</code> and <code>p3_train_aux_df</code> /
+<code>p3_test_aux_df</code> — as <strong>RDS</strong> into
+<code>FIXTURE_ROOT/inputs/</code>, and commit them, so the tests have a
+fixed input that does not move when data is regenerated. Snapshotting
+the <em>working</em> frames (rather than the already-derived
+<code>p3_train_x_df</code> / <code>p3_test_x_df</code>) is deliberate:
+one snapshot serves every feature set, and the fixture’s own
+<code>build_feature_set_specific_test_and_train()</code> derives the
+per-feature-set x-frames, keeping that derivation inside the tested
+path.</p>
+<p>Two correctness details govern <em>how</em> the snapshot is
+taken:</p>
+<ul>
+<li><strong>Capture in memory, at the fit call site, as RDS — not by
+copying the on-disk CSVs.</strong> The frames live on disk as CSV
+(<code>p3_working_train_df.gurobi__all.exclude_imperfect_wraps__FALSE.csv</code>,
+etc.), which has already lost R types and factor levels, and the
+analysis body <em>munges the frames after loading</em> (the Gurobi→ILP
+string replacement). So a raw CSV copy would be both lossy and
+pre-munge. The snapshot must be <code>saveRDS()</code> of the in-memory
+frames as they enter
+<code>fit_and_predict_output_error_using_feature_set()</code> (after the
+ILP replacement).<br />
 </li>
-<li><strong>Author task (flagged for the author, not Claude
-Code):</strong> write the prepared <code>p3_working_train_df</code> and
-<code>p3_working_test_df</code> into <code>FIXTURE_ROOT/inputs/</code>
-as <strong>RDS</strong> (preserves types, factor levels, exact
-values).<br />
-</li>
-<li><strong>Set up testthat scaffolding</strong> and create an empty
-<code>R/v2_paper_3_fitting_and_eval_pipeline.R</code>.<br />
-</li>
-<li><strong>DoD:</strong> environment-check test green;
+<li><strong>These working frames are already post-Box-Cox /
+post-standardization</strong> (preprocessing happened upstream in the
+prep Rmd), which is exactly the pass-through-recipe input this round
+expects. The separate <code>__before_any_preprocessing</code> frames are
+<em>not</em> the learning input (they feed only the disabled
+Matilda-file chunk) and are not snapshotted.</li>
+</ul>
+<p><strong>Commit the full batch.</strong> Measured sizes: each working
+frame is ~13 MB as CSV (smaller as compressed RDS) and each aux frame
+~100 KB — comfortably small enough to commit directly (no Git LFS, no
+out-of-repo artifact). So both tiers’ inputs are committed: the
+full-batch snapshot for the author’s release gate and the fast-subset
+snapshot for the inner loop. This step freezes inputs only — the golden
+outputs come in Checkpoint 1.<br />
+</p></li>
+<li><p><strong>Set up testthat scaffolding</strong> and create an empty
+<code>R/v1_paper_9_fitting_and_eval_pipeline.R</code> (with the header
+comment described in §2 and §10).<br />
+</p></li>
+<li><p><strong>DoD:</strong> environment-check test green;
 <code>FIXTURE_ROOT</code> resolved and reported; input RDS files
-present; empty new R file created; test harness runs.</li>
+present; empty new R file created; test harness runs.</p></li>
 </ul>
 </div>
 <div id="checkpoint-1-capture-golden-masters-from-the-old-pipeline" class="section level3">
 <h3>Checkpoint 1 — Capture golden masters from the OLD pipeline</h3>
+<p>This checkpoint freezes the pipeline’s <strong>outputs</strong> (the
+golden master) — distinct from Checkpoint 0, which froze the
+<strong>inputs</strong>. Same frozen inputs go in; the old code’s
+numbers come out and become the reference.</p>
 <ul>
-<li><p>Draft a <strong>capture script</strong> that sources the old
-fitting + eval code, loads the input fixtures, and runs the existing
+<li><p>Draft a <strong>capture script</strong> (Claude Code writes it;
+the author runs it — the author writes no capture code) that sources the
+old fitting + eval code, loads the frozen input fixtures from
+<code>FIXTURE_ROOT/inputs/</code>, and runs the existing
 <code>build_feature_set_specific_test_and_train()</code> +
 <code>fit_and_predict_output_error_using_feature_set()</code> for the
 <strong>LM</strong> cases across the reported feature sets × error types
@@ -725,15 +860,27 @@ golden), and<br />
 <li>the per-cell true-vs-predicted data (predictions golden), for the
 scatter.</li>
 </ul></li>
-<li><p>Claude Code generates the <strong>fast-subset</strong> golden by
-running the same capture on the deterministic subsample.<br />
+<li><p><strong>The author runs the capture on the full batches</strong>
+(trusted environment, old code untouched) and commits the result as the
+canonical golden — because the paper’s authoritative numbers should
+trace to the author’s environment, captured before any new code
+exists.<br />
 </p></li>
-<li><p>The <strong>author</strong> runs the capture on the <strong>full
-batches</strong> and commits the canonical golden.<br />
+<li><p><strong>Claude Code generates the fast-subset golden</strong> by
+running the same script on the deterministic subsample.<br />
 </p></li>
 <li><p>Note: the capture script temporarily needs the old
 <code>show()</code> side effect suppressed or redirected; capture data,
 not figures, at this stage.<br />
+</p></li>
+<li><p>Note (resolved 2026-07-21): the capture script is authored
+<strong>here, by Claude Code</strong>, not drafted during planning — an
+untested script written in the planning chat could drift from the real
+return shapes of <code>eval_model_on_train_or_test_data()</code> and the
+true-vs-pred frame, and it belongs in the session that can execute and
+verify it. What the script captures, the equivalence tolerance, the
+fast-subset selection rule, and the refresh protocol are fixed in
+“Golden-master specifics” (§5); follow those.<br />
 </p></li>
 <li><p><strong>DoD:</strong> golden files exist for both tiers; a test
 loads them; the fast-subset golden is reproducible by re-running the
@@ -924,13 +1071,19 @@ preserved.</li>
 surgical, testable increments.</p>
 <hr />
 </div>
-<div id="naming-convention-proposed-author-to-approve" class="section level2">
-<h2>10. Naming convention (PROPOSED — author to approve)</h2>
+<div id="naming-convention-approved-2026-07-21" class="section level2">
+<h2>10. Naming convention (APPROVED 2026-07-21)</h2>
 <ul>
 <li><p><strong>New file:</strong>
-<code>R/v2_paper_3_fitting_and_eval_pipeline.R</code> (the
-<code>v2_</code> prefix matches
-<code>v2_paper_3_cv_test_train_splitting_functions.R</code>).<br />
+<code>R/v1_paper_9_fitting_and_eval_pipeline.R</code>. The
+<code>v1_paper_9</code> prefix records when and in what context this
+code was first added (the author’s convention for locating new blocks).
+Do <strong>not</strong> reuse the <code>v2_paper_3</code> prefix to
+signal the connection to
+<code>R/v2_paper_3_cv_test_train_splitting_functions.R</code>; instead
+state that relationship explicitly in a header comment inside the new
+file (it is the upstream COR-disjoint splitting the pipeline will
+eventually consume when CV lands).<br />
 </p></li>
 <li><p><strong>Functions:</strong></p>
 <ul>
@@ -967,6 +1120,14 @@ what would trigger revisiting. Two kinds are tracked:
 <strong>placeholders</strong> (simplest-thing-now, expected to change)
 and <strong>preserved behaviors</strong> (match the old code exactly; do
 not “improve”).</p>
+<blockquote>
+<p>The subset of these items that are large enough to warrant their
+<strong>own dedicated chats</strong> (rather than being folded into
+implementation) are also tracked separately in
+<code>FUTURE_CHATS.md</code>, so they are not lost inside this list.
+Entries tagged <em>“separate chat”</em> below correspond to items in
+that file.</p>
+</blockquote>
 <div id="placeholders-expected-to-revisit" class="section level3">
 <h3>Placeholders (expected to revisit)</h3>
 <ul>
@@ -1040,7 +1201,12 @@ tidymodels metrics are ever substituted, the matching function is
 <li><strong>adjusted-R² formula.</strong>
 <code>1 - (1 - R2) * ((n - 1)/(n - p - 1))</code> via
 <code>compute_adj.r.squared()</code> (df.int = 1). Reproduce, do not
-“modernize.”<br />
+“modernize” — i.e. do not replace it with
+<code>summary(lm_fit)$adj.r.squared</code> or
+<code>broom::glance()$adj.r.squared</code>, which compute the
+<em>in-sample</em> adjusted R² from the model’s own residual degrees of
+freedom and would silently produce a different number than this
+out-of-sample form.<br />
 </li>
 <li><strong><code>all_fitting_scores_df</code> column shape.</strong>
 Exactly as in §3; downstream factoring/plotting depends on it.</li>
@@ -1053,8 +1219,9 @@ Exactly as in §3; downstream factoring/plotting depends on it.</li>
 assume)</h2>
 <p>Raise these during implementation rather than guessing:</p>
 <ul>
-<li>Confirm <code>FIXTURE_ROOT</code> choice (package vs project) after
-the <code>DESCRIPTION</code> check; report it.<br />
+<li><code>FIXTURE_ROOT</code> is <code>tests/fixtures/</code> (project
+repo, not a package); create it if absent and report the path
+used.<br />
 </li>
 <li>Confirm the required packages are installed before relying on them
 (env check, Checkpoint 0); if not, report which and stop.<br />
@@ -1076,7 +1243,7 @@ author approves.<br />
 <div id="one-screen-summary" class="section level2">
 <h2>13. One-screen summary</h2>
 <p>Build a new, legible fitting/evaluation pipeline in
-<code>R/v2_paper_3_fitting_and_eval_pipeline.R</code>, parallel to the
+<code>R/v1_paper_9_fitting_and_eval_pipeline.R</code>, parallel to the
 old code, structured around three seams (resampling plan, recipe,
 learner) but exercising only the simplest case (single holdout,
 pass-through recipe, LM). Reuse the existing metric kernel
