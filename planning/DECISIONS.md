@@ -228,3 +228,120 @@ metrics-only, captured in-Rmd, one-shot.
 - Author's careful read of the revised `bdpg_fitting_refactor_plan.md`; revise in place if further edits arise 
 
 - Begin the Claude Code implementation session at Checkpoint 0 when ready 
+
+# Decisions Log Entry: 2026-07-23
+
+## Session: Claude Code implementation, Checkpoints 0-1 (fitting/eval refactor bootstrap)
+
+### Context
+
+First Claude Code implementation session for `bdpg_fitting_refactor_plan.md`, run from
+`planning/CLAUDE_CODE_PROMPT_fitting_refactor.md`. Completed the environment check and
+scaffolding (Checkpoint 0), then drafted the combined golden-master capture instrumentation
+(Checkpoints 0's input freeze + Checkpoint 1's metric capture, bundled under one flag as the
+plan specifies). This entry records the scoped no-modify exception and one deviation from the
+plan's literal wording that the author should confirm.
+
+### Decisions made / actions taken
+
+- Environment check passed with no missing packages: tidymodels (parsnip, recipes, workflows,
+  rsample, yardstick), ranger, caret, party, glmnet, dataprov, bdpg all already installed.
+  Both `R/v1_paper_3_fitting_functions.R` and `R/v1_paper_3_plotting_and_evaluation_functions.R`
+  source cleanly; `eval_model_on_train_or_test_data()` reproduces sane metrics on a trivial LM
+  fit. Captured as an automated test,
+  `tests/testthat/test-fitting-pipeline-env-check.R` (5/5 assertions green) 
+
+- Created `tests/fixtures/inputs/` and `tests/fixtures/golden/` (FIXTURE_ROOT =
+  `tests/fixtures/`, confirmed as a plain project repo with no `DESCRIPTION`) 
+
+- Created the empty `R/v1_paper_9_fitting_and_eval_pipeline.R` with the header comment
+  required by plan §2/§10 
+
+- **Scoped no-modify exception exercised.** Added two additive, flag-gated chunks to
+  `Paper_9_heavily_abridged_version_of_p8/p9_v01_all_combined__body.Rmd`, plus two new
+  params (`capture_golden_master`, default `FALSE`; `force_golden_master`, default `FALSE`):
+    - `goldenMasterOverwriteGuard` (right after the registry is opened, before any data
+      loading or fitting): when the flag is on, aborts via `stop()` if a finalized
+      `all_fitting_scores_df` golden record already exists and `force_golden_master` is not
+      set  
+    - `captureGoldenMasterInputsAndScores` (right after the last fit call in the document,
+      before the "Summary of learning to predict output errors" section): when the flag is
+      on, writes `p3_working_train_df`, `p3_working_test_df`, `p3_train_aux_df`,
+      `p3_test_aux_df` (post Gurobi->ILP renaming, matching the plan's "capture at the fit
+      call site, not the pre-munge CSVs" requirement) to `tests/fixtures/inputs/`, and the
+      final accumulated `all_fitting_scores_df` to `tests/fixtures/golden/`, both as RDS via
+      `write_a_tib_with_provenance()`  
+  Both chunks are no-ops when `capture_golden_master` is `FALSE` (the default); confirmed the
+  full document still parses as valid R via `knitr::purl()` after the edit, and confirmed via
+  `git diff` that the edit is purely additive (0 lines of existing code touched) 
+
+- **Deviation from the plan's literal wording, flagged for confirmation:** the capture chunk
+  uses a **dedicated** dataprov registry at `tests/fixtures/dataprov_registry/`, not the
+  production `Data/dataprov_registry` the plan's prose names. Reason: `Data/` in `bdpgtext2`
+  is a symlink out to `RnotInPkgs/bdpgtext/Data` (a sibling, separately-ignored directory per
+  the root `CLAUDE.md`), so it is not part of the `bdpgtext2` git repo, while the plan requires
+  the golden-master fixtures to be committed directly into `bdpgtext2`. A dedicated
+  in-repo registry keeps the provenance database and its RDS payloads committable together.
+  This still reuses the exact same *idiom* the plan asks for (`open_or_init_registry()` /
+  `prov_session_start()` / `write_a_tib_with_provenance()` / `prov_session_close()`), just
+  pointed at a different directory 
+
+- The capture chunk prints the golden-master session's UUID (mirroring exactly how the prep
+  Rmd prints and pins `prep_session_uuid`). This UUID is not yet wired into any params default
+  or test fixture — that wiring is Checkpoint 2 work, once the author has actually run the
+  capture and the UUID is known 
+
+### Next steps
+
+- Author reviews the two new chunks and two new params in
+  `p9_v01_all_combined__body.Rmd`, and the dedicated-registry deviation above 
+
+- Author runs the document once with `capture_golden_master: TRUE` (trusted environment, old
+  code otherwise untouched) to produce and commit the four input RDS files and the
+  `all_fitting_scores_df` golden RDS, plus the new `tests/fixtures/dataprov_registry/`
+  directory, and records the printed session UUID 
+
+- Once committed, proceed to Checkpoint 2 (fit/evaluate core, LM equivalence test against the
+  committed golden, new-side self-regression fixture on a COR-subsample, RF smoke test) 
+
+## Session (same day, continued): Checkpoint 1 confirmed
+
+### Context
+
+Author ran `p9_v01_all_combined__body.Rmd` once with `capture_golden_master: TRUE`. It
+completed and the rendered PDF printed `GOLDEN MASTER CAPTURE SESSION UUID:
+2daf65c9-72c2-4fd0-89ff-a91074b4cb63`.
+
+### Decisions made / actions taken
+
+- Verified the five committed fixture files (`tests/fixtures/inputs/p3_working_train_df.rds`
+  (7676 x 101), `p3_working_test_df.rds` (7752 x 101), `p3_train_aux_df.rds` (7676 x 3),
+  `p3_test_aux_df.rds` (7752 x 3), and `tests/fixtures/golden/all_fitting_scores_df.rds`
+  (64 x 8)) all hash-verify via `resolve_prov_file()` against the pinned session UUID.
+  `all_fitting_scores_df` has exactly the 8 columns from plan §3, 4 `vars_used_str` levels
+  (`PUsAndSppOnly`, `ProbSizeAndDensity`, `Graph`, `All`), 2 `measure_name_str` levels, 4
+  `rs_method_name` levels, and both `TRAIN`/`TEST` -- i.e. 4 x 2 x 4 x 2 = 64 rows, matching
+  the 8 fit-call sites read from the Rmd 
+
+- Added `tests/testthat/test-golden-master-capture.R` (13 assertions, all green): loads and
+  hash-verifies all five fixtures via `resolve_prov_file()`, and exercises the ACTUAL
+  `goldenMasterOverwriteGuard` chunk (extracted verbatim from the Rmd by chunk label, not
+  reimplemented, so the test cannot drift from the real chunk) under three conditions --
+  inert when `capture_golden_master` is `FALSE`; aborts with "Refusing to overwrite" when
+  `capture_golden_master` is `TRUE` and the (now-existing) finalized golden is found with
+  `force_golden_master` unset; bypassed when `force_golden_master` is `TRUE`. This satisfies
+  Checkpoint 1's DoD 
+
+- Full existing test suite (`testthat::test_dir("tests/testthat")`, all 5 files) still passes
+  together: 5+13+4+7+16 = 45 assertions, 0 failures 
+
+- Noted but not touched: the render also produced an untracked PDF,
+  `Paper_9_heavily_abridged_version_of_p8/p9_v01_all_combined__body.GOLDEN_MASTER_CAPTURE-2026-07-23-13-40.pdf`.
+  Left for the author to decide whether to keep, `.gitignore`, or delete 
+
+### Next steps
+
+- Checkpoint 1 is complete. Proceed to Checkpoint 2: implement the pure fit/evaluate core
+  (`fit_output_error_for_feature_set()`), the LM equivalence test against this committed
+  golden (tolerance ~1.5e-8), the new-side self-regression fixture on a deterministic
+  COR-subsample, and the RF structure-only smoke test -- per author approval to proceed 

@@ -35,6 +35,9 @@ params:
   ggplot_save_path: "Paper_9_heavily_abridged_version_of_p8/Saved_plots"
   prep_session_uuid: "4c261db9-913b-4a1b-abc1-88cd1cbd0665"    #  UUID printed by p9_v01_prep_data_for_p8_to_load_from_files.Rmd
   verbose_verify_prov_reads: FALSE    #  If TRUE, resolve_prov_file() prints a VERIFIED line for each of the 8 prepped inputs it loads
+#-----  golden-master capture variables (fitting/eval refactor bootstrap; see planning/bdpg_fitting_refactor_plan.md) -----#
+  capture_golden_master: TRUE    #  If TRUE, writes frozen input snapshots + all_fitting_scores_df under tests/fixtures/ for the new tidymodels pipeline's golden-master equivalence tests.  Inert (no behavior change) when FALSE.  See DECISIONS.md.
+  force_golden_master: FALSE    #  If TRUE, allows capture_golden_master to overwrite an existing finalized golden record.  Otherwise the run aborts (before any fitting or writes) if one already exists, instead of silently regenerating it.
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
   show_only_test_results: TRUE
@@ -614,6 +617,51 @@ source (file.path (proj_dir, "R/provenance_helpers.R"),
          local = knitr::knit_global())
 
 reg = dataprov::prov_registry_open (file.path (proj_dir, "Data", "dataprov_registry"))
+```
+
+```{r goldenMasterOverwriteGuard, include=FALSE}
+
+#  Overwrite guard for the golden-master capture (see
+#  planning/bdpg_fitting_refactor_plan.md, "Golden-master specifics").  Evaluated
+#  here, before any data loading or fitting, so a capture_golden_master = TRUE run
+#  aborts immediately if a golden record already exists, instead of doing hours of
+#  fitting first.  Inert when capture_golden_master is FALSE (the default).
+#
+#  Not implemented as an interactive prompt: interactive() is FALSE under
+#  rmarkdown::render(), so readline() would not block and a prompt would silently
+#  fall through.
+#
+#  Uses a DEDICATED registry under tests/fixtures/dataprov_registry, not the
+#  production Data/dataprov_registry -- Data/ is a symlink out to the (separately
+#  ignored) bdpgtext/Data directory and so is not part of this git repo, while the
+#  golden-master fixtures must be committed here.
+
+if (isTRUE (params$capture_golden_master))
+    {
+    fixture_root        = file.path (proj_dir, "tests", "fixtures")
+    golden_dir          = file.path (fixture_root, "golden")
+    golden_registry_dir = file.path (fixture_root, "dataprov_registry")
+
+    golden_check_reg = open_or_init_registry (golden_registry_dir)
+
+    existing_golden_records =
+        dataprov::prov_list (golden_check_reg,
+                             tags = list (tib = "all_fitting_scores_df",
+                                         file_extension = "rds"))
+
+    DBI::dbDisconnect (golden_check_reg$conn)
+
+    golden_already_exists =
+        (nrow (existing_golden_records) > 0) &&
+        any (existing_golden_records$status == "finalized")
+
+    if (golden_already_exists && ! isTRUE (params$force_golden_master))
+        stop (paste0 ("params$capture_golden_master is TRUE, but a finalized ",
+                      "'all_fitting_scores_df' golden record already exists in\n    ",
+                      golden_registry_dir, "\n",
+                      "Refusing to overwrite it.  Set params$force_golden_master = TRUE ",
+                      "to regenerate it intentionally.\n"))
+    }
 ```
 
 ```{r loadPreppedDataFromFiles, include=FALSE}
@@ -2562,6 +2610,74 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           display_train_as_final_pred_using_plot
           )
 
+```
+
+```{r captureGoldenMasterInputsAndScores, include=TRUE}
+
+#  Golden-master capture for the fitting/eval refactor bootstrap (see
+#  planning/bdpg_fitting_refactor_plan.md, "Golden-master specifics").  ADDITIVE and
+#  INERT when params$capture_golden_master is FALSE (the default) -- no behavior
+#  change to normal knits.  The overwrite guard earlier in this document has already
+#  aborted the run if a finalized golden record exists and
+#  params$force_golden_master is not set.
+#
+#  Writes two distinct things, both as RDS via the same dataprov idiom already used
+#  for the prep-run outputs (write_a_tib_with_provenance() / resolve_prov_file()):
+#    - the frozen INPUT snapshot: the working + aux frames exactly as they exist at
+#      this point in the document, i.e. AFTER the Gurobi->ILP renaming above, not the
+#      on-disk pre-munge CSVs -- into tests/fixtures/inputs/
+#    - the frozen OUTPUT golden: all_fitting_scores_df, accumulated across every fit
+#      call in this document (not hardcoded here) -- into tests/fixtures/golden/
+#
+#  This is a one-shot bootstrap (see plan): once the new tidymodels pipeline is
+#  validated against this golden, the old pipeline and this capture instrumentation
+#  are retired.
+
+if (isTRUE (params$capture_golden_master))
+    {
+    inputs_dir = file.path (fixture_root, "inputs")
+
+    golden_registry = open_or_init_registry (golden_registry_dir)
+
+    golden_sess = prov_session_start (
+        golden_registry,
+        description = paste0 ("bdpg fitting-refactor golden-master capture; ",
+                              "gurobi_problem_filter=", params$gurobi_problem_filter,
+                              "; exclude_imperfect_wraps=", params$exclude_imperfect_wraps),
+        parameters  = params
+        )
+
+    write_a_tib_with_provenance (golden_sess, p3_working_train_df,
+                                 "p3_working_train_df", inputs_dir,
+                                 params, "rds")
+    write_a_tib_with_provenance (golden_sess, p3_working_test_df,
+                                 "p3_working_test_df", inputs_dir,
+                                 params, "rds")
+    write_a_tib_with_provenance (golden_sess, p3_train_aux_df,
+                                 "p3_train_aux_df", inputs_dir,
+                                 params, "rds")
+    write_a_tib_with_provenance (golden_sess, p3_test_aux_df,
+                                 "p3_test_aux_df", inputs_dir,
+                                 params, "rds")
+
+    write_a_tib_with_provenance (golden_sess, all_fitting_scores_df,
+                                 "all_fitting_scores_df", golden_dir,
+                                 params, "rds")
+
+    prov_session_close (golden_sess)
+
+    cat ("\n\n=========================================================\n")
+    message ("GOLDEN MASTER CAPTURE SESSION UUID: ", golden_sess$uuid)
+    cat ("GOLDEN MASTER CAPTURE SESSION UUID: ", golden_sess$uuid, "\n", sep = "")
+    cat ("nrow (all_fitting_scores_df) = ", nrow (all_fitting_scores_df), "\n", sep = "")
+    cat ("dim (p3_working_train_df)   = ", paste (dim (p3_working_train_df), collapse = " x "), "\n", sep = "")
+    cat ("dim (p3_working_test_df)    = ", paste (dim (p3_working_test_df), collapse = " x "), "\n", sep = "")
+    cat ("dim (p3_train_aux_df)       = ", paste (dim (p3_train_aux_df), collapse = " x "), "\n", sep = "")
+    cat ("dim (p3_test_aux_df)        = ", paste (dim (p3_test_aux_df), collapse = " x "), "\n", sep = "")
+    cat ("=========================================================\n\n")
+
+    DBI::dbDisconnect (golden_registry$conn)
+    }
 ```
 
 ##  Summary of learning to predict output errors    
