@@ -563,4 +563,62 @@ modifying that function, per plan §6 Checkpoint 3 / §7
 ### Next steps
 
 - Checkpoint 3 is complete; awaiting author review before Checkpoint 4 (orchestrator, legacy
-  scores adapter, `save_final_model` gate)  
+  scores adapter, `save_final_model` gate)
+
+# Decisions Log Entry: 2026-07-24 (continued further still)
+
+## Session: Claude Code implementation, Checkpoint 4 (orchestrator, scores adapter, save_final_model gate)
+
+### Context
+
+Implemented `bind_fitting_scores()` and `run_output_error_fit()` in
+`R/v1_paper_9_fitting_and_eval_pipeline.R`, per plan §6 Checkpoint 4 / §10's approved names
+
+### Decisions made / actions taken
+
+- `bind_fitting_scores(all_fitting_scores_df, bundle)` projects `bundle$metrics` onto the exact
+  8-column legacy shape from plan §3 (`train_or_test`, `fitting_model_str`, `vars_used_str`,
+  `measure_name_str`, `rs_method_name`, `rmse`, `R2`, `adj_R2`) and row-binds. A `NULL` or
+  0-row starting frame is handled explicitly (returns the projected rows directly), which also
+  sidesteps a latent old-code quirk: the Rmd's own `all_fitting_scores_df` initializer uses the
+  column name `test_or_train` while `add_to_full_fitting_scores()` actually rbinds
+  `train_or_test` -- confirmed harmless in the old code (the golden's actual column is
+  `train_or_test`) but not worth replicating; the new adapter just always produces
+  `train_or_test` 
+
+- **Row order is NOT preserved and this is intentional, flagged for review:**
+  `add_to_full_fitting_scores()` appends all 4 RS TRAIN rows then all 4 RS TEST rows per call;
+  `fit_output_error_for_feature_set()` (Checkpoint 2, already tested, not reopened) appends
+  TRAIN-then-TEST per RS (interleaved) in its own RS loop. Nothing in the Rmd's downstream use
+  of `all_fitting_scores_df` (table/bar-chart code, all `filter()`/`group_by()`/`summarize()`)
+  depends on row position, so this was not treated as a "preserve exactly" item per plan §3 --
+  only column shape and values are 
+
+- `run_output_error_fit()`: fit -> bind scores -> `save_final_model` gate -> returns
+  `list(bundle, all_fitting_scores_df)`. No plotting inside it (plan §6) --
+  `plot_output_error_fit()` stays a separate call on the caller's side. The gate's save body is
+  a stubbed `TODO` cross-referencing the 2026-06-28 DECISIONS.md entry and `FUTURE_CHATS.md`
+  FC-4, per plan §8/§11; `FALSE` (default) skips silently, `TRUE` reaches the stub and returns
+  normally (tested) 
+
+- **Column-for-column equivalence test**
+  (`tests/testthat/test-fitting-pipeline-scores-adapter.R`): re-ran all 8 (feature set x error
+  type) call sites through `run_output_error_fit()` (not `fit_output_error_for_feature_set()`
+  directly, unlike the Checkpoint 2 test -- this one validates the adapter/orchestrator wiring),
+  accumulating `all_fitting_scores_df` from `NULL` exactly as the Rmd would. Result: same 8
+  column names in the same order as the golden; same row count (64); after sorting both sides
+  onto a canonical key (`vars_used_str`, `measure_name_str`, `rs_method_name`,
+  `train_or_test`), every value matches exactly -- consistent with Checkpoint 2's bit-for-bit
+  result. Plus unit tests for `bind_fitting_scores()` (projection, accumulation across calls,
+  0-row-vs-NULL starting frame) and `run_output_error_fit()` (return shape, both
+  `save_final_model` branches) 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 10 files) passes together: **271
+  assertions, 0 failures**, 32 warnings (same benign "All"-feature-set rank-deficient
+  prediction warnings from Checkpoints 2/3, now appearing in two equivalence tests that both
+  exercise "All"; unaffected) 
+
+### Next steps
+
+- Checkpoint 4 is complete; awaiting author review before Checkpoints 5-6 (wiring one Rmd
+  subsection behind a flag, then rolling out and flipping the default)   

@@ -454,3 +454,123 @@ plot_output_error_fit <- function (
     }
 
 #===============================================================================
+
+#  Legacy scores adapter (Checkpoint 4).  Projects bundle$metrics onto the
+#  exact legacy all_fitting_scores_df column shape (plan §3, produced by
+#  add_to_full_fitting_scores() in R/v1_paper_3_fitting_functions.R) and
+#  row-binds onto the running scores frame, so downstream table/summary code
+#  in the Rmd stays untouched.
+#
+#  Column VALUES are reproduced exactly (see the LM equivalence test); row
+#  ORDER is not: add_to_full_fitting_scores() appends all-RS-TRAIN-then-
+#  all-RS-TEST per call, while fit_output_error_for_feature_set() appends
+#  TRAIN-then-TEST per RS (interleaved). Nothing downstream depends on row
+#  order (all_fitting_scores_df is only ever consumed via
+#  filter()/group_by()/summarize() for tables and bar charts) -- flagged for
+#  author review as an intentional, low-stakes divergence rather than
+#  reworking Checkpoint 2's already-tested accumulation order to match.
+#
+#  all_fitting_scores_df - the running legacy-shaped frame, or NULL/0-row to
+#                          start a new one
+#  bundle                 - a bdpg_fit_result from fit_output_error_for_feature_set()
+#
+#  Returns the updated legacy-shaped data frame.
+
+bind_fitting_scores <- function (all_fitting_scores_df, bundle)
+    {
+    legacy_rows =
+        data.frame (train_or_test     = bundle$metrics$ds_label,
+                    fitting_model_str = bundle$metrics$fitting_model_str,
+                    vars_used_str     = bundle$metrics$feature_set_label,
+                    measure_name_str  = bundle$metrics$error_type_label,
+                    rs_method_name    = bundle$metrics$rs_name,
+                    rmse              = bundle$metrics$rmse,
+                    R2                = bundle$metrics$R2,
+                    adj_R2            = bundle$metrics$adj_R2,
+                    stringsAsFactors  = FALSE)
+
+    if (is.null (all_fitting_scores_df) || nrow (all_fitting_scores_df) == 0)
+        return (legacy_rows)
+
+    return (rbind (all_fitting_scores_df, legacy_rows))
+    }
+
+#===============================================================================
+
+#  Orchestrator (Checkpoint 4): fit + bind scores + the save_final_model
+#  gate. No plotting here (plan §6) -- plot_output_error_fit() is called
+#  separately by the caller on the returned bundle.
+#
+#  The save_final_model gate is consumed here as an already-resolved boolean
+#  (plan §8: "Is this a final-model run?" is a property of the whole run, not
+#  of any individual fit, so it is resolved ONCE, globally, by the caller --
+#  e.g. params$save_final_model in the eventual Rmd -- and this function only
+#  acts on it mechanically). TRUE fits the final workflow on the full
+#  training pool and saves a versioned artifact; FALSE (default) skips
+#  silently. The save body is a stub this round -- see the "save_final_model"
+#  / "Fitted-model carriage and final-model persistence" entries in
+#  DECISIONS.md (2026-06-28) and FUTURE_CHATS.md FC-4.
+#
+#  all_fitting_scores_df - the running legacy-shaped frame to bind onto
+#                          (NULL/0-row to start a new one)
+#  ...                    - all fit_output_error_for_feature_set() arguments,
+#                          passed through unchanged (see that function's
+#                          header comment)
+#  save_final_model       - resolved boolean; see above
+#
+#  Returns list (bundle, all_fitting_scores_df).
+
+run_output_error_fit <- function (
+    all_fitting_scores_df,
+    rs_method_names_list,
+    train_x_df, test_x_df,
+    working_train_df, working_test_df,
+    train_aux_df, test_aux_df,
+    target_col_name,
+    recipe,
+    learner_spec,
+    learner_id,
+    vars_used_str,
+    measure_name_str,
+    fitting_model_str,
+
+    x_min_on_plot = NA, x_max_on_plot = NA,
+    y_min_on_plot = NA, y_max_on_plot = NA,
+
+    seed = NULL,
+    keep_workflow = FALSE,
+    save_final_model = FALSE
+    )
+    {
+    bundle =
+        fit_output_error_for_feature_set (
+            rs_method_names_list,
+            train_x_df, test_x_df,
+            working_train_df, working_test_df,
+            train_aux_df, test_aux_df,
+            target_col_name,
+            recipe, learner_spec, learner_id,
+            vars_used_str, measure_name_str, fitting_model_str,
+
+            x_min_on_plot = x_min_on_plot, x_max_on_plot = x_max_on_plot,
+            y_min_on_plot = y_min_on_plot, y_max_on_plot = y_max_on_plot,
+
+            seed = seed, keep_workflow = keep_workflow)
+
+    all_fitting_scores_df = bind_fitting_scores (all_fitting_scores_df, bundle)
+
+    if (save_final_model)
+        {
+            #  TODO (deferred to the final-model round; see DECISIONS.md
+            #  2026-06-28 "save_final_model is a single global gate..." and
+            #  FUTURE_CHATS.md FC-4): fit the final workflow on the FULL
+            #  training pool (not just this call's train_x_df/test_x_df split)
+            #  and saveRDS() a versioned artifact. Not implemented -- the
+            #  final model is not trained until the pipeline is frozen and
+            #  the sequestered batches are unlocked.
+        }
+
+    return (list (bundle = bundle, all_fitting_scores_df = all_fitting_scores_df))
+    }
+
+#===============================================================================
