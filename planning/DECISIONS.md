@@ -738,4 +738,66 @@ just demonstrated
 
 - Author re-knit and it worked. Checkpoint 5 is now genuinely complete (real knit, not just
   fixture-driven tests). Next: Checkpoint 6 (convert the remaining subsections the same way;
-  flip the default), on author go-ahead      
+  flip the default), on author go-ahead
+
+# Decisions Log Entry: 2026-07-24 (Checkpoint 6)
+
+## Session: Claude Code implementation, Checkpoint 6 (roll out and flip default)
+
+### Context
+
+Converted the remaining 7 fit-call subsections in
+`Paper_9_heavily_abridged_version_of_p8/p9_v01_all_combined__body.Rmd` to the same
+flag-gated `if (params$use_new_fitting_pipeline) {...} else {...}` pattern Checkpoint 5
+established for the first one, per plan §6 Checkpoint 6
+
+### Decisions made / actions taken
+
+- Wired: `predictSolCostErrorUsingPUsAndSppOnly`,
+  `predictRepShortfallUsingProbSizeAndDensity`, `predictSolCostErrorUsingProbSizeAndDensity`,
+  `predictRepShortfallUsingNonLatapyGRAPH`, `predictSolCostErrorUsingNonLatapyGRAPH`,
+  `predictRepShortfallUsingEverything`, `predictSolCostErrorUsingEverything` -- all 8 fit-call
+  subsections are now wired 
+
+- Done via a Python line-splice script (not the Edit tool's string-matching, which caused two
+  earlier whitespace slips this session -- see Checkpoint 1 and Checkpoint 5 entries) that
+  locates each existing `fit_and_predict_output_error_using_feature_set()` call block and
+  wraps it in place, leaving every original byte untouched. **Confirmed via `git diff --stat`:
+  315 insertions, 0 deletions** across the whole file -- the old branches are provably
+  byte-identical for all 7, not just visually similar 
+
+- **`params$use_new_fitting_pipeline` was already `TRUE` in the working tree** (the author set
+  it to verify the Checkpoint 5 knit fix, then committed that state) -- so "flip the default to
+  the new path" was already satisfied going into this checkpoint; no further params edit was
+  needed. Flagged here for the record rather than silently assumed 
+
+- Confirmed no hidden dependency risk from skipping the old path: grepped
+  `R/v1_paper_3_fitting_functions.R` and `R/v1_paper_3_plotting_and_evaluation_functions.R` for
+  `<<-` (no matches) -- the old fitting functions have no side effects beyond their return
+  value and the `show()`-triggered plot, both of which the new path's explicit `print()`
+  reproduces 
+
+- **Extended `tests/testthat/test-fitting-pipeline-rmd-wiring.R`** with a full-document-level
+  test: runs the ACTUAL chunks for all 4 feature sets x 2 error types, in the same order and
+  accumulating `all_fitting_scores_df` the same way the real document does, with
+  `use_new_fitting_pipeline = TRUE`. Result: the final accumulated frame matches the canonical
+  golden exactly -- same 8 columns, same 64 rows, all values equal after canonical sorting.
+  This is the strongest check short of an actual knit 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 11 files) passes together: **301
+  assertions, 0 failures**, 52 warnings (same benign "All"-feature-set rank-deficient
+  prediction warnings; this checkpoint's new comprehensive test also exercises "All", hence the
+  increase from 32) 
+
+- **Old path retained, not removed** -- every wired subsection still has its old branch
+  reachable by setting `use_new_fitting_pipeline: FALSE`, satisfying plan §6's "keep the old
+  path callable for one cycle (rollback)" 
+
+### Next steps
+
+- Author to do a full knit with the current (already-`TRUE`) default to confirm the complete
+  document renders and `all_fitting_scores_df` matches the canonical golden in practice -- my
+  own verification is fixture/chunk-driven, not a literal end-to-end knit 
+
+- Once confirmed: author decides whether to retain the old path (rollback safety net) or
+  remove it now, per plan §6's DoD       

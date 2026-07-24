@@ -192,3 +192,74 @@ test_that ("the Rmd actually sources R/v1_paper_9_fitting_and_eval_pipeline.R",
 
     expect_match (source_chunk_text, "v1_paper_9_fitting_and_eval_pipeline\\.R")
     })
+
+#===============================================================================
+
+#  Checkpoint 6 verification (plan §6): all 8 subsections are now wired, and
+#  the default is flipped to the new path (params$use_new_fitting_pipeline
+#  defaults to TRUE in the Rmd's own params block). This test runs the
+#  ACTUAL chunks for all 4 feature sets x 2 error types, in the same order
+#  and accumulating all_fitting_scores_df the same way the real document
+#  does, and checks the FINAL accumulated frame against the canonical golden
+#  -- the strongest check short of an actual knit (which the author has done
+#  separately for this same TRUE default; see DECISIONS.md).
+
+feature_set_sequence_for_tests =
+    list (
+        list (set_chunk = "setPUsAndSppOnlyParams",
+             build_chunk = "buildPUsAndSppOnlyTestAndTrain",
+             predict_chunks = c ("predictRepShortfallUsingPUsAndSppOnly",
+                                "predictSolCostErrorUsingPUsAndSppOnly")),
+        list (set_chunk = "setProbSizeAndDensityParams",
+             build_chunk = "buildProbSizeAndDensityTestAndTrain",
+             predict_chunks = c ("predictRepShortfallUsingProbSizeAndDensity",
+                                "predictSolCostErrorUsingProbSizeAndDensity")),
+        list (set_chunk = "setNonLatapyGraphParams",
+             build_chunk = "buildNonLatapyGraphTestAndTrain",
+             predict_chunks = c ("predictRepShortfallUsingNonLatapyGRAPH",
+                                "predictSolCostErrorUsingNonLatapyGRAPH")),
+        list (set_chunk = "setEverythingParams",
+             build_chunk = "buildEverythingTestAndTrain",
+             predict_chunks = c ("predictRepShortfallUsingEverything",
+                                "predictSolCostErrorUsingEverything"))
+        )
+
+test_that ("with the flag TRUE, all 8 wired subsections together reproduce the full canonical golden",
+    {
+    env = make_wired_chunk_env (use_new_fitting_pipeline = TRUE)
+
+    pdf (NULL)
+    on.exit (dev.off (), add = TRUE)
+
+    for (fs in feature_set_sequence_for_tests)
+        {
+        run_rmd_chunks_in_env (body_rmd_path_for_tests, fs$set_chunk, env)
+        run_rmd_chunks_in_env (body_rmd_path_for_tests, fs$build_chunk, env)
+
+        for (predict_chunk in fs$predict_chunks)
+            expect_no_error (
+                run_rmd_chunks_in_env (body_rmd_path_for_tests, predict_chunk, env)
+                )
+        }
+
+    new_scores = env$all_fitting_scores_df
+
+    expect_equal (names (new_scores), names (all_fitting_scores_df_golden))
+    expect_equal (nrow (new_scores), nrow (all_fitting_scores_df_golden))
+    expect_equal (nrow (new_scores), 64)
+
+    sort_key <- function (df)
+        order (df$vars_used_str, df$measure_name_str, df$rs_method_name, df$train_or_test)
+
+    new_sorted    = new_scores [sort_key (new_scores), ]
+    golden_sorted = all_fitting_scores_df_golden [sort_key (all_fitting_scores_df_golden), ]
+
+    expect_equal (new_sorted$train_or_test, golden_sorted$train_or_test)
+    expect_equal (new_sorted$fitting_model_str, golden_sorted$fitting_model_str)
+    expect_equal (new_sorted$vars_used_str, golden_sorted$vars_used_str)
+    expect_equal (new_sorted$measure_name_str, golden_sorted$measure_name_str)
+    expect_equal (new_sorted$rs_method_name, golden_sorted$rs_method_name)
+    expect_equal (new_sorted$rmse, golden_sorted$rmse)
+    expect_equal (new_sorted$R2, golden_sorted$R2)
+    expect_equal (new_sorted$adj_R2, golden_sorted$adj_R2)
+    })

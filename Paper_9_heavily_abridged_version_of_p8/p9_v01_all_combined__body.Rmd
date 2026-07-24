@@ -1934,6 +1934,50 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
 
 ```{r predictSolCostErrorUsingPUsAndSppOnly, fig.cap = "\\label{fig:predSolCostErrorUsingPUsAndSppOnly}True solution cost error vs. predicted solution cost error on each problem in the test set using linear model trained for each reserve selector on input feature set containing only the number of planning units and the number of species.  Adjusted $R^2$ and rmse (on the test set) for each of the four learned prediction models are shown in the upper left corner of each plot.  Problems are colored by their dominant error type.  For reference, the line corresponding to a perfect fit of predicted to true values is shown diagonally upward from the origin"}
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rs_solution_cost_err_frac"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_sol_cost_err_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = NA, y_max_on_plot = NA,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Solution Cost Error"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -1956,6 +2000,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 ```
 
 ##  Predict using Problem Size and Density features (5 input variables)    
@@ -2074,6 +2119,50 @@ cat ("\nFeatures used:\n\n"); names (p3_train_x_df) [-1]    #  -1 to drop the rs
 
 ### Representation shortfall using ProbSizeAndDensity data
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rsr_COR_spp_rep_shortfall"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_rep_shortfall_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = -0.2, y_max_on_plot = 1.2,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Representation Shortfall"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2096,6 +2185,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
@@ -2103,6 +2193,50 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
 
 ### Solution cost error using ProbSizeAndDensity data 
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rs_solution_cost_err_frac"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_sol_cost_err_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = NA, y_max_on_plot = NA,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Solution Cost Error"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2125,6 +2259,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
@@ -2368,6 +2503,50 @@ cat ("\nFeatures used:\n\n"); names (p3_train_x_df) [-1]    #  -1 to drop the rs
 
 ```{r predictRepShortfallUsingNonLatapyGRAPH, fig.cap = "\\label{fig:predRepShortfallUsingNonLatapyGRAPH}True representation shortfall vs. predicted representation shortfall on each problem in the test set using linear model trained for each reserve selector on input feature set containing all bipartite graph variables (listed in LongformSI).  Adjusted $R^2$ and rmse (on the test set) for each of the four learned prediction models are shown in the upper left corner of each plot.  Problems are colored by their dominant error type.  For reference, the line corresponding to a perfect fit of predicted to true values is shown diagonally upward from the origin."}
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rsr_COR_spp_rep_shortfall"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_rep_shortfall_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = -0.2, y_max_on_plot = 1.2,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Representation Shortfall"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2390,6 +2569,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
@@ -2397,6 +2577,50 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
 
 ```{r predictSolCostErrorUsingNonLatapyGRAPH, fig.cap = "\\label{fig:predSolCostErrorUsingNonLatapyGRAPH}True solution cost error vs. predicted solution cost error on each problem in the test set using linear model trained for each reserve selector on input feature set containing all bipartite graph variables (listed in LongformSI).  Adjusted $R^2$ and rmse (on the test set) for each of the four learned prediction models are shown in the upper left corner of each plot.  Problems are colored by their dominant error type.  For reference, the line corresponding to a perfect fit of predicted to true values is shown diagonally upward from the origin."}
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rs_solution_cost_err_frac"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_sol_cost_err_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = NA, y_max_on_plot = NA,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Solution Cost Error"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2419,6 +2643,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
@@ -2613,6 +2838,50 @@ cat ("\nFeatures used:\n\n"); names (p3_train_x_df) [-1]    #  -1 to drop the rs
 
 ### Representation shortfall using Everything data
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rsr_COR_spp_rep_shortfall"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_rep_shortfall_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = -0.2, y_max_on_plot = 1.2,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Representation Shortfall"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2635,6 +2904,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
@@ -2642,6 +2912,50 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
 
 ### Solution cost error using Everything data 
 
+    #  Checkpoint 6 (planning/bdpg_fitting_refactor_plan.md): wired to the
+    #  new pipeline behind params$use_new_fitting_pipeline, same pattern as
+    #  Checkpoint 5.  See DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rs_solution_cost_err_frac"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_sol_cost_err_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = NA, y_max_on_plot = NA,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Solution Cost Error"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -2664,6 +2978,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 
 ```
 
