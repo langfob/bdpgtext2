@@ -1,0 +1,32 @@
+{
+  "uuid": "ff08478c-d9f0-4b56-9166-fc606e0cfa3b",
+  "schema_version": "1.0",
+  "description": "bdpg p9 prep tib 'self_regression_metrics' (rds)",
+  "tags": {
+    "tib": "self_regression_metrics",
+    "file_extension": "rds",
+    "gurobi_problem_filter": "all",
+    "exclude_imperfect_wraps": false
+  },
+  "locations": [
+    {
+      "type": "local",
+      "path": "/Users/bill/D/Projects/ProblemDifficulty/RnotInPkgs/bdpgtext2/tests/fixtures/golden/ff08478c-d9f0-4b56-9166-fc606e0cfa3b__self_regression_metrics.rds"
+    }
+  ],
+  "hash": {
+    "algorithm": "sha256",
+    "value": "8b1fe99b7a73b86be21e430965aaefe2d5819679f4b8d24e6411560ba05cf625"
+  },
+  "created_at": "2026-07-23T22:58:05Z",
+  "code_version": "d13777955099991565f30c23b5b82461b864477f",
+  "session_uuid": "2fe11665-b57a-4c34-b127-bffee0f49cec",
+  "parameters": {
+    "n_groups": 8,
+    "seed": 42,
+    "feature_sets": ["PUsAndSppOnly", "ProbSizeAndDensity", "Graph"]
+  },
+  "parent_uuids": [],
+  "parent_hashes": [],
+  "sibling_uuids": ["848a7b52-afa5-40b0-84bc-a9417da0155f", "b45368a2-ca7a-4df2-8309-9dade8da1f73"]
+}

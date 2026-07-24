@@ -51,12 +51,16 @@ resolve_golden_fixture <- function (reg, tib_name, ext = "rds")
                        verify = TRUE)
     }
 
-    #  Extracts the R source of one fenced chunk from the Rmd by label.
+    #  Extracts the R source of one fenced chunk from the Rmd by label.  A
+    #  chunk header is either "```{r label, <options>}" or, with no options,
+    #  bare "```{r label}".
 extract_rmd_chunk <- function (rmd_path, label)
     {
     lines = readLines (rmd_path, warn = FALSE)
 
-    start_idx = which (startsWith (trimws (lines), paste0 ("```{r ", label, ",")))
+    trimmed = trimws (lines)
+    start_idx = which (startsWith (trimmed, paste0 ("```{r ", label, ",")) |
+                       (trimmed == paste0 ("```{r ", label, "}")))
 
     if (length (start_idx) != 1)
         stop (paste0 ("Expected exactly one chunk labeled '", label,
