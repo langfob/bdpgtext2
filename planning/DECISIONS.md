@@ -345,3 +345,222 @@ completed and the rendered PDF printed `GOLDEN MASTER CAPTURE SESSION UUID:
   (`fit_output_error_for_feature_set()`), the LM equivalence test against this committed
   golden (tolerance ~1.5e-8), the new-side self-regression fixture on a deterministic
   COR-subsample, and the RF structure-only smoke test -- per author approval to proceed 
+
+# Decisions Log Entry: 2026-07-24
+
+## Session: Claude Code implementation, Checkpoint 2 (fitting/eval refactor) -- "All" feature set rank-deficiency
+
+### Context
+
+Mid-Checkpoint-2, building the fast-inner-loop new-side self-regression fixture (plan §5,
+"Golden-master specifics" -- a deterministic COR-subsample the new pipeline is regression-tested
+against, distinct from the full-batch old-vs-new equivalence golden). The plan requires every
+cell in that subsample to be non-degenerate for an LM fit ("`n > p+1`, not rank-deficient").
+While searching for a COR-group selection satisfying this, the "All" feature set (42 variables)
+would not become full rank no matter how many COR groups were added (tried up to 148, out of
+500 available) 
+
+### Root cause found
+
+`ig_num_edges_m` is an exact linear combination of two other "All" predictors --
+`edge_frac_of_possible x sppPUprod` -- confirmed via `caret::findLinearCombos()`. This is a
+structural property of the "All" feature set's variable *definitions* (an arithmetic identity),
+not a subsampling artifact: it reproduces identically at full data scale (all ~1900+ rows per
+reserve selector), for all 4 reserve selectors. This is also the exact cause of the 16
+"prediction from rank-deficient fit" warnings seen in the (separately passing, bit-for-bit
+exact) Checkpoint 2 LM equivalence test for the "All" feature set -- i.e. the OLD pipeline's own
+`lm()` call on "All" is equally rank-deficient today; this is pre-existing behavior, not
+something the new pipeline introduced 
+
+### Decisions made
+
+- **Do not remove `ig_num_edges_m` (or otherwise edit the "All" `inVars` list) as part of this
+  refactor.** Considered and explicitly rejected for now: doing so would change the "All"
+  feature set's actual reported `adj_R2`/`rmse`/`R2` values in the current manuscript (a
+  paper-content / methodology change), not just test-fixture plumbing, since it changes what
+  `lm()` fits on the full dataset too. That is out of scope for a code refactor governed by "do
+  not modify working code" (plan §9) and the project's "do not rewrite working code/logic
+  without explicit discussion and permission" rule (root `CLAUDE.md`). It would also require
+  re-deriving and re-reviewing the full-batch golden master again 
+
+- **The fast self-regression fixture excludes the "All" feature set.** It covers
+  `PUsAndSppOnly` (p=2), `ProbSizeAndDensity` (p=5), and `Graph` (p=27) -- all confirmed
+  genuinely full-rank at full data scale (`qr()$rank` == `ncol(model.matrix)` for all 4
+  reserve selectors, no deficiency). "All" stays fully covered by the full-batch LM equivalence
+  test (already green, bit-for-bit exact against the golden, rank-deficiency and all), so no
+  equivalence coverage is lost overall -- it is just not duplicated in the fast/small fixture 
+
+- **Tracked for a future dedicated look, not fixed now:** the cleanest fix is likely a
+  `recipes::step_lincomb()` (or `step_zv()`) step once the recipe seam takes on real
+  preprocessing (already a named placeholder -- plan §11, "Preprocessing ownership" -- rather
+  than a one-off manual edit to the `inVars` list, since a recipe step would also catch any
+  *other* near-collinear variables in "All" that have not been specifically checked. Logged in
+  `FUTURE_CHATS.md` 
+
+### Next steps
+
+- Add a FUTURE_CHATS.md entry for the "All" feature set collinearity / recipe-based fix 
+
+- Resume Checkpoint 2: materialize the COR-subsample selection (3 feature sets), freeze the new
+  pipeline's own output on it as the self-regression golden, then the RF structure-only smoke
+  test 
+
+# Decisions Log Entry: 2026-07-24 (continued)
+
+## Session: Claude Code implementation, Checkpoint 2 complete
+
+### Context
+
+Completed Checkpoint 2 of `bdpg_fitting_refactor_plan.md`: the pure fit/evaluate core, its LM
+equivalence test, the new-side self-regression fixture, and the RF smoke test. Added the
+FUTURE_CHATS.md FC-6 entry for the "All" feature set collinearity finding recorded in the
+previous entry above 
+
+### Decisions made / actions taken
+
+- Implemented the three seam-builder functions and the fit/evaluate core in
+  `R/v1_paper_9_fitting_and_eval_pipeline.R`, per plan §10's approved names:
+  `make_bdpg_resampling_plan()`, `make_bdpg_recipe()`, `make_bdpg_learner()`,
+  `fit_output_error_for_feature_set()`. Verified `generics::fit()` + `broom::augment()` on a
+  tidymodels workflow reproduces plain `lm()` predictions to bit-for-bit precision before
+  wiring it in 
+
+- `fit_output_error_for_feature_set()` loops over `rs_method_names_list` internally (one
+  fitted model per reserve selector, mirroring the old `fit_one_rs()`), so a single call
+  produces a bundle spanning all 4 reserve selectors x TRAIN/TEST -- matching what the plot
+  function (Checkpoint 3) and the Rmd call sites (Checkpoint 5) need. `num_predictors` is
+  computed from the RS-filtered, feature-only x data frame, matching the legacy `ncol()` count
+  exactly 
+
+- **LM equivalence test** (`tests/testthat/test-fitting-pipeline-lm-equivalence.R`): all 8
+  (feature set x error type) call sites read from the Rmd (not hand-transcribed --
+  `inVars`/`vars_used_str` are extracted and `eval()`'d directly from the Rmd's own
+  `set<FeatureSet>Params` chunks). Result: **exact bit-for-bit match (0.000e+00 max abs diff)**
+  against the committed golden for every cell -- well inside the ~1.5e-8 tolerance target. 16
+  benign "prediction from rank-deficient fit" warnings on the "All" feature set are expected
+  (see below) and do not affect the exact match 
+
+- **"All" feature set rank-deficiency finding and its handling: see the DECISIONS.md entry
+  immediately above** (same date) and `FUTURE_CHATS.md` FC-6. Net effect: the fast
+  self-regression fixture below covers `PUsAndSppOnly` / `ProbSizeAndDensity` / `Graph` only;
+  "All" stays covered by the LM equivalence test above 
+
+- **New-side self-regression fixture**: COR-subsample selected by fixed seed (42/43) + greedy
+  group count, validated for (a) >= 29 rows per reserve selector in both train and test
+  (`p+1` for Graph, the largest included feature set), (b) both `dom_err_type` levels present,
+  (c) full column rank for all 4 reserve selectors on the Graph feature set -- landed at 8 COR
+  groups (31-32 rows/RS). Frozen selection + the new pipeline's own metrics and predictions on
+  it were committed via the same dataprov idiom as the Checkpoint 1 golden, into the same
+  dedicated `tests/fixtures/dataprov_registry` (new tibs: `cor_subsample_selection`,
+  `self_regression_metrics`, `self_regression_predictions`; session
+  `2fe11665-b57a-4c34-b127-bffee0f49cec`). Unlike the Checkpoint 1 capture, this one did not
+  need author review/run -- it is new-side-only output, generated directly (no old code
+  touched, no Rmd touched) 
+
+- `tests/testthat/test-fitting-pipeline-self-regression.R` re-derives the subsample from the
+  frozen COR-group UUIDs (not by re-running the selection search) and re-runs the new pipeline,
+  reproducing the frozen metrics and predictions exactly (72 assertions green) 
+
+- **RF smoke test** (`tests/testthat/test-fitting-pipeline-rf-smoke.R`, 28 assertions green):
+  the identical workflow path with `make_bdpg_learner("rf")` runs end-to-end on the committed
+  subsample and returns a well-formed `bdpg_fit_result` -- structure only (class, bundle names,
+  `metrics`/`predictions` column shapes and types, `meta` contents), never values. Also covers
+  the `keep_workflow` flag's two branches (`NULL` when off; a named list of fitted workflows,
+  one per reserve selector, when on) 
+
+- **Seam unit tests** (`tests/testthat/test-fitting-pipeline-seams.R`, 20 assertions green): happy
+  path plus a zero-row edge case for `make_bdpg_resampling_plan()`; role-assignment / zero-steps
+  check for `make_bdpg_recipe()`; `"lm"`/`"rf"`/default-argument happy paths and an
+  unrecognized-`learner_id` abort for `make_bdpg_learner()` -- satisfies the project's testing
+  philosophy (every abort has a test) for the new code added this checkpoint 
+
+- Fixed a latent bug in `extract_rmd_chunk()` (both in
+  `test-golden-master-capture.R` and the new equivalence/self-regression test files): it only
+  matched chunk headers with a trailing comma+options (e.g. `` ```{r label, include=FALSE} ``)
+  and silently failed to find bare-header chunks with no options (e.g.
+  `` ```{r setPUsAndSppOnlyParams} ``). Fixed to match both forms 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 8 files) passes together: **225
+  assertions, 0 failures**, 16 warnings (all the same benign "All"-feature-set rank-deficient
+  prediction warnings, expected and already accounted for) 
+
+- No plotting code anywhere in `R/v1_paper_9_fitting_and_eval_pipeline.R` (grep-verified) 
+
+### Next steps
+
+- Checkpoint 2 is complete; awaiting author review before Checkpoint 3 (the separated plot
+  function `plot_output_error_fit()`)
+
+# Decisions Log Entry: 2026-07-24 (continued further)
+
+## Session: Claude Code implementation, Checkpoint 3 (separated plot function)
+
+### Context
+
+Implemented `plot_output_error_fit()` in `R/v1_paper_9_fitting_and_eval_pipeline.R`, borrowing
+its layout from the old `plot_full_fits()` (`R/v1_paper_3_fitting_functions.R`) without
+modifying that function, per plan §6 Checkpoint 3 / §7
+
+### Decisions made / actions taken
+
+- Reuses `force_dom_err_type_colors()` (already in
+  `R/v1_paper_3_plotting_and_evaluation_functions.R`) and
+  `convert_rs_method_name_to_ordered_factor()` (a NEW dependency for this file, in
+  `R/v1_paper_3_utility_functions.R`) unchanged -- including that function's known
+  facet-ordering quirk (`CLEANUP_GOALS.md` Priority 1). Not fixed here; out of scope for this
+  refactor 
+
+- **Two gaps between Checkpoint 2's `meta` and what the old plot needs, resolved without
+  reopening the already-tested `fit_output_error_for_feature_set()` signature -- flagged for
+  author review:**
+    - Old code hardcodes per-error-type text-annotation coordinates
+      (`R2_x_loc`/`R2_y_loc`/`rmse_x_loc`/`rmse_y_loc`) inside `fit_rep_shortfall()` /
+      `fit_cost_err_frac()`, which this refactor's single generic fit function collapsed away.
+      Replaced with one shared anchor point per plot (matching old code's own behavior of
+      reusing the same location across every facet), computed as a 5-8-16% inset from
+      `meta$x_min_on_plot`/`y_min_on_plot` etc. when set, else from the plotted predictions'
+      own range. A structural/layout simplification, not a metrics change -- does not affect
+      any tested numeric value  
+    - Old code's title and the "Solution Cost Error" `ylim(NA, 1.5)` special case key off a
+      `pred_value_name_display_str` ("Representation Shortfall" / "Solution Cost Error") that
+      `fit_output_error_for_feature_set()` does not carry (only `measure_name_str`, e.g.
+      `"abs_rep_shortfall_resid"`). `plot_output_error_fit()` accepts an optional
+      `pred_value_name_display_str` override; when omitted, derives it from `meta$error_type`
+      for the two known error types (matches the Rmd's eventual per-call-site display strings) 
+
+- `plot_output_error_fit(bundle, ds_label = "TEST", ...)`: `ds_label` selects which subset to
+  plot ("TRAIN" or "TEST"), replacing old code's `display_train_as_final_pred_using_plot`
+  boolean (which picked between two ENTIRELY SEPARATE pre-built plot objects). Default `"TEST"`
+  matches that flag's own default (`FALSE` -> show test) 
+
+- `num_facet_wrap_rows` defaults to 2, matching the Rmd's actual current default
+  (`params$exclude_greedy_rs_in_fit_plots = FALSE`) 
+
+- Does not call `save_this_ggplot()` (old code's disk-write side effect) -- out of scope; the
+  function is pure (returns the ggplot only), matching plan §4's fit/plot separation. Disk
+  saving, if wanted, belongs to the Rmd call site (Checkpoint 5) 
+
+- Placed a commented-out `plot_train_and_test_stuff_for_one_RS()` call with a note, per plan §7 
+
+- Visually spot-checked two rendered plots (Solution Cost Error / ProbSizeAndDensity, and
+  Representation Shortfall / PUsAndSppOnly) against the full committed golden inputs --
+  faceted 2x2 by reserve selector, colored by dominant error type, diagonal reference line,
+  per-facet adj-R2/rmse annotations upper-left, matching the described structure of the current
+  manuscript figures 
+
+- **Plot structural test** (`tests/testthat/test-fitting-pipeline-plot-structure.R`, 16
+  assertions green): one facet panel per reserve selector; point/diagonal/two-text layers
+  present; axis labels; renders without error for both `ds_label` values; title derivation
+  (default and override); the cost-error-only `ylim(NA, 1.5)` quirk checked directly via the
+  plot's own `scales` API (not by re-deriving it from rendered ranges, which turned out not to
+  be a reliable signal -- rep shortfall is itself a bounded fraction that never approached 1.5
+  in the test subsample, an early false-fail in this test caught and fixed before landing) 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 9 files) passes together: **241
+  assertions, 0 failures**, 16 warnings (same benign "All"-feature-set rank-deficient
+  prediction warnings from Checkpoint 2, unaffected) 
+
+### Next steps
+
+- Checkpoint 3 is complete; awaiting author review before Checkpoint 4 (orchestrator, legacy
+  scores adapter, `save_final_model` gate)  

@@ -45,3 +45,11 @@ Status key: **open** (not yet started), **scheduled**, **in progress**, **done**
 - **Why its own chat:** Adds a tuning/validation surface and test-matrix growth that is separable from the core refactor.  
 - **Depends on / trigger:** Core refactor done; a decision that a non-linear learner will actually be reported (overlaps FC-2).  
 - **First flagged:** fitting-refactor planning chat, 2026-06-28 (plan §11, "Learners available day one").  
+
+## FC-6 — "All" feature set exact collinearity (`ig_num_edges_m`)
+
+- **Status:** open  
+- **What:** `ig_num_edges_m` is an exact linear combination of two other "All"-feature-set predictors (`edge_frac_of_possible x sppPUprod`), confirmed via `caret::findLinearCombos()`. This makes the "All" feature set's design matrix rank-deficient by exactly 1, for every reserve selector, at full data scale -- not a subsampling artifact. It is pre-existing OLD-pipeline behavior (the old `lm()` call already emits "prediction from rank-deficient fit" warnings on "All"; the new pipeline reproduces this bit-for-bit). Decide whether/how to address it -- likely via a `recipes::step_lincomb()` or `step_zv()` step once the recipe seam takes on real preprocessing (see the "Preprocessing ownership" placeholder in the plan §11), rather than manually editing the `inVars` list, since a recipe step would also catch any other near-collinear variables in "All" that have not been specifically checked.  
+- **Why its own chat:** Removing or transforming a variable in "All" changes that feature set's actual reported `adj_R2`/`rmse`/`R2` in the current manuscript -- a paper-content / methodology decision, not code-refactor plumbing. It also requires re-deriving and re-reviewing the full-batch golden master. Out of scope for the "do not modify working code" refactor discipline (plan §9).  
+- **Depends on / trigger:** None strictly -- can be picked up whenever the author wants to revisit "All" feature set methodology, or naturally alongside FC-1 (evaluation methodology) once the recipe seam gets real preprocessing steps.  
+- **First flagged:** Checkpoint 2 implementation session, 2026-07-24, while building the fast-inner-loop self-regression fixture (see DECISIONS.md 2026-07-24 entry). The fast fixture works around this by excluding "All" (covered instead by the full-batch LM equivalence test, which is unaffected).  
