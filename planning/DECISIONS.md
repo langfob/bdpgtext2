@@ -800,4 +800,36 @@ established for the first one, per plan §6 Checkpoint 6
   own verification is fixture/chunk-driven, not a literal end-to-end knit 
 
 - Once confirmed: author decides whether to retain the old path (rollback safety net) or
-  remove it now, per plan §6's DoD       
+  remove it now, per plan §6's DoD
+
+### Confirmed
+
+- Author did the full knit: it worked, and `all_fitting_scores_df` matches the canonical
+  golden. Checkpoint 6's DoD is fully satisfied by a real end-to-end run, not just fixture-
+  driven tests. Only open item: author's retain-vs-remove-old-path decision (asked separately)
+
+- **Retain-vs-remove decision: KEEP the old path for now.** Every wired subsection's `else`
+  branch (the untouched old `fit_and_predict_output_error_using_feature_set()` call) stays in
+  the document as a rollback safety net, reachable by setting `use_new_fitting_pipeline:
+  FALSE`; the default stays `TRUE`. This is the plan §6 DoD's own framing ("keep the old path
+  callable for one cycle") and was the author's explicit choice over removing it now 
+
+## Fitting/eval refactor: Checkpoints 0-6 complete
+
+All six checkpoints in `bdpg_fitting_refactor_plan.md` are now done and confirmed by the
+author via real knits (not just fixture-driven tests): environment/scaffolding, the old-pipeline
+golden-master capture, the new pipeline's fit/evaluate core with exact LM equivalence, the
+separated plot function, the legacy scores adapter and orchestrator, and all 8 fit-call
+subsections wired with the new path as the default. Two items remain open for whenever the
+author wants to pick them up, both already tracked:
+
+- `FUTURE_CHATS.md` FC-6 -- the "All" feature set's structural rank-deficiency
+  (`ig_num_edges_m`), likely fixed later via a `step_lincomb()` recipe step 
+- `FUTURE_CHATS.md` FC-4 -- final-model persistence, still a stubbed `TODO` behind
+  `save_final_model`, deferred until the pipeline is frozen and sequestered batches unlock 
+
+Removing the old path and the golden-master capture instrumentation (a deliberate one-shot
+bootstrap, not durable infrastructure -- plan §5) is left for a future cycle, per the
+retain-for-now decision above. `FUTURE_CHATS.md` FC-7 is the concrete checklist for when that
+happens -- in particular, which functions in the "old" R files the new pipeline still depends
+on and must NOT be deleted along with the old Rmd call sites.        
