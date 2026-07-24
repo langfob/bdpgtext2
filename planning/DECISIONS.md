@@ -621,4 +621,121 @@ Implemented `bind_fitting_scores()` and `run_output_error_fit()` in
 ### Next steps
 
 - Checkpoint 4 is complete; awaiting author review before Checkpoints 5-6 (wiring one Rmd
-  subsection behind a flag, then rolling out and flipping the default)   
+  subsection behind a flag, then rolling out and flipping the default)
+
+# Decisions Log Entry: 2026-07-24 (continued yet further)
+
+## Session: Claude Code implementation, Checkpoint 5 (wire ONE Rmd subsection behind a flag)
+
+### Context
+
+Wired "Representation shortfall using PUsAndSppOnly" (chunk
+`predictRepShortfallUsingPUsAndSppOnly` in
+`Paper_9_heavily_abridged_version_of_p8/p9_v01_all_combined__body.Rmd`) to the new pipeline,
+behind a flag, per plan §6 Checkpoint 5. This is the first checkpoint that touches the Rmd's
+actual fit/plot logic (not just the additive golden-master capture instrumentation from
+Checkpoints 0-1) 
+
+### Decisions made / actions taken
+
+- Added two params: `use_new_fitting_pipeline` (default `FALSE`) and `save_final_model`
+  (default `FALSE`, plan §8's global gate -- not added until now since Checkpoint 4 was the
+  first point `run_output_error_fit()` needed it) 
+
+- The target chunk is now `if (params$use_new_fitting_pipeline) { <new path> } else { <old
+  path> }`. **The old-path branch is verified byte-for-byte identical to the pre-Checkpoint-5
+  Rmd via `git diff`** (confirmed no whitespace or formatting drift, after catching and fixing
+  an initial reformatting slip the same way as the Checkpoint 1 whitespace issue) 
+
+- New path: builds a recipe template from `p3_train_x_df` + the target column pulled from
+  `p3_working_train_df`, calls `run_output_error_fit()`, updates `all_fitting_scores_df`, then
+  explicitly `print()`s `plot_output_error_fit()`'s return -- required since (per plan §6) the
+  old figure only renders because `show()` runs inside the old fitting function; the new path
+  has no such side effect 
+
+- `ds_label` for the plot is derived from `display_train_as_final_pred_using_plot` (`TRAIN` if
+  `TRUE`, else `TEST`), matching the old flag's own selection logic. `learner_spec`/`learner_id`
+  are derived from `params$fitting_model_str` via `make_bdpg_learner()` (which already errors
+  clearly on anything besides `"lm"`/`"rf"`) rather than hardcoding `"lm"` 
+
+- **Verification test** (`tests/testthat/test-fitting-pipeline-rmd-wiring.R`, 10 assertions
+  green): extracts and `eval()`s the ACTUAL chunks from the Rmd -- not a hand-reproduction --
+  in the same order the document runs them (`setBdpgOptionsThatAreHardToSetInParams`,
+  `settingsThatApplyToAllPredPlots`, `creacyanlFittingScoresDF`, `setPUsAndSppOnlyParams`,
+  `buildPUsAndSppOnlyTestAndTrain`, then the target chunk itself), against the committed golden
+  inputs, with `use_new_fitting_pipeline = TRUE`. Result: reproduces the golden's 8
+  `PUsAndSppOnly`/`abs_rep_shortfall_resid` rows exactly, and the `print()`ed plot renders
+  without error (`pdf(NULL)` sink). Additionally visually spot-checked the actual wired chunk's
+  rendered output -- matches the Checkpoint 3 direct-call plot exactly (same adj-R2/rmse
+  values per facet) 
+
+- **The OLD (flag-off) branch was deliberately NOT re-executed** in the verification test: the
+  `git diff` byte-identity check already proves it, and executing it would require satisfying
+  old code's full plotting/matilda-file dependency graph (`save_this_ggplot()`,
+  `plot_train_and_test_stuff_for_one_RS()`, etc.) for no additional correctness signal, since
+  nothing in that branch's bytes changed 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 11 files) passes together: **281
+  assertions, 0 failures**, 32 warnings (same benign "All"-feature-set rank-deficient
+  prediction warnings from earlier checkpoints; unaffected, and this checkpoint doesn't
+  exercise "All") 
+
+### Next steps
+
+- Checkpoint 5 is complete; awaiting author review -- ideally including an actual knit of the
+  document with `use_new_fitting_pipeline: TRUE`, since this test suite exercises the wiring
+  against fixtures but has not rendered the full PDF/document -- before Checkpoint 6 (convert
+  the remaining subsections the same way; flip the default)
+
+# Decisions Log Entry: 2026-07-24 (Checkpoint 5 knit fix)
+
+## Session: real-knit bug found by the author, fixed
+
+### Context
+
+Author re-knit `p9_v01_all_combined__body.Rmd` with `use_new_fitting_pipeline: TRUE` (as
+suggested at the end of the Checkpoint 5 entry above) and it failed:
+`Error in \`run_output_error_fit()\`: ! could not find function "run_output_error_fit"`, at the
+wired chunk
+
+### Root cause
+
+`R/v1_paper_9_fitting_and_eval_pipeline.R` was never added to the Rmd's own
+`loadP1andP2FunctionDefns` chunk, which `source()`s every other R file the document depends on
+(`v1_paper_3_fitting_functions.R`, `v1_paper_3_plotting_and_evaluation_functions.R`, etc.). All
+of this session's own `testthat` runs passed because they follow this repo's documented test
+convention of sourcing the R files manually before calling `testthat::test_file()`/`test_dir()`
+-- which meant the missing `source()` call was invisible to every test written so far. A real
+knit is the only thing that exercises the Rmd's own source chain, exactly as the author's test
+just demonstrated 
+
+### Fix
+
+- Added `source (file.path (proj_dir, "/R/v1_paper_9_fitting_and_eval_pipeline.R"), local =
+  knitr::knit_global())` to `loadP1andP2FunctionDefns`, right after the existing
+  `v1_paper_3_fitting_functions.R` source call 
+
+- Also caught and fixed a repeat of the Checkpoint-1-style trailing-whitespace slip introduced
+  while making that edit (two adjacent `source()` lines lost trailing spaces) -- restored via
+  the same git-history-based byte-exact splice used previously 
+
+- **Added a regression test** for this exact bug class,
+  `tests/testthat/test-fitting-pipeline-rmd-wiring.R`: "the Rmd actually sources
+  R/v1_paper_9_fitting_and_eval_pipeline.R" statically greps the `loadP1andP2FunctionDefns`
+  chunk's own text for the file path, rather than relying on any dynamic execution -- dynamic
+  execution would have needed to NOT pre-source the file the way every other test in this
+  session does, which is exactly the blind spot that let the bug through in the first place 
+
+- Full test suite (`testthat::test_dir("tests/testthat")`, 11 files) passes together: **282
+  assertions, 0 failures**, same 32 pre-existing benign warnings 
+
+### Next steps
+
+- Author to re-knit with `use_new_fitting_pipeline: TRUE` (already set in the working tree) to
+  confirm the fix
+
+### Confirmed
+
+- Author re-knit and it worked. Checkpoint 5 is now genuinely complete (real knit, not just
+  fixture-driven tests). Next: Checkpoint 6 (convert the remaining subsections the same way;
+  flip the default), on author go-ahead      

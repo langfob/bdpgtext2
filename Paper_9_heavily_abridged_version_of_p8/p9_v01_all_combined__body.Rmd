@@ -36,7 +36,7 @@ params:
   prep_session_uuid: "4c261db9-913b-4a1b-abc1-88cd1cbd0665"    #  UUID printed by p9_v01_prep_data_for_p8_to_load_from_files.Rmd
   verbose_verify_prov_reads: FALSE    #  If TRUE, resolve_prov_file() prints a VERIFIED line for each of the 8 prepped inputs it loads
 #-----  golden-master capture variables (fitting/eval refactor bootstrap; see planning/bdpg_fitting_refactor_plan.md) -----#
-  capture_golden_master: TRUE    #  If TRUE, writes frozen input snapshots + all_fitting_scores_df under tests/fixtures/ for the new tidymodels pipeline's golden-master equivalence tests.  Inert (no behavior change) when FALSE.  See DECISIONS.md.
+  capture_golden_master: FALSE    #  If TRUE, writes frozen input snapshots + all_fitting_scores_df under tests/fixtures/ for the new tidymodels pipeline's golden-master equivalence tests.  Inert (no behavior change) when FALSE.  See DECISIONS.md.
   force_golden_master: FALSE    #  If TRUE, allows capture_golden_master to overwrite an existing finalized golden record.  Otherwise the run aborts (before any fitting or writes) if one already exists, instead of silently regenerating it.
 #-----  plotting variables  -----# 
   exclude_greedy_rs_in_fit_plots: FALSE
@@ -61,7 +61,10 @@ params:
   VERBOSE_GLMNET_UC: FALSE        ## 2024 01 30 ## 
   VERBOSE_LM: FALSE
   VERBOSE_LM_CATS: FALSE
-#-----  misc variables  -----# 
+#-----  new fitting/eval pipeline variables (parallel-build refactor; see planning/bdpg_fitting_refactor_plan.md) -----#
+  use_new_fitting_pipeline: TRUE    #  If TRUE, wired subsections use the new tidymodels fitting/eval pipeline (R/v1_paper_9_fitting_and_eval_pipeline.R) instead of the old one.  Old path is the default and is byte-for-byte unchanged when FALSE.  See DECISIONS.md.
+  save_final_model: FALSE    #  Global gate (plan §8): fit + save a versioned final model.  Stubbed with a TODO this round -- see DECISIONS.md (2026-06-28) and FUTURE_CHATS.md FC-4.  Quiet default; only reachable when use_new_fitting_pipeline is TRUE.
+#-----  misc variables  -----#
   mag_base_col_name_str: "max_TOT_FN_FP_rate"    #"max_TOT_FN_FP_rate"    #  "rsp_euc_realized_Ftot_and_cost_in_err_frac"
 #-----  vestigial variables  -----# 
 #  near_1_tol: 0.05
@@ -595,6 +598,12 @@ source (file.path (proj_dir, "/R/v1_paper_3_utility_functions.R"),
          local = knitr::knit_global())
 
 source (file.path (proj_dir, "/R/v1_paper_3_fitting_functions.R"), 
+         local = knitr::knit_global())
+
+#  Parallel-build fitting/eval refactor (planning/bdpg_fitting_refactor_plan.md).
+#  Used only when params$use_new_fitting_pipeline is TRUE (see the wired
+#  subsection(s) below); harmless to source unconditionally otherwise.
+source (file.path (proj_dir, "/R/v1_paper_9_fitting_and_eval_pipeline.R"),
          local = knitr::knit_global())
 
 source (file.path (proj_dir, "/R/p8.matildaFunctions.v01.R"), 
@@ -1851,6 +1860,51 @@ cat ("\nFeatures used:\n\n"); names (p3_train_x_df) [-1]    #  -1 to drop the rs
 
 ```{r predictRepShortfallUsingPUsAndSppOnly, fig.cap = "\\label{fig:predRepShortfallUsingPUsAndSppOnly}True representation shortfall vs. predicted representation shortfall on each problem in the test set using linear model trained for each reserve selector on input feature set containing only the number of planning units and the number of species.  Adjusted $R^2$ and rmse (on the test set) for each of the four learned prediction models are shown in the upper left corner of each plot.  Problems are colored by their dominant error type.  For reference, the line corresponding to a perfect fit of predicted to true values is shown diagonally upward from the origin."}
 
+    #  Checkpoint 5 (planning/bdpg_fitting_refactor_plan.md): this is the one
+    #  subsection wired to the new pipeline, behind params$use_new_fitting_pipeline
+    #  (default FALSE -- old path below is byte-for-byte unchanged).  See
+    #  DECISIONS.md.
+
+if (params$use_new_fitting_pipeline)
+    {
+    new_pipeline_target_col_name = "rsr_COR_spp_rep_shortfall"
+
+    new_pipeline_recipe_template_df = p3_train_x_df %>% select (-rs_method_name)
+    new_pipeline_recipe_template_df [[new_pipeline_target_col_name]] =
+        p3_working_train_df [[new_pipeline_target_col_name]]
+
+    new_pipeline_result =
+        run_output_error_fit (
+            all_fitting_scores_df = all_fitting_scores_df,
+            rs_method_names_list,
+            train_x_df = p3_train_x_df, test_x_df = p3_test_x_df,
+            working_train_df = p3_working_train_df, working_test_df = p3_working_test_df,
+            train_aux_df = p3_train_aux_df, test_aux_df = p3_test_aux_df,
+            target_col_name = new_pipeline_target_col_name,
+            recipe       = make_bdpg_recipe (new_pipeline_recipe_template_df, new_pipeline_target_col_name),
+            learner_spec = make_bdpg_learner (params$fitting_model_str),
+            learner_id   = params$fitting_model_str,
+            vars_used_str = vars_used_str, measure_name_str = "abs_rep_shortfall_resid",
+            fitting_model_str = params$fitting_model_str,
+
+            x_min_on_plot = NA, x_max_on_plot = NA,
+            y_min_on_plot = -0.2, y_max_on_plot = 1.2,
+
+            save_final_model = params$save_final_model)
+
+    all_fitting_scores_df = new_pipeline_result$all_fitting_scores_df
+
+        #  The current figure renders only because show() runs inside the old
+        #  fit_and_predict_output_error_using_feature_set(); the new path must
+        #  explicitly print the returned plot here so knitr captures it under
+        #  this chunk's fig.cap.
+    print (plot_output_error_fit (
+        new_pipeline_result$bundle,
+        ds_label = if (display_train_as_final_pred_using_plot) "TRAIN" else "TEST",
+        pred_value_name_display_str = "Representation Shortfall"))
+
+    } else
+    {
 all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_method_names_list, 
           train_x_df = p3_train_x_df,    # p3_train_x_df_probSize
           test_x_df = p3_test_x_df,    # p3_test_x_df_probSize
@@ -1873,6 +1927,7 @@ all_fitting_scores_df = fit_and_predict_output_error_using_feature_set (rs_metho
           source_string, 
           display_train_as_final_pred_using_plot
           )
+    }
 ```
 
 ### Solution cost error using PUsAndSppOnly data 
